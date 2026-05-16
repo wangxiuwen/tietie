@@ -1,0 +1,1514 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1280, initial-scale=1" />
+    <title>PasteBar — Design Mockup</title>
+    <style>
+      :root {
+        --accent: #007aff;
+        --accent-dim: rgba(0, 122, 255, 0.18);
+        --text: rgba(20, 20, 22, 0.92);
+        --text-2: rgba(20, 20, 22, 0.62);
+        --text-3: rgba(20, 20, 22, 0.42);
+        --bar-bg: rgba(245, 245, 247, 0.92);
+        --bar-stroke: rgba(255, 255, 255, 0.7);
+        --bar-shadow: 0 24px 60px rgba(0, 0, 0, 0.32), 0 2px 12px rgba(0, 0, 0, 0.18);
+        --card-bg: rgba(255, 255, 255, 0.96);
+        --card-stroke: rgba(0, 0, 0, 0.08);
+        --card-hover: #ffffff;
+        --pin: #ff9500;
+        --code: #af52de;
+        --link: #34c759;
+        --image: #ff2d55;
+        --text-cat: #007aff;
+        --color-cat: #ffcc00;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --text: rgba(255, 255, 255, 0.94);
+          --text-2: rgba(255, 255, 255, 0.62);
+          --text-3: rgba(255, 255, 255, 0.42);
+          --bar-bg: rgba(28, 28, 30, 0.92);
+          --bar-stroke: rgba(255, 255, 255, 0.12);
+          --card-bg: rgba(58, 58, 60, 0.96);
+          --card-stroke: rgba(255, 255, 255, 0.1);
+          --card-hover: rgba(82, 82, 84, 1);
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC",
+          "Helvetica Neue", sans-serif;
+        font-feature-settings: "ss01", "cv11";
+        -webkit-font-smoothing: antialiased;
+        color: var(--text);
+        background: #0c0e14;
+      }
+
+      .page {
+        position: relative;
+        width: 100%;
+        min-height: 100vh;
+        padding: 80px 0 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+        overflow: hidden;
+      }
+      /* page variant for full-window panels (Library / Settings) — keep them centered */
+      .page.center { padding: 80px 0 120px; justify-content: flex-start; }
+      .page-label {
+        align-self: flex-start;
+        margin-left: max(40px, calc((100vw - 1240px) / 2));
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.55);
+      }
+      .page-label .num {
+        display: inline-block;
+        width: 22px;
+        height: 22px;
+        line-height: 22px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.1);
+        text-align: center;
+        margin-right: 8px;
+      }
+
+      /* ───────── desktop backgrounds (varied for showcase) ───────── */
+      .bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+      }
+      .bg.sonoma {
+        background:
+          radial-gradient(1200px 700px at 20% 20%, #ff8a5c 0%, transparent 60%),
+          radial-gradient(900px 600px at 80% 30%, #a45cff 0%, transparent 55%),
+          radial-gradient(1000px 600px at 50% 90%, #2e6bff 0%, transparent 50%),
+          linear-gradient(160deg, #1a1530 0%, #0d0a1f 100%);
+      }
+      .bg.sequoia {
+        background:
+          radial-gradient(800px 500px at 70% 20%, #2dd4bf 0%, transparent 55%),
+          radial-gradient(900px 500px at 20% 80%, #f59e0b 0%, transparent 50%),
+          linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      }
+      .bg.code {
+        background:
+          radial-gradient(900px 500px at 80% 30%, #6d28d9 0%, transparent 60%),
+          radial-gradient(700px 400px at 20% 70%, #1e40af 0%, transparent 55%),
+          linear-gradient(160deg, #1e1b4b 0%, #020617 100%);
+      }
+      .bg.window-mock {
+        background: linear-gradient(160deg, #2c3e50 0%, #1a1a2e 100%);
+      }
+      .bg.window-mock::before {
+        content: "";
+        position: absolute;
+        inset: 60px 80px 60px 80px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+      }
+
+      /* a fake app window peeking from behind, to convey "overlay" */
+      .behind-app {
+        position: absolute;
+        z-index: 1;
+        top: 100px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(1100px, 90vw);
+        height: 480px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.97);
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55);
+        overflow: hidden;
+      }
+      .behind-app .titlebar {
+        height: 38px;
+        background: linear-gradient(180deg, #f6f6f6 0%, #ececec 100%);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        gap: 8px;
+      }
+      .behind-app .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+      }
+      .dot.r {
+        background: #ff5f57;
+      }
+      .dot.y {
+        background: #febc2e;
+      }
+      .dot.g {
+        background: #28c840;
+      }
+      .behind-app .app-title {
+        margin-left: 10px;
+        font-size: 13px;
+        color: #555;
+      }
+      .behind-app .doc {
+        padding: 26px 36px;
+        color: #1d1d1f;
+      }
+      .behind-app h1 {
+        margin: 0 0 18px;
+        font-size: 22px;
+      }
+      .behind-app p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: #444;
+        margin: 0 0 12px;
+      }
+
+      /* ───────── the bar itself — full-width drawer pinned to bottom ───────── */
+      .bar-wrap {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2;
+        width: 100%;
+        transform: translateY(100%);
+        opacity: 0;
+        will-change: transform, opacity;
+      }
+      .bar-wrap.drawer-in {
+        animation: drawer-up 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+      @keyframes drawer-up {
+        0%   { transform: translateY(100%); opacity: 0; }
+        45%  { opacity: 1; }
+        100% { transform: translateY(0); opacity: 1; }
+      }
+
+      /* dim overlay that fades in with drawer (gives "modal" feel) */
+      .scrim {
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(60% 80% at 50% 100%, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0) 70%);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1;
+        transition: opacity 380ms ease;
+      }
+      .page.drawer-active .scrim { opacity: 1; }
+
+      /* replay button — sits in page top-right */
+      .replay {
+        position: absolute;
+        top: 80px;
+        right: max(40px, calc((100vw - 1240px) / 2));
+        z-index: 4;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: rgba(255,255,255,0.85);
+        background: rgba(255,255,255,0.12);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-radius: 999px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .replay:hover { background: rgba(255,255,255,0.2); }
+      .replay svg { width: 12px; height: 12px; }
+
+      /* drawer handle (visual affordance at top of bar) */
+      .bar::before {
+        content: "";
+        position: absolute;
+        top: 6px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 36px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(0,0,0,0.12);
+        z-index: 5;
+      }
+      .bar {
+        position: relative;
+        padding-top: 8px;
+      }
+
+      .bar {
+        background: var(--bar-bg);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
+        border-top: 1px solid var(--bar-stroke);
+        border-radius: 16px 16px 0 0;
+        box-shadow: var(--bar-shadow);
+        overflow: hidden;
+      }
+
+      .bar-header {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      }
+
+      .search {
+        flex: 0 0 320px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+        font-size: 13px;
+        color: var(--text-2);
+      }
+      .search input {
+        all: unset;
+        flex: 1;
+        font-size: 13px;
+        color: var(--text);
+      }
+      .search input::placeholder {
+        color: var(--text-3);
+      }
+      .kbd {
+        display: inline-block;
+        min-width: 18px;
+        padding: 1px 5px;
+        font-size: 11px;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        color: var(--text-2);
+        background: rgba(0, 0, 0, 0.06);
+        border-radius: 4px;
+        text-align: center;
+      }
+
+      .type-tabs {
+        display: flex;
+        gap: 4px;
+        flex: 1;
+      }
+      .tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 0 12px;
+        font-size: 13px;
+        color: var(--text-2);
+        border-radius: 8px;
+        cursor: default;
+      }
+      .tab .count {
+        font-size: 11px;
+        color: var(--text-3);
+      }
+      .tab.active {
+        background: rgba(0, 0, 0, 0.08);
+        color: var(--text);
+      }
+      .tab .dot-sm {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .icon-btn {
+        width: 30px;
+        height: 30px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        color: var(--text-2);
+      }
+      .icon-btn:hover {
+        background: rgba(0, 0, 0, 0.06);
+      }
+
+      /* folder chip row */
+      .folders {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 18px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        overflow-x: auto;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        font-size: 12px;
+        color: var(--text-2);
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+      .chip.active {
+        background: var(--accent);
+        color: #fff;
+      }
+      .chip .swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+
+      /* cards strip */
+      .strip {
+        position: relative;
+        padding: 16px 18px 14px;
+      }
+      .cards {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 8px;
+      }
+      .cards::-webkit-scrollbar {
+        height: 6px;
+      }
+      .cards::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.18);
+        border-radius: 6px;
+      }
+
+      .card {
+        position: relative;
+        flex: 0 0 200px;
+        height: 200px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-stroke);
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        scroll-snap-align: start;
+        transition:
+          transform 120ms ease,
+          background 120ms ease;
+      }
+      .card .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        align-self: flex-start;
+        padding: 2px 8px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--text-2);
+        border-radius: 6px;
+      }
+      .card .badge.text {
+        color: var(--text-cat);
+        background: rgba(0, 122, 255, 0.1);
+      }
+      .card .badge.link {
+        color: var(--link);
+        background: rgba(52, 199, 89, 0.12);
+      }
+      .card .badge.image {
+        color: var(--image);
+        background: rgba(255, 45, 85, 0.12);
+      }
+      .card .badge.code {
+        color: var(--code);
+        background: rgba(175, 82, 222, 0.12);
+      }
+      .card .badge.color {
+        color: #a07000;
+        background: rgba(255, 204, 0, 0.18);
+      }
+
+      .card .pin {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 18px;
+        height: 18px;
+        color: var(--pin);
+      }
+      .card .body {
+        margin-top: 10px;
+        flex: 1;
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--text);
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 6;
+        -webkit-box-orient: vertical;
+      }
+      .card .body.mono {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11.5px;
+        line-height: 1.55;
+        color: var(--text);
+      }
+      .card .body.mono .kw {
+        color: #c678dd;
+      }
+      .card .body.mono .fn {
+        color: #61afef;
+      }
+      .card .body.mono .str {
+        color: #98c379;
+      }
+      .card .body.mono .cm {
+        color: #7f848e;
+      }
+
+      .card .img {
+        margin-top: 10px;
+        flex: 1;
+        border-radius: 8px;
+        background-size: cover;
+        background-position: center;
+      }
+      .card .img.a {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ffd93d 50%, #6bcf7f 100%);
+      }
+      .card .img.b {
+        background:
+          radial-gradient(400px 200px at 30% 30%, #ffffff 0%, transparent 50%),
+          linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      }
+      .card .img.c {
+        background:
+          repeating-linear-gradient(
+            45deg,
+            #1a1a2e 0,
+            #1a1a2e 8px,
+            #16213e 8px,
+            #16213e 16px
+          );
+      }
+
+      .card .swatch-big {
+        margin-top: 10px;
+        flex: 1;
+        border-radius: 8px;
+      }
+
+      .card .meta {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 11px;
+        color: var(--text-3);
+      }
+      .card .src {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .card .src .favicon {
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+      }
+
+      .card.selected {
+        outline: 2px solid var(--accent);
+        outline-offset: -2px;
+        background: var(--card-hover);
+        box-shadow: 0 8px 24px rgba(0, 122, 255, 0.18);
+      }
+      .card.selected .index-kbd {
+        position: absolute;
+        bottom: -10px;
+        right: -10px;
+        background: var(--accent);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 600;
+        box-shadow: 0 4px 10px rgba(0, 122, 255, 0.35);
+      }
+
+      .card .actions {
+        position: absolute;
+        inset: auto 8px 8px 8px;
+        display: none;
+        gap: 4px;
+        background: rgba(0, 0, 0, 0.75);
+        padding: 4px;
+        border-radius: 10px;
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+      }
+      .card.hovering .actions {
+        display: flex;
+      }
+      .action {
+        flex: 1;
+        height: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        font-size: 11px;
+        color: #fff;
+        border-radius: 6px;
+      }
+      .action:hover {
+        background: rgba(255, 255, 255, 0.16);
+      }
+      .action.primary {
+        background: var(--accent);
+      }
+
+      /* footer hints */
+      .bar-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 18px;
+        border-top: 1px solid rgba(0, 0, 0, 0.06);
+        font-size: 12px;
+        color: var(--text-2);
+        background: rgba(0, 0, 0, 0.02);
+      }
+      .hints {
+        display: flex;
+        gap: 18px;
+      }
+      .hints span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      /* color swatch shape */
+      .color-row {
+        display: flex;
+        gap: 4px;
+        margin-top: 6px;
+      }
+      .color-row b {
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--text);
+      }
+
+      /* ───────── card edit overlay ───────── */
+      .edit-card {
+        flex: 0 0 360px;
+        height: 240px;
+        background: var(--card-hover);
+        border: 2px solid var(--accent);
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        box-shadow:
+          0 0 0 6px var(--accent-dim),
+          0 12px 30px rgba(0, 122, 255, 0.25);
+      }
+      .edit-card textarea {
+        flex: 1;
+        margin-top: 10px;
+        all: unset;
+        font-size: 13px;
+        line-height: 1.5;
+        color: var(--text);
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 8px;
+        padding: 10px;
+        white-space: pre-wrap;
+      }
+      .edit-card .edit-foot {
+        margin-top: 8px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        color: var(--text-3);
+      }
+      .btn {
+        padding: 5px 12px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: white;
+      }
+      .btn.ghost {
+        color: var(--text-2);
+      }
+
+      /* ───────── Folder management panel ───────── */
+      .panel {
+        width: min(900px, 92vw);
+        background: var(--bar-bg);
+        -webkit-backdrop-filter: blur(40px) saturate(180%);
+        backdrop-filter: blur(40px) saturate(180%);
+        border: 1px solid var(--bar-stroke);
+        border-radius: 18px;
+        box-shadow: var(--bar-shadow);
+        overflow: hidden;
+        position: relative;
+        z-index: 2;
+      }
+      .panel-head {
+        display: flex;
+        align-items: center;
+        padding: 16px 22px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      }
+      .panel-title {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .panel-body {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+      }
+      .panel-side {
+        padding: 12px 0;
+        border-right: 1px solid rgba(0, 0, 0, 0.06);
+      }
+      .side-group {
+        padding: 12px 18px 6px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-3);
+      }
+      .side-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 18px;
+        font-size: 13px;
+        color: var(--text);
+      }
+      .side-item .swatch {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .side-item.active {
+        background: var(--accent-dim);
+        color: var(--accent);
+      }
+      .side-item .num {
+        margin-left: auto;
+        font-size: 11px;
+        color: var(--text-3);
+      }
+      .panel-main {
+        padding: 18px 22px;
+      }
+      .row-card {
+        display: grid;
+        grid-template-columns: 28px 1fr 120px 80px 80px;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-stroke);
+        border-radius: 10px;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+      .row-card .ic {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.06);
+        font-size: 12px;
+      }
+      .row-card .preview {
+        font-size: 13px;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .row-card .time {
+        font-size: 11px;
+        color: var(--text-3);
+      }
+
+      /* ───────── Settings panel ───────── */
+      .settings-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .form-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 14px;
+        background: var(--card-bg);
+        border: 1px solid var(--card-stroke);
+        border-radius: 10px;
+      }
+      .form-row .label {
+        font-size: 13px;
+      }
+      .form-row .help {
+        font-size: 11px;
+        color: var(--text-3);
+        margin-top: 3px;
+      }
+      .toggle {
+        width: 38px;
+        height: 22px;
+        border-radius: 999px;
+        background: rgba(0, 0, 0, 0.15);
+        position: relative;
+      }
+      .toggle::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        transition: all 120ms;
+      }
+      .toggle.on {
+        background: var(--accent);
+      }
+      .toggle.on::after {
+        left: 18px;
+      }
+      .hotkey {
+        display: inline-flex;
+        gap: 4px;
+      }
+
+      /* ───────── Empty state ───────── */
+      .empty {
+        padding: 60px 22px;
+        text-align: center;
+        color: var(--text-2);
+      }
+      .empty .icon {
+        font-size: 42px;
+        opacity: 0.4;
+      }
+      .empty h3 {
+        margin: 14px 0 6px;
+        font-size: 16px;
+        color: var(--text);
+        font-weight: 600;
+      }
+      .empty p {
+        margin: 0;
+        font-size: 13px;
+      }
+      .empty .keys {
+        margin-top: 20px;
+        display: inline-flex;
+        gap: 8px;
+        padding: 10px 14px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+      }
+
+      /* horizontal divider between pages */
+      .divider {
+        width: 100%;
+        height: 60px;
+        background: #0c0e14;
+      }
+
+      /* tiny mac menubar mock */
+      .menubar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 26px;
+        background: rgba(0, 0, 0, 0.35);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        display: flex;
+        align-items: center;
+        padding: 0 14px;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.85);
+        z-index: 3;
+      }
+      .menubar .right {
+        margin-left: auto;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .menubar .right .clip-icon {
+        color: var(--accent);
+        background: rgba(255, 255, 255, 0.12);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ═══════════════════════ Screen 1: Main paste bar (default) ═══════════════════════ -->
+    <section class="page">
+      <div class="bg sonoma"></div>
+      <div class="scrim"></div>
+      <div class="replay" data-replay>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
+        重放弹出动画
+      </div>
+      <div class="menubar">
+        <span style="font-weight: 600">Safari</span>
+        <span style="margin-left: 14px; opacity: 0.7">File &nbsp; Edit &nbsp; View</span>
+        <div class="right">
+          <span class="clip-icon">⌘V</span>
+          <span>Wed 14:32</span>
+        </div>
+      </div>
+
+      <div class="behind-app">
+        <div class="titlebar">
+          <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="app-title">Untitled — TextEdit</span>
+        </div>
+        <div class="doc">
+          <h1>Meeting notes — Q2 planning</h1>
+          <p>We're aligned on the roadmap for the clipboard manager. Three things came up that we should track:</p>
+          <p style="color: #999">▍</p>
+        </div>
+      </div>
+
+      <div class="page-label"><span class="num">01</span>Paste bar — default state</div>
+
+      <div class="bar-wrap">
+        <div class="bar">
+          <!-- header -->
+          <div class="bar-header">
+            <div class="search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input placeholder="搜索剪切板历史 …" />
+              <span class="kbd">⌘F</span>
+            </div>
+
+            <div class="type-tabs">
+              <div class="tab active"><span class="dot-sm" style="background: var(--accent)"></span>全部 <span class="count">248</span></div>
+              <div class="tab"><span class="dot-sm" style="background: var(--text-cat)"></span>文本 <span class="count">142</span></div>
+              <div class="tab"><span class="dot-sm" style="background: var(--link)"></span>链接 <span class="count">38</span></div>
+              <div class="tab"><span class="dot-sm" style="background: var(--image)"></span>图片 <span class="count">21</span></div>
+              <div class="tab"><span class="dot-sm" style="background: var(--code)"></span>代码 <span class="count">39</span></div>
+              <div class="tab"><span class="dot-sm" style="background: var(--color-cat)"></span>颜色 <span class="count">8</span></div>
+            </div>
+
+            <div class="header-right">
+              <div class="icon-btn" title="Folder view">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+              </div>
+              <div class="icon-btn" title="Settings">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- folder chips -->
+          <div class="folders">
+            <span class="chip active">📌 置顶 <span style="opacity:.7">5</span></span>
+            <span class="chip"><span class="swatch" style="background:#ff9500"></span>常用代码片段 <span style="opacity:.6">12</span></span>
+            <span class="chip"><span class="swatch" style="background:#34c759"></span>工作邮箱 <span style="opacity:.6">3</span></span>
+            <span class="chip"><span class="swatch" style="background:#5856d6"></span>项目链接 <span style="opacity:.6">9</span></span>
+            <span class="chip"><span class="swatch" style="background:#ff2d55"></span>设计参考 <span style="opacity:.6">7</span></span>
+            <span class="chip"><span class="swatch" style="background:#007aff"></span>密码片段 🔒 <span style="opacity:.6">4</span></span>
+            <span class="chip" style="opacity:.5">+ 新建</span>
+          </div>
+
+          <!-- cards strip -->
+          <div class="strip">
+            <div class="cards">
+              <!-- pinned text -->
+              <div class="card selected">
+                <span class="badge text">文本</span>
+                <svg class="pin" viewBox="0 0 24 24" fill="currentColor"><path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2z"/></svg>
+                <div class="body">william.wong@turingapi.com</div>
+                <div class="meta"><span class="src">📌 工作邮箱</span><span>3 分钟前</span></div>
+                <div class="index-kbd">⌘1</div>
+              </div>
+
+              <!-- code snippet -->
+              <div class="card">
+                <span class="badge code">代码 · TS</span>
+                <div class="body mono"><span class="cm">// debounce</span><br/><span class="kw">export const</span> <span class="fn">debounce</span> = (fn, ms) =&gt; {<br/>&nbsp;&nbsp;<span class="kw">let</span> t;<br/>&nbsp;&nbsp;<span class="kw">return</span> (...a) =&gt; {<br/>&nbsp;&nbsp;&nbsp;&nbsp;clearTimeout(t);<br/>&nbsp;&nbsp;&nbsp;&nbsp;t = setTimeout(...);</div>
+                <div class="meta"><span class="src">📌 常用代码片段</span><span>昨天</span></div>
+              </div>
+
+              <!-- url -->
+              <div class="card">
+                <span class="badge link">链接</span>
+                <div class="body">
+                  <div style="font-weight:600; font-size:13px; margin-bottom:4px">Linear — Issue TUR-1492</div>
+                  <div style="font-size:11px; color:var(--text-3); word-break:break-all">linear.app/tur/issue/TUR-1492/clipboard-mvp</div>
+                </div>
+                <div class="meta"><span class="src"><span class="favicon" style="background:#5e6ad2"></span>linear.app</span><span>14:01</span></div>
+              </div>
+
+              <!-- text long -->
+              <div class="card">
+                <span class="badge text">文本</span>
+                <div class="body">"性能要好，体积小，跨平台" — 用户对剪切板应用的核心要求。需要明确每条都怎么落地：Tauri+React 解决体积和跨平台，Rust 监听剪切板和搜索索引解决性能…</div>
+                <div class="meta"><span class="src">从 Bear</span><span>13:48</span></div>
+              </div>
+
+              <!-- image -->
+              <div class="card">
+                <span class="badge image">图片 · 1.2 MB</span>
+                <div class="img a"></div>
+                <div class="meta"><span class="src">PNG · 1920×1080</span><span>13:22</span></div>
+              </div>
+
+              <!-- color -->
+              <div class="card">
+                <span class="badge color">颜色</span>
+                <div class="swatch-big" style="background:#007aff"></div>
+                <div class="color-row"><b>#007AFF</b></div>
+                <div class="meta"><span class="src">从 Figma</span><span>13:10</span></div>
+              </div>
+
+              <!-- image 2 -->
+              <div class="card">
+                <span class="badge image">截图</span>
+                <div class="img b"></div>
+                <div class="meta"><span class="src">屏幕截图</span><span>12:58</span></div>
+              </div>
+
+              <!-- code python -->
+              <div class="card">
+                <span class="badge code">代码 · Python</span>
+                <div class="body mono"><span class="kw">def</span> <span class="fn">retry</span>(fn, n=<span class="str">3</span>):<br/>&nbsp;&nbsp;<span class="kw">for</span> i <span class="kw">in range</span>(n):<br/>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">try</span>: <span class="kw">return</span> fn()<br/>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">except</span>: time.sleep(<span class="str">2</span>**i)</div>
+                <div class="meta"><span class="src">从 VS Code</span><span>12:30</span></div>
+              </div>
+
+              <!-- text plain -->
+              <div class="card">
+                <span class="badge text">文本</span>
+                <div class="body">SF6 23 88 11 92 14 35</div>
+                <div class="meta"><span class="src">手动输入</span><span>11:45</span></div>
+              </div>
+
+              <!-- url 2 -->
+              <div class="card">
+                <span class="badge link">链接</span>
+                <div class="body">
+                  <div style="font-weight:600; font-size:13px; margin-bottom:4px">Tauri 2.0 — Plugin clipboard-manager</div>
+                  <div style="font-size:11px; color:var(--text-3); word-break:break-all">tauri.app/plugin/clipboard-manager</div>
+                </div>
+                <div class="meta"><span class="src"><span class="favicon" style="background:#ffc131"></span>tauri.app</span><span>10:14</span></div>
+              </div>
+
+              <!-- image 3 -->
+              <div class="card">
+                <span class="badge image">图片</span>
+                <div class="img c"></div>
+                <div class="meta"><span class="src">设计参考</span><span>09:20</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- foot -->
+          <div class="bar-foot">
+            <div class="hints">
+              <span><span class="kbd">←</span> <span class="kbd">→</span> 切换</span>
+              <span><span class="kbd">↵</span> 粘贴</span>
+              <span><span class="kbd">⌘</span><span class="kbd">1-9</span> 直选</span>
+              <span><span class="kbd">⌘</span><span class="kbd">E</span> 编辑</span>
+              <span><span class="kbd">⌘</span><span class="kbd">P</span> 置顶</span>
+              <span><span class="kbd">⌘</span><span class="kbd">D</span> 删除</span>
+            </div>
+            <div><span class="kbd">Esc</span> 关闭</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════ Screen 2: Hover + actions ═══════════════════════ -->
+    <section class="page">
+      <div class="bg sequoia"></div>
+      <div class="scrim"></div>
+      <div class="replay" data-replay>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
+        重放
+      </div>
+      <div class="page-label"><span class="num">02</span>Card hover — 内联操作 & 多选</div>
+
+      <div class="bar-wrap">
+        <div class="bar">
+          <div class="bar-header">
+            <div class="search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input placeholder="3 项已选" style="color:var(--accent)" />
+              <span class="kbd">⌘A</span>
+            </div>
+            <div class="type-tabs">
+              <div class="tab"><span class="dot-sm" style="background: var(--accent)"></span>全部 <span class="count">248</span></div>
+              <div class="tab active"><span class="dot-sm" style="background: var(--code)"></span>代码 <span class="count">39</span></div>
+            </div>
+            <div class="header-right">
+              <div class="chip" style="background: var(--accent); color: white">合并粘贴</div>
+              <div class="icon-btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg></div>
+            </div>
+          </div>
+
+          <div class="folders">
+            <span class="chip">📌 置顶</span>
+            <span class="chip active">常用代码片段</span>
+            <span class="chip">SQL 模板</span>
+            <span class="chip">cURL 示例</span>
+          </div>
+
+          <div class="strip">
+            <div class="cards">
+              <div class="card selected">
+                <span class="badge code">代码 · TS</span>
+                <div class="body mono"><span class="kw">export const</span> <span class="fn">debounce</span> = (fn, ms) =&gt; {<br/>&nbsp;&nbsp;<span class="kw">let</span> t;<br/>&nbsp;&nbsp;<span class="kw">return</span> (...a) =&gt; clearTimeout(t)</div>
+                <div class="meta"><span class="src">📌 代码片段</span><span>昨天</span></div>
+                <div class="index-kbd">⌘1</div>
+              </div>
+
+              <div class="card hovering">
+                <span class="badge code">代码 · SQL</span>
+                <div class="body mono"><span class="kw">SELECT</span> u.id, u.name<br/><span class="kw">FROM</span> users u<br/><span class="kw">JOIN</span> orders o <span class="kw">ON</span> o.uid=u.id<br/><span class="kw">WHERE</span> o.amount &gt; <span class="str">100</span></div>
+                <div class="actions">
+                  <div class="action primary">↵ 粘贴</div>
+                  <div class="action">📌</div>
+                  <div class="action">✎</div>
+                  <div class="action">🗂</div>
+                  <div class="action">🗑</div>
+                </div>
+              </div>
+
+              <div class="card">
+                <span class="badge code">代码 · Bash</span>
+                <div class="body mono"><span class="cm"># deploy staging</span><br/>kubectl rollout restart \\<br/>&nbsp;&nbsp;deploy/workflow -n staging</div>
+                <div class="meta"><span class="src">📌 代码片段</span><span>2 天前</span></div>
+              </div>
+
+              <div class="card selected">
+                <span class="badge code">代码 · cURL</span>
+                <div class="body mono">curl -X POST \\<br/>&nbsp;&nbsp;-H <span class="str">"Auth: ..."</span> \\<br/>&nbsp;&nbsp;https://api.turing/v1/chat</div>
+                <div class="meta"><span class="src">📌 cURL</span><span>3 天前</span></div>
+                <div class="index-kbd">⌘2</div>
+              </div>
+
+              <div class="card selected">
+                <span class="badge code">代码 · YAML</span>
+                <div class="body mono">apiVersion: v1<br/>kind: ConfigMap<br/>metadata:<br/>&nbsp;&nbsp;name: workflow-cfg</div>
+                <div class="meta"><span class="src">从 ArgoCD</span><span>4 天前</span></div>
+                <div class="index-kbd">⌘3</div>
+              </div>
+
+              <div class="card">
+                <span class="badge code">代码 · Go</span>
+                <div class="body mono"><span class="kw">func</span> <span class="fn">retry</span>(fn func() error) error {<br/>&nbsp;&nbsp;<span class="kw">for</span> i := <span class="str">0</span>; i &lt; <span class="str">3</span>; i++ {<br/>&nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> err := fn(); err == nil</div>
+                <div class="meta"><span class="src">VS Code</span><span>1 周前</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bar-foot">
+            <div class="hints">
+              <span><span class="kbd">⌘</span> 多选</span>
+              <span><span class="kbd">⇧↵</span> 合并粘贴</span>
+              <span><span class="kbd">⌘</span><span class="kbd">G</span> 加入文件夹</span>
+            </div>
+            <div>3 / 6 selected</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════ Screen 3: Inline edit ═══════════════════════ -->
+    <section class="page">
+      <div class="bg code"></div>
+      <div class="scrim"></div>
+      <div class="replay" data-replay>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
+        重放
+      </div>
+      <div class="page-label"><span class="num">03</span>Edit — 内联编辑（不离开 bar）</div>
+
+      <div class="bar-wrap">
+        <div class="bar">
+          <div class="bar-header">
+            <div class="search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input placeholder="编辑模式 — Esc 退出" style="color:var(--text-3)" />
+            </div>
+            <div class="type-tabs">
+              <div class="tab"><span class="dot-sm" style="background: var(--accent)"></span>全部</div>
+            </div>
+            <div class="header-right">
+              <div class="chip">仅本条保存</div>
+              <div class="chip" style="background: var(--accent); color: white">另存为新条目</div>
+            </div>
+          </div>
+
+          <div class="strip">
+            <div class="cards">
+              <div class="card" style="opacity:.45">
+                <span class="badge text">文本</span>
+                <div class="body">william.wong@turingapi.com</div>
+                <div class="meta"><span class="src">📌</span><span>3m</span></div>
+              </div>
+
+              <div class="edit-card">
+                <div style="display:flex; align-items:center; justify-content:space-between">
+                  <span class="badge code">代码 · TypeScript</span>
+                  <span style="font-size:11px; color:var(--text-3)">编辑中 · 不影响原条目</span>
+                </div>
+                <textarea>export const debounce = (fn, ms = 250) =&gt; {
+  let t;
+  return (...args) =&gt; {
+    clearTimeout(t);
+    t = setTimeout(() =&gt; fn(...args), ms);
+  };
+};</textarea>
+                <div class="edit-foot">
+                  <span>TypeScript · 198 字符 · 7 行</span>
+                  <div style="display:flex; gap:6px">
+                    <span class="btn ghost">Esc 取消</span>
+                    <span class="btn primary">⌘↵ 保存并粘贴</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="card" style="opacity:.45">
+                <span class="badge link">链接</span>
+                <div class="body">linear.app/tur/issue/TUR-1492</div>
+                <div class="meta"><span class="src">linear.app</span><span>14:01</span></div>
+              </div>
+
+              <div class="card" style="opacity:.45">
+                <span class="badge text">文本</span>
+                <div class="body">"性能要好，体积小，跨平台"</div>
+                <div class="meta"><span class="src">Bear</span><span>13:48</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bar-foot">
+            <div class="hints">
+              <span><span class="kbd">⌘</span><span class="kbd">↵</span> 保存 + 粘贴</span>
+              <span><span class="kbd">⌘</span><span class="kbd">S</span> 仅保存</span>
+              <span><span class="kbd">Esc</span> 取消</span>
+            </div>
+            <div>语法高亮 · 自动检测语言</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════ Screen 4: Folder / library management ═══════════════════════ -->
+    <section class="page center" style="padding-top:60px">
+      <div class="bg window-mock"></div>
+
+      <div class="page-label"><span class="num">04</span>Library — 全屏文件夹与历史管理</div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-title">PasteBar Library</span>
+          <div style="margin-left:auto; display:flex; gap:8px; align-items:center">
+            <div class="search" style="background: rgba(0,0,0,.06); width:240px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input placeholder="搜索全部条目 …"/>
+            </div>
+            <div class="chip" style="background: var(--accent); color: white">+ 新建文件夹</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="panel-side">
+            <div class="side-group">智能</div>
+            <div class="side-item"><span>📋</span> 全部 <span class="num">248</span></div>
+            <div class="side-item"><span>📌</span> 置顶 <span class="num">5</span></div>
+            <div class="side-item"><span>🕘</span> 今天 <span class="num">23</span></div>
+            <div class="side-item"><span>⭐</span> 最常用 <span class="num">12</span></div>
+
+            <div class="side-group">类型</div>
+            <div class="side-item"><span class="swatch" style="background:var(--text-cat)"></span> 文本 <span class="num">142</span></div>
+            <div class="side-item"><span class="swatch" style="background:var(--link)"></span> 链接 <span class="num">38</span></div>
+            <div class="side-item"><span class="swatch" style="background:var(--image)"></span> 图片 <span class="num">21</span></div>
+            <div class="side-item active"><span class="swatch" style="background:var(--code)"></span> 代码 <span class="num">39</span></div>
+            <div class="side-item"><span class="swatch" style="background:var(--color-cat)"></span> 颜色 <span class="num">8</span></div>
+
+            <div class="side-group">我的文件夹</div>
+            <div class="side-item"><span class="swatch" style="background:#ff9500"></span> 常用代码片段 <span class="num">12</span></div>
+            <div class="side-item"><span class="swatch" style="background:#34c759"></span> 工作邮箱 <span class="num">3</span></div>
+            <div class="side-item"><span class="swatch" style="background:#5856d6"></span> 项目链接 <span class="num">9</span></div>
+            <div class="side-item"><span class="swatch" style="background:#ff2d55"></span> 设计参考 <span class="num">7</span></div>
+            <div class="side-item"><span class="swatch" style="background:#007aff"></span> 密码片段 🔒 <span class="num">4</span></div>
+          </div>
+
+          <div class="panel-main">
+            <div style="font-size:12px; color:var(--text-3); margin-bottom:8px">代码 · 39 项 · 按最近使用排序</div>
+
+            <div class="row-card">
+              <div class="ic" style="background: rgba(175,82,222,.12); color: var(--code)">TS</div>
+              <div class="preview">export const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); …</div>
+              <div class="time">📌 代码片段</div>
+              <div class="time">昨天 14:32</div>
+              <div style="display:flex; justify-content:flex-end; gap:6px"><span class="icon-btn">📌</span><span class="icon-btn">✎</span></div>
+            </div>
+            <div class="row-card">
+              <div class="ic" style="background: rgba(175,82,222,.12); color: var(--code)">SQL</div>
+              <div class="preview">SELECT u.id, u.name FROM users u JOIN orders o ON o.uid=u.id WHERE o.amount > 100</div>
+              <div class="time">📌 代码片段</div>
+              <div class="time">昨天 11:08</div>
+              <div style="display:flex; justify-content:flex-end; gap:6px"><span class="icon-btn">📌</span><span class="icon-btn">✎</span></div>
+            </div>
+            <div class="row-card">
+              <div class="ic" style="background: rgba(175,82,222,.12); color: var(--code)">SH</div>
+              <div class="preview"># deploy staging\nkubectl rollout restart deploy/workflow -n staging</div>
+              <div class="time">📌 代码片段</div>
+              <div class="time">2 天前</div>
+              <div style="display:flex; justify-content:flex-end; gap:6px"><span class="icon-btn">📌</span><span class="icon-btn">✎</span></div>
+            </div>
+            <div class="row-card">
+              <div class="ic" style="background: rgba(175,82,222,.12); color: var(--code)">cURL</div>
+              <div class="preview">curl -X POST -H "Auth: ..." https://api.turing/v1/chat</div>
+              <div class="time">📌 cURL 示例</div>
+              <div class="time">3 天前</div>
+              <div style="display:flex; justify-content:flex-end; gap:6px"><span class="icon-btn">📌</span><span class="icon-btn">✎</span></div>
+            </div>
+            <div class="row-card">
+              <div class="ic" style="background: rgba(175,82,222,.12); color: var(--code)">YAML</div>
+              <div class="preview">apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: workflow-cfg</div>
+              <div class="time">从 ArgoCD</div>
+              <div class="time">4 天前</div>
+              <div style="display:flex; justify-content:flex-end; gap:6px"><span class="icon-btn">📌</span><span class="icon-btn">✎</span></div>
+            </div>
+            <div class="row-card">
+              <div class="ic" style="background: rgba(175,82,222,.12); color: var(--code)">Go</div>
+              <div class="preview">func retry(fn func() error) error { for i := 0; i &lt; 3; i++ { if err := fn(); err == nil …</div>
+              <div class="time">VS Code</div>
+              <div class="time">1 周前</div>
+              <div style="display:flex; justify-content:flex-end; gap:6px"><span class="icon-btn">📌</span><span class="icon-btn">✎</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════ Screen 5: Settings ═══════════════════════ -->
+    <section class="page center" style="padding-top:60px">
+      <div class="bg window-mock"></div>
+
+      <div class="page-label"><span class="num">05</span>Settings — 简洁偏好设置</div>
+
+      <div class="panel" style="max-width:760px">
+        <div class="panel-head">
+          <span class="panel-title">Preferences</span>
+          <div style="margin-left:auto; display:flex; gap:4px">
+            <span class="tab active" style="background:rgba(0,0,0,.06)">通用</span>
+            <span class="tab">快捷键</span>
+            <span class="tab">同步</span>
+            <span class="tab">隐私</span>
+            <span class="tab">关于</span>
+          </div>
+        </div>
+
+        <div class="panel-main" style="padding:18px 22px">
+          <div class="side-group" style="padding:0 0 8px">触发</div>
+          <div class="settings-grid">
+            <div class="form-row">
+              <div>
+                <div class="label">弹出快捷键</div>
+                <div class="help">从屏幕底部弹出剪切板</div>
+              </div>
+              <span class="hotkey"><span class="kbd">⌘</span><span class="kbd">⇧</span><span class="kbd">V</span></span>
+            </div>
+            <div class="form-row">
+              <div>
+                <div class="label">拦截 ⌘V</div>
+                <div class="help">按 V 仍可直接粘贴，长按 0.3s 弹出 bar</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="form-row">
+              <div>
+                <div class="label">编辑当前条</div>
+                <div class="help">在弹出 bar 中按下，进入编辑</div>
+              </div>
+              <span class="hotkey"><span class="kbd">⌘</span><span class="kbd">E</span></span>
+            </div>
+            <div class="form-row">
+              <div>
+                <div class="label">打开 Library</div>
+                <div class="help">全屏管理文件夹和历史</div>
+              </div>
+              <span class="hotkey"><span class="kbd">⌘</span><span class="kbd">⇧</span><span class="kbd">L</span></span>
+            </div>
+          </div>
+
+          <div class="side-group" style="padding:18px 0 8px">行为</div>
+          <div class="settings-grid">
+            <div class="form-row">
+              <div>
+                <div class="label">历史保留数量</div>
+                <div class="help">超出自动清理（置顶不计）</div>
+              </div>
+              <span class="chip">500 条</span>
+            </div>
+            <div class="form-row">
+              <div>
+                <div class="label">忽略密码管理器</div>
+                <div class="help">1Password / Bitwarden / Keychain</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="form-row">
+              <div>
+                <div class="label">自动分类</div>
+                <div class="help">按内容类型自动归类</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+            <div class="form-row">
+              <div>
+                <div class="label">检测信用卡 / 密码</div>
+                <div class="help">自动标记敏感，30 分钟后清除</div>
+              </div>
+              <div class="toggle on"></div>
+            </div>
+          </div>
+
+          <div class="side-group" style="padding:18px 0 8px">同步（可选）</div>
+          <div class="form-row">
+            <div>
+              <div class="label">iCloud 同步</div>
+              <div class="help">端到端加密 · 跨设备共享置顶与文件夹</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+        </div>
+
+        <div class="bar-foot" style="border-top:1px solid rgba(0,0,0,.06)">
+          <div class="hints">
+            <span>PasteBar 1.0 · Tauri 2 + React</span>
+            <span>~9.8 MB</span>
+            <span>内存常驻 &lt; 60 MB</span>
+          </div>
+          <div>开机自启 <span class="toggle on" style="margin-left:8px; vertical-align:middle"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ═══════════════════════ Screen 6: Empty state ═══════════════════════ -->
+    <section class="page">
+      <div class="bg sonoma"></div>
+      <div class="scrim"></div>
+      <div class="replay" data-replay>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 10 9 10"/></svg>
+        重放
+      </div>
+      <div class="page-label"><span class="num">06</span>Empty — 首次使用引导</div>
+
+      <div class="bar-wrap">
+        <div class="bar">
+          <div class="empty">
+            <div class="icon">📋</div>
+            <h3>剪切板还是空的</h3>
+            <p>复制任何文本、链接、图片或代码，它会出现在这里</p>
+            <div class="keys">
+              <span class="kbd">⌘</span><span class="kbd">⇧</span><span class="kbd">V</span>
+              <span style="font-size:12px; align-self:center">随时唤起 PasteBar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <script>
+      // Trigger drawer-up animation when each page enters viewport
+      const bars = document.querySelectorAll(".page .bar-wrap");
+      const io = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (!e.isIntersecting) return;
+            playDrawer(e.target);
+          });
+        },
+        { threshold: 0.35 }
+      );
+      bars.forEach((b) => io.observe(b));
+
+      function playDrawer(barWrap) {
+        const page = barWrap.closest(".page");
+        barWrap.classList.remove("drawer-in");
+        page.classList.remove("drawer-active");
+        // force reflow so re-adding the class restarts the animation
+        void barWrap.offsetWidth;
+        barWrap.classList.add("drawer-in");
+        page.classList.add("drawer-active");
+      }
+
+      // Replay buttons
+      document.querySelectorAll("[data-replay]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const bar = btn.closest(".page").querySelector(".bar-wrap");
+          if (bar) playDrawer(bar);
+        });
+      });
+    </script>
+  </body>
+</html>

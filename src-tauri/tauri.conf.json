@@ -1,0 +1,77 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "贴贴",
+  "version": "0.1.0",
+  "identifier": "com.tietie.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "drawer",
+        "title": "贴贴",
+        "width": 1280,
+        "height": 360,
+        "minWidth": 800,
+        "minHeight": 320,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "shadow": false,
+        "center": false
+      },
+      {
+        "label": "tray-popover",
+        "title": "贴贴",
+        "url": "index.html?view=tray",
+        "width": 320,
+        "height": 460,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "shadow": true,
+        "focus": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "category": "Productivity",
+    "shortDescription": "漂亮、轻量、跨平台的剪切板管理器",
+    "longDescription": "贴贴 (Tietie) — 一个底部抽屉式的剪切板管理器，支持文本/链接/图片/代码/颜色分类、置顶、文件夹、全局快捷键和系统托盘。",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    },
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libayatana-appindicator3-1"]
+      }
+    },
+    "windows": {
+      "wix": {
+        "language": ["zh-CN", "en-US"]
+      }
+    }
+  }
+}
