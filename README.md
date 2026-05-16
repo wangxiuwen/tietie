@@ -6,7 +6,7 @@ English · [简体中文](./README.zh-CN.md)
 
 Bottom-drawer popup, all-keyboard driven, Tauri 2 + React + Rust, ~10 MB installer. Does one thing well: **clipboard**.
 
-> Looking for menu-bar icon hiding (the macOS notch problem)? See the sister project [Shouna (收纳)](https://github.com/wangxiuwen/shouna).
+> Looking for menu-bar icon hiding (the macOS notch problem)? See the sister project [Tuntun (囤囤) 🐹](https://github.com/wangxiuwen/tuntun).
 
 ## ✨ Features
 

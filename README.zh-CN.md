@@ -6,7 +6,7 @@
 
 底部抽屉式弹出，全键盘操作，Tauri 2 + React + Rust，安装包 ~10 MB。专注做好一件事：**剪切板**。
 
-> 如果你想要 macOS 菜单栏图标的隐藏/收纳（被刘海挡住那个问题），看姊妹项目 [收纳 (shouna)](https://github.com/wangxiuwen/shouna)。
+> 如果你想要 macOS 菜单栏图标的隐藏/收纳（被刘海挡住那个问题），看姊妹项目 [囤囤 (tuntun) 🐹](https://github.com/wangxiuwen/tuntun)。
 
 ## ✨ 功能
 
