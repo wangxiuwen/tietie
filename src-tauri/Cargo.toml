@@ -1,6 +1,6 @@
 [package]
 name = "tietie"
-version = "0.1.4"
+version = "0.1.5"
 description = "贴贴 — 漂亮、轻量、跨平台的剪切板管理器"
 authors = ["wangxiuwen"]
 edition = "2021"
@@ -34,7 +34,8 @@ png = "0.17"
 [target."cfg(target_os = \"macos\")".dependencies]
 objc2 = "0.6"
 objc2-foundation = "0.3"
-objc2-app-kit = { version = "0.3", features = ["NSScreen"] }
+objc2-app-kit = { version = "0.3", features = ["NSScreen", "NSWorkspace", "NSRunningApplication"] }
+core-graphics = "0.24"
 
 [features]
 default = ["custom-protocol"]

@@ -97,7 +97,9 @@ export default function App() {
       await writeText(item.content);
     }
     await invoke("touch_item", { id: item.id });
-    await invoke("hide_window");
+    // paste_back hides the drawer, restores focus to the previously-active app,
+    // and synthesizes ⌘V so the content is actually pasted (not just copied).
+    await invoke("paste_back");
   }, []);
 
   const togglePin = useCallback(async (id: number) => {
@@ -123,7 +125,7 @@ export default function App() {
     await refresh();
     if (alsoPaste) {
       await writeText(editValue);
-      await invoke("hide_window");
+      await invoke("paste_back");
     }
   }, [editing, editValue, refresh]);
 

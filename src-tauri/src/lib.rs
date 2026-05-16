@@ -1,5 +1,7 @@
 mod clipboard;
 mod db;
+#[cfg(target_os = "macos")]
+mod paste;
 
 use parking_lot::Mutex;
 use std::sync::Arc;
@@ -98,6 +100,7 @@ pub fn run() {
             get_item_image,
             show_drawer,
             hide_window,
+            paste_back,
             open_settings,
             quit_app,
         ])
@@ -250,6 +253,13 @@ fn toggle_drawer<R: Runtime>(app: &AppHandle<R>) {
                 let _ = win.hide();
             }
             _ => {
+                // Snapshot frontmost app BEFORE we steal focus, so paste-back
+                // can return to it and synth ⌘V into its frontmost text field.
+                #[cfg(target_os = "macos")]
+                {
+                    let mtm = unsafe { objc2::MainThreadMarker::new_unchecked() };
+                    paste::snapshot_frontmost(mtm);
+                }
                 position_drawer(&win);
                 let _ = win.show();
                 let _ = win.set_focus();
@@ -364,6 +374,34 @@ fn hide_window(window: tauri::Window) {
     let _ = window.hide();
     if window.label() == "drawer" {
         let _ = window.app_handle().emit("hide-drawer", ());
+    }
+}
+
+/// Hide drawer + restore focus to the app that was frontmost before drawer opened
+/// + synthesize ⌘V. Frontend should already have written the desired content to
+/// the clipboard via plugin-clipboard-manager.
+#[tauri::command]
+fn paste_back(app: AppHandle) -> Result<bool, String> {
+    if let Some(win) = app.get_webview_window("drawer") {
+        let _ = win.hide();
+        let _ = app.emit("hide-drawer", ());
+    }
+    if let Some(win) = app.get_webview_window("tray-popover") {
+        let _ = win.hide();
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let (tx, rx) = std::sync::mpsc::channel();
+        let _ = app.run_on_main_thread(move || {
+            let mtm = unsafe { objc2::MainThreadMarker::new_unchecked() };
+            let ok = paste::paste_back(mtm);
+            let _ = tx.send(ok);
+        });
+        Ok(rx.recv().unwrap_or(false))
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        Ok(false)
     }
 }
 

@@ -39,6 +39,8 @@ export default function TrayPopover() {
     await writeText(it.content);
     await invoke("touch_item", { id: it.id });
     await getCurrentWindow().hide();
+    // Auto-paste into the previously-focused app.
+    await invoke("paste_back");
   };
 
   const filtered = (
