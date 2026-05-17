@@ -163,6 +163,9 @@ pub fn upsert_item(conn: &Connection, it: InsertItem) -> SqlResult<i64> {
     Ok(conn.last_insert_rowid())
 }
 
+// Fields only read on macOS (paste_item rich-text / image write); non-mac
+// builds still construct the struct but clippy would flag unused fields.
+#[cfg_attr(not(target_os = "macos"), allow(dead_code))]
 pub struct FullItem {
     pub kind: String,
     pub content: String,
