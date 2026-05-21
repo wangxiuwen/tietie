@@ -297,10 +297,29 @@ type UpdateStatus =
   | { kind: "ready" }
   | { kind: "error"; msg: string };
 
+function formatHotkey(s: string): string {
+  return s
+    .split("+")
+    .map((p) => p.trim())
+    .map((p) => {
+      if (p === "Super" || p === "Meta" || p === "Cmd" || p === "Command") return "⌘";
+      if (p === "Shift") return "⇧";
+      if (p === "Control" || p === "Ctrl") return "⌃";
+      if (p === "Alt" || p === "Option") return "⌥";
+      if (p.startsWith("Key")) return p.slice(3);
+      if (p.startsWith("Digit")) return p.slice(5);
+      return p;
+    })
+    .join("");
+}
+
 function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [version, setVersion] = useState<string>("");
   const [acc, setAcc] = useState<boolean | null>(null);
   const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
+  const [hotkey, setHotkey] = useState<string>("");
+  const [recording, setRecording] = useState(false);
+  const [hotkeyErr, setHotkeyErr] = useState<string | null>(null);
 
   const recheck = useCallback(async () => {
     const ok = await invoke<boolean>("check_accessibility");
@@ -328,10 +347,12 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     invoke<string>("app_version").then(setVersion);
+    invoke<string>("get_drawer_hotkey").then(setHotkey);
     recheck();
     checkForUpdate();
     const t = setInterval(recheck, 1500);
     const onKey = (e: KeyboardEvent) => {
+      if (recording) return; // capture handler owns the keys
       if (e.key === "Escape") {
         e.stopPropagation();
         onClose();
@@ -342,7 +363,40 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
       clearInterval(t);
       window.removeEventListener("keydown", onKey, true);
     };
-  }, [recheck, onClose, checkForUpdate]);
+  }, [recheck, onClose, checkForUpdate, recording]);
+
+  const captureHotkey = useCallback((e: React.KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.key === "Escape") {
+      setRecording(false);
+      setHotkeyErr(null);
+      return;
+    }
+    const mods: string[] = [];
+    if (e.metaKey) mods.push("Super");
+    if (e.ctrlKey) mods.push("Control");
+    if (e.altKey) mods.push("Alt");
+    if (e.shiftKey) mods.push("Shift");
+    const c = e.code;
+    const isKey =
+      c.startsWith("Key") || c.startsWith("Digit") || /^F\d+$/.test(c) || c === "Space";
+    if (!isKey) return; // wait for a real key, ignore standalone modifier presses
+    if (mods.length === 0) {
+      setHotkeyErr("全局快捷键需要至少一个修饰键");
+      return;
+    }
+    const combo = [...mods, c].join("+");
+    invoke("set_drawer_hotkey", { value: combo })
+      .then(() => {
+        setHotkey(combo);
+        setRecording(false);
+        setHotkeyErr(null);
+      })
+      .catch((err) => {
+        setHotkeyErr(String(err));
+      });
+  }, []);
 
   const grant = useCallback(async () => {
     await invoke("request_accessibility");
@@ -432,6 +486,38 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
               粘贴功能需要"辅助功能"权限。点击「去授权」会打开系统设置 → 隐私与安全 → 辅助功能,把 Tietie 开关打开即可。授权后状态会自动刷新。
             </p>
           )}
+          <div className="settings-row">
+            <span className="settings-label">唤起快捷键</span>
+            <span className="settings-value">
+              {recording ? (
+                <input
+                  className="hotkey-capture"
+                  autoFocus
+                  readOnly
+                  placeholder="按下新的组合 (Esc 取消)…"
+                  onKeyDown={captureHotkey}
+                  onBlur={() => {
+                    setRecording(false);
+                    setHotkeyErr(null);
+                  }}
+                />
+              ) : (
+                <>
+                  <span className="hotkey-badge">{hotkey ? formatHotkey(hotkey) : "..."}</span>
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      setHotkeyErr(null);
+                      setRecording(true);
+                    }}
+                  >
+                    修改
+                  </button>
+                </>
+              )}
+            </span>
+          </div>
+          {hotkeyErr && <pre className="settings-err">{hotkeyErr}</pre>}
         </div>
       </div>
     </div>

@@ -6,6 +6,7 @@ mod paste;
 mod richtext;
 
 use parking_lot::Mutex;
+use std::str::FromStr;
 use std::sync::Arc;
 use tauri::{
     image::Image,
@@ -18,9 +19,64 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 const DRAWER_HEIGHT: u32 = 380;
 const TRAY_POPOVER_W: u32 = 320;
 const TRAY_POPOVER_H: u32 = 460;
+const DEFAULT_DRAWER_HOTKEY: &str = "Super+Shift+KeyV";
+const SCREENSHOT_HOTKEY: &str = "Control+Alt+Digit4";
 
 pub struct AppState {
     pub conn: Arc<Mutex<rusqlite::Connection>>,
+}
+
+pub struct HotkeyState {
+    pub drawer: Mutex<Shortcut>,
+}
+
+/// Parse "Super+Shift+KeyV" → Shortcut. Last segment must be the Code.
+fn parse_hotkey(s: &str) -> Option<Shortcut> {
+    let mut mods = Modifiers::empty();
+    let mut code: Option<Code> = None;
+    for part in s.split('+').map(str::trim).filter(|p| !p.is_empty()) {
+        match part {
+            "Super" | "Meta" | "Cmd" | "Command" => mods |= Modifiers::SUPER,
+            "Shift" => mods |= Modifiers::SHIFT,
+            "Control" | "Ctrl" => mods |= Modifiers::CONTROL,
+            "Alt" | "Option" => mods |= Modifiers::ALT,
+            other => {
+                code = Code::from_str(other).ok();
+            }
+        }
+    }
+    let c = code?;
+    Some(Shortcut::new(if mods.is_empty() { None } else { Some(mods) }, c))
+}
+
+fn settings_path<R: Runtime>(app: &AppHandle<R>) -> std::path::PathBuf {
+    app.path()
+        .app_local_data_dir()
+        .expect("no app local data dir")
+        .join("settings.json")
+}
+
+fn load_drawer_hotkey<R: Runtime>(app: &AppHandle<R>) -> String {
+    let path = settings_path(app);
+    std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        .and_then(|v| v.get("drawer_hotkey").and_then(|x| x.as_str()).map(String::from))
+        .unwrap_or_else(|| DEFAULT_DRAWER_HOTKEY.to_string())
+}
+
+fn save_drawer_hotkey<R: Runtime>(app: &AppHandle<R>, value: &str) -> Result<(), String> {
+    let path = settings_path(app);
+    if let Some(p) = path.parent() {
+        let _ = std::fs::create_dir_all(p);
+    }
+    let mut v: serde_json::Value = std::fs::read_to_string(&path)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_else(|| serde_json::json!({}));
+    v["drawer_hotkey"] = serde_json::Value::String(value.into());
+    let body = serde_json::to_string_pretty(&v).map_err(|e| e.to_string())?;
+    std::fs::write(&path, body).map_err(|e| e.to_string())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -41,15 +97,17 @@ pub fn run() {
         builder = builder.plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
-                    if event.state() == ShortcutState::Pressed {
-                        let drawer =
-                            Shortcut::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyV);
-                        let shot =
-                            Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::Digit4);
-                        if shortcut == &drawer {
+                    if event.state() != ShortcutState::Pressed {
+                        return;
+                    }
+                    let shot = parse_hotkey(SCREENSHOT_HOTKEY);
+                    if shot.as_ref() == Some(shortcut) {
+                        trigger_screenshot();
+                        return;
+                    }
+                    if let Some(state) = app.try_state::<HotkeyState>() {
+                        if &*state.drawer.lock() == shortcut {
                             toggle_drawer(app);
-                        } else if shortcut == &shot {
-                            trigger_screenshot();
                         }
                     }
                 })
@@ -83,16 +141,23 @@ pub fn run() {
             #[cfg(desktop)]
             create_tray(app.handle())?;
 
-            // register hotkeys
+            // register hotkeys (drawer is user-configurable; screenshot is fixed)
             #[cfg(desktop)]
             {
-                let drawer = Shortcut::new(Some(Modifiers::SUPER | Modifiers::SHIFT), Code::KeyV);
-                let shot = Shortcut::new(Some(Modifiers::CONTROL | Modifiers::ALT), Code::Digit4);
+                let drawer_str = load_drawer_hotkey(&app.handle());
+                let drawer = parse_hotkey(&drawer_str)
+                    .or_else(|| parse_hotkey(DEFAULT_DRAWER_HOTKEY))
+                    .expect("DEFAULT_DRAWER_HOTKEY must parse");
+                app.manage(HotkeyState {
+                    drawer: Mutex::new(drawer),
+                });
                 if let Err(e) = app.global_shortcut().register(drawer) {
                     log::warn!("register drawer hotkey failed: {e}");
                 }
-                if let Err(e) = app.global_shortcut().register(shot) {
-                    log::warn!("register screenshot hotkey failed: {e}");
+                if let Some(shot) = parse_hotkey(SCREENSHOT_HOTKEY) {
+                    if let Err(e) = app.global_shortcut().register(shot) {
+                        log::warn!("register screenshot hotkey failed: {e}");
+                    }
                 }
             }
 
@@ -138,6 +203,8 @@ pub fn run() {
             request_accessibility,
             open_accessibility_settings,
             app_version,
+            get_drawer_hotkey,
+            set_drawer_hotkey,
             quit_app,
         ])
         .on_window_event(|window, event| {
@@ -582,6 +649,30 @@ fn open_accessibility_settings() {
 #[tauri::command]
 fn app_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
+}
+
+#[tauri::command]
+fn get_drawer_hotkey(app: AppHandle) -> String {
+    load_drawer_hotkey(&app)
+}
+
+#[tauri::command]
+fn set_drawer_hotkey(app: AppHandle, value: String) -> Result<(), String> {
+    let new = parse_hotkey(&value).ok_or_else(|| format!("无法解析快捷键: {value}"))?;
+    let state = app
+        .try_state::<HotkeyState>()
+        .ok_or_else(|| "未初始化 HotkeyState".to_string())?;
+    let old = *state.drawer.lock();
+    // Unregister old, register new — bail out gracefully if collision.
+    let _ = app.global_shortcut().unregister(old);
+    if let Err(e) = app.global_shortcut().register(new) {
+        // try to restore old on failure
+        let _ = app.global_shortcut().register(old);
+        return Err(format!("注册失败: {e}"));
+    }
+    *state.drawer.lock() = new;
+    save_drawer_hotkey(&app, &value)?;
+    Ok(())
 }
 
 #[tauri::command]
