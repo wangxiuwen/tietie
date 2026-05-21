@@ -22,6 +22,7 @@ use std::time::Duration;
 unsafe extern "C" {
     fn AXIsProcessTrustedWithOptions(options: core_foundation::dictionary::CFDictionaryRef)
         -> bool;
+    fn AXIsProcessTrusted() -> bool;
 }
 
 /// Pop the macOS Accessibility-permission dialog if tietie isn't trusted yet.
@@ -31,6 +32,11 @@ pub fn ensure_accessibility_trust() -> bool {
     let val = CFBoolean::true_value();
     let opts = CFDictionary::from_CFType_pairs(&[(key, val)]);
     unsafe { AXIsProcessTrustedWithOptions(opts.as_concrete_TypeRef()) }
+}
+
+/// Silent check (no system prompt). Use for UI status indicators.
+pub fn is_accessibility_trusted() -> bool {
+    unsafe { AXIsProcessTrusted() }
 }
 
 /// PID of the app that was frontmost just before tietie's drawer was shown.

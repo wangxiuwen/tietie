@@ -69,14 +69,22 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: "贴贴 ${{ github.ref_name }}"
           releaseBody: |
             自动构建产物 — Windows / macOS (Intel + Apple Silicon) / Linux (deb + AppImage)。
 
-            **macOS 用户**：第一次打开请到「系统设置 → 隐私与安全」允许运行（应用未签名）。
-            **Linux 用户**：deb 适用于 Ubuntu/Debian；AppImage 直接 chmod +x 后运行。
+            支持 in-app OTA 升级:打开设置 → 检查更新。
+
+            **macOS 用户**:第一次打开请到「系统设置 → 隐私与安全」允许运行(自签名)。
+            **Linux 用户**:deb 适用于 Ubuntu/Debian;AppImage 直接 chmod +x 后运行。
           releaseDraft: true
           prerelease: false
+          includeUpdaterJson: true
           args: ${{ matrix.args }}

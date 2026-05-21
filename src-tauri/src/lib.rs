@@ -32,7 +32,9 @@ pub fn run() {
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
-        ));
+        ))
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init());
 
     #[cfg(desktop)]
     {
@@ -123,6 +125,10 @@ pub fn run() {
             paste_item,
             screenshot,
             open_settings,
+            check_accessibility,
+            request_accessibility,
+            open_accessibility_settings,
+            app_version,
             quit_app,
         ])
         .on_window_event(|window, event| {
@@ -486,8 +492,46 @@ fn write_image_pasteboard(png: &[u8]) {
 
 #[tauri::command]
 fn open_settings(app: AppHandle) {
-    // For MVP, settings opens the drawer with a settings event the UI can react to.
     let _ = app.emit("show-settings", ());
+}
+
+#[tauri::command]
+fn check_accessibility() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        paste::is_accessibility_trusted()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
+}
+
+#[tauri::command]
+fn request_accessibility() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        paste::ensure_accessibility_trust()
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        true
+    }
+}
+
+#[tauri::command]
+fn open_accessibility_settings() {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            .spawn();
+    }
+}
+
+#[tauri::command]
+fn app_version() -> String {
+    env!("CARGO_PKG_VERSION").to_string()
 }
 
 #[tauri::command]

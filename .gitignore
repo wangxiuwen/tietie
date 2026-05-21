@@ -37,3 +37,4 @@ src-tauri/icons/StoreLogo.png
 *.tsbuildinfo
 vite.config.d.ts
 vite.config.js
+.tauri-keys/

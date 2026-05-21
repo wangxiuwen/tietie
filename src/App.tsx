@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { check as checkUpdate, type Update } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 // clipboard plugin no longer needed at JS layer — Rust paste_item handles it
 import type { ClipItem, Folder, ItemKind } from "./types";
 import { KIND_LABEL } from "./types";
@@ -27,6 +29,7 @@ export default function App() {
   const [editing, setEditing] = useState<ClipItem | null>(null);
   const [editValue, setEditValue] = useState("");
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const cardsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -54,7 +57,9 @@ export default function App() {
     listen<null>("hide-drawer", () => {
       setDrawerVisible(false);
       setEditing(null);
+      setSettingsOpen(false);
     }).then((u) => unlistens.push(u));
+    listen<null>("show-settings", () => setSettingsOpen(true)).then((u) => unlistens.push(u));
     return () => unlistens.forEach((u) => u());
   }, [refresh]);
 
@@ -122,21 +127,24 @@ export default function App() {
   // keyboard navigation
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (editing) return; // edit textarea handles its own keys
       const isMod = e.metaKey || e.ctrlKey;
+
+      // Arrow keys always switch selection — bail out of edit mode if needed.
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        if (editing) setEditing(null);
+        if (e.key === "ArrowRight") {
+          setSelectedIdx((i) => Math.min(i + 1, Math.max(0, filtered.length - 1)));
+        } else {
+          setSelectedIdx((i) => Math.max(0, i - 1));
+        }
+        return;
+      }
+
+      if (editing) return; // textarea handles the rest
 
       if (e.key === "Escape") {
         invoke("hide_window");
-        return;
-      }
-      if (e.key === "ArrowRight") {
-        e.preventDefault();
-        setSelectedIdx((i) => Math.min(i + 1, Math.max(0, filtered.length - 1)));
-        return;
-      }
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        setSelectedIdx((i) => Math.max(0, i - 1));
         return;
       }
       if (e.key === "Enter") {
@@ -154,9 +162,9 @@ export default function App() {
         setSelectedIdx(0);
         return;
       }
-      if (isMod && /^[1-9]$/.test(e.key)) {
+      if (isMod && /^[0-9]$/.test(e.key)) {
         e.preventDefault();
-        const i = Number(e.key) - 1;
+        const i = e.key === "0" ? 9 : Number(e.key) - 1;
         const it = filtered[i];
         if (it) paste(it);
         return;
@@ -274,6 +282,151 @@ export default function App() {
           )}
         </div>
         <Footer count={filtered.length} total={items.length} />
+        {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+      </div>
+    </div>
+  );
+}
+
+type UpdateStatus =
+  | { kind: "idle" }
+  | { kind: "checking" }
+  | { kind: "uptodate" }
+  | { kind: "available"; version: string; notes: string; update: Update }
+  | { kind: "downloading"; pct: number }
+  | { kind: "ready" }
+  | { kind: "error"; msg: string };
+
+function SettingsPanel({ onClose }: { onClose: () => void }) {
+  const [version, setVersion] = useState<string>("");
+  const [acc, setAcc] = useState<boolean | null>(null);
+  const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
+
+  const recheck = useCallback(async () => {
+    const ok = await invoke<boolean>("check_accessibility");
+    setAcc(ok);
+  }, []);
+
+  useEffect(() => {
+    invoke<string>("app_version").then(setVersion);
+    recheck();
+    const t = setInterval(recheck, 1500);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey, true);
+    return () => {
+      clearInterval(t);
+      window.removeEventListener("keydown", onKey, true);
+    };
+  }, [recheck, onClose]);
+
+  const grant = useCallback(async () => {
+    await invoke("request_accessibility");
+    await invoke("open_accessibility_settings");
+  }, []);
+
+  const checkForUpdate = useCallback(async () => {
+    setUpd({ kind: "checking" });
+    try {
+      const update = await checkUpdate();
+      if (update) {
+        setUpd({
+          kind: "available",
+          version: update.version,
+          notes: update.body ?? "",
+          update,
+        });
+      } else {
+        setUpd({ kind: "uptodate" });
+      }
+    } catch (e: unknown) {
+      setUpd({ kind: "error", msg: e instanceof Error ? e.message : String(e) });
+    }
+  }, []);
+
+  const downloadAndInstall = useCallback(async () => {
+    if (upd.kind !== "available") return;
+    let total = 0;
+    let downloaded = 0;
+    setUpd({ kind: "downloading", pct: 0 });
+    try {
+      await upd.update.downloadAndInstall((ev) => {
+        if (ev.event === "Started") {
+          total = ev.data.contentLength ?? 0;
+        } else if (ev.event === "Progress") {
+          downloaded += ev.data.chunkLength;
+          setUpd({
+            kind: "downloading",
+            pct: total > 0 ? Math.round((downloaded / total) * 100) : 0,
+          });
+        } else if (ev.event === "Finished") {
+          setUpd({ kind: "ready" });
+        }
+      });
+      await relaunch();
+    } catch (e: unknown) {
+      setUpd({ kind: "error", msg: e instanceof Error ? e.message : String(e) });
+    }
+  }, [upd]);
+
+  return (
+    <div className="settings-overlay" onClick={onClose}>
+      <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="settings-head">
+          <h3>设置</h3>
+          <button className="settings-close" onClick={onClose} title="关闭">✕</button>
+        </div>
+        <div className="settings-section">
+          <div className="settings-row">
+            <span className="settings-label">版本</span>
+            <span className="settings-value">
+              <span>{version || "..."}</span>
+              {upd.kind === "idle" && (
+                <button className="btn ghost" onClick={checkForUpdate}>检查更新</button>
+              )}
+              {upd.kind === "checking" && <span className="settings-tag muted">检查中…</span>}
+              {upd.kind === "uptodate" && <span className="settings-tag ok">已是最新</span>}
+              {upd.kind === "available" && (
+                <button className="btn primary" onClick={downloadAndInstall}>
+                  升级到 {upd.version}
+                </button>
+              )}
+              {upd.kind === "downloading" && (
+                <span className="settings-tag muted">下载 {upd.pct}%</span>
+              )}
+              {upd.kind === "ready" && (
+                <span className="settings-tag ok">即将重启…</span>
+              )}
+              {upd.kind === "error" && (
+                <span className="settings-tag err" title={upd.msg}>更新失败</span>
+              )}
+            </span>
+          </div>
+          {upd.kind === "available" && upd.notes && (
+            <pre className="settings-notes">{upd.notes}</pre>
+          )}
+          <div className="settings-row">
+            <span className="settings-label">辅助功能</span>
+            <span className="settings-value">
+              {acc === null ? (
+                <span className="settings-tag muted">检测中…</span>
+              ) : acc ? (
+                <span className="settings-tag ok">已授权</span>
+              ) : (
+                <button className="btn primary" onClick={grant}>去授权</button>
+              )}
+            </span>
+          </div>
+          {acc === false && (
+            <p className="settings-hint">
+              粘贴功能需要"辅助功能"权限。点击「去授权」会打开系统设置 → 隐私与安全 → 辅助功能,把 Tietie 开关打开即可。授权后状态会自动刷新。
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -416,7 +569,7 @@ function Card({
         <span className="src">{item.source_app || "—"}</span>
         <span>{relTime(item.used_at)}</span>
       </div>
-      {selected && idx < 9 && <div className="index-kbd">⌘{idx + 1}</div>}
+      {idx < 10 && <div className="index-kbd">⌘{idx === 9 ? 0 : idx + 1}</div>}
       <div className="actions" onClick={(e) => e.stopPropagation()}>
         <button className="action primary" onClick={onPaste}>↵ 粘贴</button>
         <button className="action" onClick={onPin} title="置顶">📌</button>
@@ -519,7 +672,7 @@ function Footer({ count, total }: { count: number; total: number }) {
       <div className="hints">
         <span><span className="kbd">←</span> <span className="kbd">→</span> 切换</span>
         <span><span className="kbd">↵</span> 粘贴</span>
-        <span><span className="kbd">⌘</span><span className="kbd">1-9</span> 直选</span>
+        <span><span className="kbd">⌘</span><span className="kbd">1-0</span> 直选</span>
         <span><span className="kbd">⌘</span><span className="kbd">E</span> 编辑</span>
         <span><span className="kbd">⌘</span><span className="kbd">P</span> 置顶</span>
         <span><span className="kbd">⌘</span><span className="kbd">D</span> 删除</span>
