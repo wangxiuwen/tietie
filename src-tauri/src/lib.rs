@@ -100,7 +100,10 @@ pub fn run() {
             if let Some(win) = app.get_webview_window("drawer") {
                 position_drawer(&win);
                 #[cfg(target_os = "macos")]
-                let _ = win.set_visible_on_all_workspaces(true);
+                {
+                    let _ = win.set_visible_on_all_workspaces(true);
+                    round_drawer_window_corners(&win, 22.0);
+                }
             }
 
             // Request Accessibility permission early — without it, synthesized
@@ -228,6 +231,39 @@ fn tray_icon_image() -> Image<'static> {
     put(&mut buf, 5, 3, on);
     put(&mut buf, 10, 3, on);
     Image::new_owned(buf, W, H)
+}
+
+/// Round only the top corners of the drawer NSWindow itself, so the area
+/// outside the bar's CSS rounded corners isn't transparent (which would
+/// reveal whatever desktop content sits behind the drawer).
+#[cfg(target_os = "macos")]
+fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) {
+    use objc2::msg_send;
+    use objc2::runtime::AnyObject;
+
+    let Ok(ns_window_ptr) = win.ns_window() else {
+        return;
+    };
+    if ns_window_ptr.is_null() {
+        return;
+    }
+    unsafe {
+        let ns_window = ns_window_ptr as *mut AnyObject;
+        let content_view: *mut AnyObject = msg_send![ns_window, contentView];
+        if content_view.is_null() {
+            return;
+        }
+        let _: () = msg_send![content_view, setWantsLayer: true];
+        let layer: *mut AnyObject = msg_send![content_view, layer];
+        if layer.is_null() {
+            return;
+        }
+        let _: () = msg_send![layer, setCornerRadius: radius];
+        let _: () = msg_send![layer, setMasksToBounds: true];
+        // kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner — top-left + top-right
+        let mask: u64 = (1u64 << 2) | (1u64 << 3);
+        let _: () = msg_send![layer, setMaskedCorners: mask];
+    }
 }
 
 fn position_drawer<R: Runtime>(win: &WebviewWindow<R>) {
