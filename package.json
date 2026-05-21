@@ -1,7 +1,7 @@
 {
   "name": "tietie",
   "private": true,
-  "version": "0.1.19",
+  "version": "0.1.20",
   "type": "module",
   "description": "贴贴 — 漂亮、轻量、跨平台的剪切板管理器",
   "scripts": {

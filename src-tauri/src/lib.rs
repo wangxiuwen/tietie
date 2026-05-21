@@ -205,6 +205,8 @@ pub fn run() {
             app_version,
             get_drawer_hotkey,
             set_drawer_hotkey,
+            begin_hotkey_capture,
+            cancel_hotkey_capture,
             quit_app,
         ])
         .on_window_event(|window, event| {
@@ -691,7 +693,7 @@ fn set_drawer_hotkey(app: AppHandle, value: String) -> Result<(), String> {
         .try_state::<HotkeyState>()
         .ok_or_else(|| "未初始化 HotkeyState".to_string())?;
     let old = *state.drawer.lock();
-    // Unregister old, register new — bail out gracefully if collision.
+    // begin_hotkey_capture may have already unregistered; unregister is idempotent in our use.
     let _ = app.global_shortcut().unregister(old);
     if let Err(e) = app.global_shortcut().register(new) {
         // try to restore old on failure
@@ -700,6 +702,31 @@ fn set_drawer_hotkey(app: AppHandle, value: String) -> Result<(), String> {
     }
     *state.drawer.lock() = new;
     save_drawer_hotkey(&app, &value)?;
+    Ok(())
+}
+
+/// Pause the global drawer hotkey so the user can press its current value
+/// during capture without the OS intercepting it (which would close the
+/// drawer instead of letting the input field record the combo).
+#[tauri::command]
+fn begin_hotkey_capture(app: AppHandle) -> Result<(), String> {
+    let state = app
+        .try_state::<HotkeyState>()
+        .ok_or_else(|| "未初始化 HotkeyState".to_string())?;
+    let cur = *state.drawer.lock();
+    let _ = app.global_shortcut().unregister(cur);
+    Ok(())
+}
+
+/// Re-register the previous hotkey — used when the user cancels capture
+/// without choosing a new combo.
+#[tauri::command]
+fn cancel_hotkey_capture(app: AppHandle) -> Result<(), String> {
+    let state = app
+        .try_state::<HotkeyState>()
+        .ok_or_else(|| "未初始化 HotkeyState".to_string())?;
+    let cur = *state.drawer.lock();
+    let _ = app.global_shortcut().register(cur);
     Ok(())
 }
 

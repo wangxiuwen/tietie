@@ -362,41 +362,64 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
     return () => {
       clearInterval(t);
       window.removeEventListener("keydown", onKey, true);
+      // If the panel unmounts mid-capture, restore the previous hotkey
+      // so the global shortcut isn't left dangling.
+      if (recording) {
+        invoke("cancel_hotkey_capture").catch(() => {});
+      }
     };
   }, [recheck, onClose, checkForUpdate, recording]);
 
-  const captureHotkey = useCallback((e: React.KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.key === "Escape") {
-      setRecording(false);
-      setHotkeyErr(null);
-      return;
-    }
-    const mods: string[] = [];
-    if (e.metaKey) mods.push("Super");
-    if (e.ctrlKey) mods.push("Control");
-    if (e.altKey) mods.push("Alt");
-    if (e.shiftKey) mods.push("Shift");
-    const c = e.code;
-    const isKey =
-      c.startsWith("Key") || c.startsWith("Digit") || /^F\d+$/.test(c) || c === "Space";
-    if (!isKey) return; // wait for a real key, ignore standalone modifier presses
-    if (mods.length === 0) {
-      setHotkeyErr("全局快捷键需要至少一个修饰键");
-      return;
-    }
-    const combo = [...mods, c].join("+");
-    invoke("set_drawer_hotkey", { value: combo })
-      .then(() => {
-        setHotkey(combo);
-        setRecording(false);
-        setHotkeyErr(null);
-      })
-      .catch((err) => {
-        setHotkeyErr(String(err));
-      });
+  const startRecording = useCallback(async () => {
+    setHotkeyErr(null);
+    // Suspend the current global drawer hotkey so pressing it during capture
+    // doesn't fire the OS handler (which would close the drawer).
+    await invoke("begin_hotkey_capture").catch(() => {});
+    setRecording(true);
   }, []);
+
+  const stopRecording = useCallback(async () => {
+    setRecording(false);
+    await invoke("cancel_hotkey_capture").catch(() => {});
+  }, []);
+
+  const captureHotkey = useCallback(
+    (e: React.KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === "Escape") {
+        stopRecording();
+        return;
+      }
+      const mods: string[] = [];
+      if (e.metaKey) mods.push("Super");
+      if (e.ctrlKey) mods.push("Control");
+      if (e.altKey) mods.push("Alt");
+      if (e.shiftKey) mods.push("Shift");
+      const c = e.code;
+      const isKey =
+        c.startsWith("Key") || c.startsWith("Digit") || /^F\d+$/.test(c) || c === "Space";
+      if (!isKey) return; // wait for a real key, ignore standalone modifier presses
+      if (mods.length === 0) {
+        setHotkeyErr("全局快捷键需要至少一个修饰键");
+        return;
+      }
+      const combo = [...mods, c].join("+");
+      invoke("set_drawer_hotkey", { value: combo })
+        .then(() => {
+          setHotkey(combo);
+          setRecording(false);
+          setHotkeyErr(null);
+        })
+        .catch((err) => {
+          setHotkeyErr(String(err));
+          // re-register prior hotkey on failure
+          invoke("cancel_hotkey_capture").catch(() => {});
+          setRecording(false);
+        });
+    },
+    [stopRecording],
+  );
 
   const grant = useCallback(async () => {
     await invoke("request_accessibility");
@@ -496,21 +519,12 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
                   readOnly
                   placeholder="按下新的组合 (Esc 取消)…"
                   onKeyDown={captureHotkey}
-                  onBlur={() => {
-                    setRecording(false);
-                    setHotkeyErr(null);
-                  }}
+                  onBlur={stopRecording}
                 />
               ) : (
                 <>
                   <span className="hotkey-badge">{hotkey ? formatHotkey(hotkey) : "..."}</span>
-                  <button
-                    className="btn ghost"
-                    onClick={() => {
-                      setHotkeyErr(null);
-                      setRecording(true);
-                    }}
-                  >
+                  <button className="btn ghost" onClick={startRecording}>
                     修改
                   </button>
                 </>
