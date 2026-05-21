@@ -303,10 +303,45 @@ fn tray_icon_image() -> Image<'static> {
 /// Round only the top corners of the drawer NSWindow itself, so the area
 /// outside the bar's CSS rounded corners isn't transparent (which would
 /// reveal whatever desktop content sits behind the drawer).
+///
+/// Note: contentView.layer.masksToBounds doesn't always clip nested WKWebView
+/// layers (wry adds the WebView as a subview with its own layer hierarchy).
+/// Apply the same cornerRadius to every subview's layer too.
 #[cfg(target_os = "macos")]
 fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) {
     use objc2::msg_send;
     use objc2::runtime::AnyObject;
+
+    // kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner — top-left + top-right
+    const TOP_CORNERS_MASK: u64 = (1u64 << 2) | (1u64 << 3);
+
+    unsafe fn round_view(view: *mut AnyObject, radius: f64) {
+        use objc2::msg_send;
+        if view.is_null() {
+            return;
+        }
+        let _: () = msg_send![view, setWantsLayer: true];
+        let layer: *mut AnyObject = msg_send![view, layer];
+        if layer.is_null() {
+            return;
+        }
+        let _: () = msg_send![layer, setCornerRadius: radius];
+        let _: () = msg_send![layer, setMasksToBounds: true];
+        let _: () = msg_send![layer, setMaskedCorners: TOP_CORNERS_MASK];
+    }
+
+    unsafe fn round_recursive(view: *mut AnyObject, radius: f64) {
+        round_view(view, radius);
+        let subviews: *mut AnyObject = msg_send![view, subviews];
+        if subviews.is_null() {
+            return;
+        }
+        let count: usize = msg_send![subviews, count];
+        for i in 0..count {
+            let sv: *mut AnyObject = msg_send![subviews, objectAtIndex: i];
+            round_recursive(sv, radius);
+        }
+    }
 
     let Ok(ns_window_ptr) = win.ns_window() else {
         return;
@@ -320,16 +355,7 @@ fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) 
         if content_view.is_null() {
             return;
         }
-        let _: () = msg_send![content_view, setWantsLayer: true];
-        let layer: *mut AnyObject = msg_send![content_view, layer];
-        if layer.is_null() {
-            return;
-        }
-        let _: () = msg_send![layer, setCornerRadius: radius];
-        let _: () = msg_send![layer, setMasksToBounds: true];
-        // kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner — top-left + top-right
-        let mask: u64 = (1u64 << 2) | (1u64 << 3);
-        let _: () = msg_send![layer, setMaskedCorners: mask];
+        round_recursive(content_view, radius);
     }
 }
 
@@ -407,6 +433,8 @@ fn toggle_drawer<R: Runtime>(app: &AppHandle<R>) {
                 position_drawer(&win);
                 let _ = win.show();
                 let _ = win.set_focus();
+                #[cfg(target_os = "macos")]
+                round_drawer_window_corners(&win, 22.0);
                 let _ = app.emit("show-drawer", ());
             }
         }
