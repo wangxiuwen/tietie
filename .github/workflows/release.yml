@@ -65,14 +65,48 @@ jobs:
       - name: Install npm deps
         run: npm ci
 
+      # Self-signed code-signing cert needs trust marking (Apple Dev IDs don't,
+      # since they chain to Apple's pre-trusted roots). tauri-action's built-in
+      # APPLE_CERTIFICATE import skips trust → codesign can't find the identity.
+      # So we do it manually here, then let tauri-action just consume the identity.
+      - name: Import self-signed code signing identity
+        if: startsWith(matrix.platform, 'macos')
+        env:
+          CERT_B64: ${{ secrets.APPLE_CERTIFICATE }}
+          CERT_PWD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          echo "$CERT_B64" | base64 --decode > /tmp/cert.p12
+          openssl pkcs12 -in /tmp/cert.p12 -clcerts -nokeys -legacy \
+            -out /tmp/cert.pem -passin pass:"$CERT_PWD"
+
+          KEYCHAIN_PATH=/tmp/build.keychain-db
+          KEYCHAIN_PWD=$(openssl rand -base64 24)
+          security create-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+
+          security import /tmp/cert.p12 -k "$KEYCHAIN_PATH" -P "$CERT_PWD" \
+            -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "$KEYCHAIN_PWD" "$KEYCHAIN_PATH"
+
+          # Prepend our keychain to the user search list
+          EXISTING=$(security list-keychains -d user | tr -d '"' | xargs)
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $EXISTING
+
+          # Admin-domain trust requires root → CI runner has passwordless sudo
+          sudo security add-trusted-cert -d -r trustRoot -p codeSign \
+            -k /Library/Keychains/System.keychain /tmp/cert.pem
+
+          security find-identity -v -p codesigning
+
       - name: Build & bundle
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
         with:
           tagName: ${{ github.ref_name }}
