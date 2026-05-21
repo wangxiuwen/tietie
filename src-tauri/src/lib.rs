@@ -302,48 +302,58 @@ fn tray_icon_image() -> Image<'static> {
     Image::new_owned(buf, W, H)
 }
 
-/// Round only the top corners of the drawer NSWindow itself, so the area
-/// outside the bar's CSS rounded corners isn't transparent (which would
-/// reveal whatever desktop content sits behind the drawer).
-///
-/// Note: contentView.layer.masksToBounds doesn't always clip nested WKWebView
-/// layers (wry adds the WebView as a subview with its own layer hierarchy).
-/// Apply the same cornerRadius to every subview's layer too.
+/// Round only the top corners of the drawer NSWindow content via a
+/// CAShapeLayer mask. A `mask` layer clips every descendant (including the
+/// out-of-process WKWebView), unlike `cornerRadius` + `masksToBounds` which
+/// can leak past out-of-process compositor sublayers and leave a square
+/// white wedge at the corners.
 #[cfg(target_os = "macos")]
 fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) {
     use objc2::msg_send;
     use objc2::runtime::AnyObject;
+    use std::ffi::c_void;
 
-    // kCALayerMinXMaxYCorner | kCALayerMaxXMaxYCorner — top-left + top-right
-    const TOP_CORNERS_MASK: u64 = (1u64 << 2) | (1u64 << 3);
-
-    unsafe fn round_view(view: *mut AnyObject, radius: f64) {
-        use objc2::msg_send;
-        if view.is_null() {
-            return;
-        }
-        let _: () = msg_send![view, setWantsLayer: true];
-        let layer: *mut AnyObject = msg_send![view, layer];
-        if layer.is_null() {
-            return;
-        }
-        let _: () = msg_send![layer, setCornerRadius: radius];
-        let _: () = msg_send![layer, setMasksToBounds: true];
-        let _: () = msg_send![layer, setMaskedCorners: TOP_CORNERS_MASK];
+    #[repr(C)]
+    struct CGSize {
+        width: f64,
+        height: f64,
+    }
+    #[repr(C)]
+    struct CGPoint {
+        x: f64,
+        y: f64,
+    }
+    #[repr(C)]
+    struct CGRect {
+        origin: CGPoint,
+        size: CGSize,
     }
 
-    unsafe fn round_recursive(view: *mut AnyObject, radius: f64) {
-        round_view(view, radius);
-        let subviews: *mut AnyObject = msg_send![view, subviews];
-        if subviews.is_null() {
-            return;
-        }
-        let count: usize = msg_send![subviews, count];
-        for i in 0..count {
-            let sv: *mut AnyObject = msg_send![subviews, objectAtIndex: i];
-            round_recursive(sv, radius);
-        }
+    #[link(name = "CoreGraphics", kind = "framework")]
+    extern "C" {
+        fn CGPathCreateMutable() -> *mut c_void;
+        fn CGPathMoveToPoint(path: *mut c_void, m: *const c_void, x: f64, y: f64);
+        fn CGPathAddLineToPoint(path: *mut c_void, m: *const c_void, x: f64, y: f64);
+        fn CGPathAddQuadCurveToPoint(
+            path: *mut c_void,
+            m: *const c_void,
+            cpx: f64,
+            cpy: f64,
+            x: f64,
+            y: f64,
+        );
+        fn CGPathCloseSubpath(path: *mut c_void);
+        fn CGPathRelease(path: *const c_void);
     }
+
+    let scale = win.scale_factor().unwrap_or(1.0);
+    let outer = match win.outer_size() {
+        Ok(s) => s,
+        Err(_) => return,
+    };
+    let w = outer.width as f64 / scale;
+    let h = outer.height as f64 / scale;
+    let r = radius.min(w / 2.0).min(h / 2.0);
 
     let Ok(ns_window_ptr) = win.ns_window() else {
         return;
@@ -357,7 +367,39 @@ fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) 
         if content_view.is_null() {
             return;
         }
-        round_recursive(content_view, radius);
+        let _: () = msg_send![content_view, setWantsLayer: true];
+        let layer: *mut AnyObject = msg_send![content_view, layer];
+        if layer.is_null() {
+            return;
+        }
+
+        // Build path: rect with only top two corners rounded.
+        // contentView layer uses bottom-left origin → "top" = MaxY = `h`.
+        let path = CGPathCreateMutable();
+        CGPathMoveToPoint(path, std::ptr::null(), 0.0, 0.0);
+        CGPathAddLineToPoint(path, std::ptr::null(), 0.0, h - r);
+        // Top-left corner: control at (0, h), end at (r, h)
+        CGPathAddQuadCurveToPoint(path, std::ptr::null(), 0.0, h, r, h);
+        CGPathAddLineToPoint(path, std::ptr::null(), w - r, h);
+        // Top-right corner: control at (w, h), end at (w, h - r)
+        CGPathAddQuadCurveToPoint(path, std::ptr::null(), w, h, w, h - r);
+        CGPathAddLineToPoint(path, std::ptr::null(), w, 0.0);
+        CGPathCloseSubpath(path);
+
+        let shape_layer: *mut AnyObject =
+            msg_send![objc2::class!(CAShapeLayer), new];
+        let _: () = msg_send![shape_layer, setPath: path];
+        let _: () = msg_send![layer, setMask: shape_layer];
+
+        CGPathRelease(path);
+
+        // Discard the no-longer-needed cornerRadius (from the previous strategy).
+        let _: () = msg_send![layer, setCornerRadius: 0.0f64];
+        let _: () = msg_send![layer, setMasksToBounds: false];
+
+        // Suggest a CGRect type bind so the encoder sees a known shape — not
+        // actually used, just keeping the structs above warning-quiet.
+        let _ = std::mem::size_of::<CGRect>();
     }
 }
 
