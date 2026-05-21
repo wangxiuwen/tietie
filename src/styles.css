@@ -89,8 +89,10 @@ button {
   background: var(--bar-bg);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
   backdrop-filter: blur(40px) saturate(180%);
-  border-top: 1px solid var(--bar-stroke);
-  border-radius: 22px 22px 0 0;
+  /* No CSS border / border-radius — the NSWindow contentView layer rounds
+     the top corners at the OS level (see round_drawer_window_corners). A CSS
+     border-top here just shows up as a visible white curve against the
+     desktop, causing the "extra edge" effect at the corners. */
   box-shadow: var(--bar-shadow);
   overflow: hidden;
 }
