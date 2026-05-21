@@ -84,7 +84,7 @@ jobs:
 
             **macOS 用户**:第一次打开请到「系统设置 → 隐私与安全」允许运行(自签名)。
             **Linux 用户**:deb 适用于 Ubuntu/Debian;AppImage 直接 chmod +x 后运行。
-          releaseDraft: true
+          releaseDraft: false
           prerelease: false
           includeUpdaterJson: true
           args: ${{ matrix.args }}
