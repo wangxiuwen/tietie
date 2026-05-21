@@ -319,6 +319,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
   const [hotkey, setHotkey] = useState<string>("");
   const [recording, setRecording] = useState(false);
+  const [pendingHotkey, setPendingHotkey] = useState<string | null>(null);
   const [hotkeyErr, setHotkeyErr] = useState<string | null>(null);
 
   const recheck = useCallback(async () => {
@@ -372,23 +373,50 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
 
   const startRecording = useCallback(async () => {
     setHotkeyErr(null);
+    setPendingHotkey(null);
     // Suspend the current global drawer hotkey so pressing it during capture
     // doesn't fire the OS handler (which would close the drawer).
     await invoke("begin_hotkey_capture").catch(() => {});
     setRecording(true);
   }, []);
 
-  const stopRecording = useCallback(async () => {
+  const cancelRecording = useCallback(async () => {
     setRecording(false);
+    setPendingHotkey(null);
+    setHotkeyErr(null);
     await invoke("cancel_hotkey_capture").catch(() => {});
   }, []);
+
+  const confirmRecording = useCallback(async () => {
+    if (!pendingHotkey) {
+      cancelRecording();
+      return;
+    }
+    try {
+      await invoke("set_drawer_hotkey", { value: pendingHotkey });
+      setHotkey(pendingHotkey);
+      setRecording(false);
+      setPendingHotkey(null);
+      setHotkeyErr(null);
+    } catch (err) {
+      setHotkeyErr(String(err));
+      // re-register prior hotkey on failure so global stays alive
+      await invoke("cancel_hotkey_capture").catch(() => {});
+      setRecording(false);
+      setPendingHotkey(null);
+    }
+  }, [pendingHotkey, cancelRecording]);
 
   const captureHotkey = useCallback(
     (e: React.KeyboardEvent) => {
       e.preventDefault();
       e.stopPropagation();
       if (e.key === "Escape") {
-        stopRecording();
+        cancelRecording();
+        return;
+      }
+      if (e.key === "Enter") {
+        confirmRecording();
         return;
       }
       const mods: string[] = [];
@@ -404,21 +432,11 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
         setHotkeyErr("全局快捷键需要至少一个修饰键");
         return;
       }
-      const combo = [...mods, c].join("+");
-      invoke("set_drawer_hotkey", { value: combo })
-        .then(() => {
-          setHotkey(combo);
-          setRecording(false);
-          setHotkeyErr(null);
-        })
-        .catch((err) => {
-          setHotkeyErr(String(err));
-          // re-register prior hotkey on failure
-          invoke("cancel_hotkey_capture").catch(() => {});
-          setRecording(false);
-        });
+      // Stage the combo — don't save until user clicks 确定 / hits Enter.
+      setPendingHotkey([...mods, c].join("+"));
+      setHotkeyErr(null);
     },
-    [stopRecording],
+    [cancelRecording, confirmRecording],
   );
 
   const grant = useCallback(async () => {
@@ -513,14 +531,26 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
             <span className="settings-label">唤起快捷键</span>
             <span className="settings-value">
               {recording ? (
-                <input
-                  className="hotkey-capture"
-                  autoFocus
-                  readOnly
-                  placeholder="按下新的组合 (Esc 取消)…"
-                  onKeyDown={captureHotkey}
-                  onBlur={stopRecording}
-                />
+                <>
+                  <input
+                    className="hotkey-capture"
+                    autoFocus
+                    readOnly
+                    placeholder="按下组合 (Esc 取消 / Enter 确定)…"
+                    value={pendingHotkey ? formatHotkey(pendingHotkey) : ""}
+                    onKeyDown={captureHotkey}
+                  />
+                  <button
+                    className="btn primary"
+                    onClick={confirmRecording}
+                    disabled={!pendingHotkey}
+                  >
+                    确定
+                  </button>
+                  <button className="btn ghost" onClick={cancelRecording}>
+                    取消
+                  </button>
+                </>
               ) : (
                 <>
                   <span className="hotkey-badge">{hotkey ? formatHotkey(hotkey) : "..."}</span>
