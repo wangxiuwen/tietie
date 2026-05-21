@@ -77,7 +77,8 @@ jobs:
         run: |
           set -euo pipefail
           echo "$CERT_B64" | base64 --decode > /tmp/cert.p12
-          openssl pkcs12 -in /tmp/cert.p12 -clcerts -nokeys -legacy \
+          # macOS runner ships LibreSSL (no -legacy flag, not needed for legacy p12)
+          openssl pkcs12 -in /tmp/cert.p12 -clcerts -nokeys \
             -out /tmp/cert.pem -passin pass:"$CERT_PWD"
 
           KEYCHAIN_PATH=/tmp/build.keychain-db
