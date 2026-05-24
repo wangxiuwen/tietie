@@ -1,6 +1,6 @@
 [package]
 name = "tietie"
-version = "0.1.27"
+version = "0.1.28"
 description = "贴贴 — 漂亮、轻量、跨平台的剪切板管理器"
 authors = ["wangxiuwen"]
 edition = "2021"

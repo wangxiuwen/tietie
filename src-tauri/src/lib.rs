@@ -409,7 +409,8 @@ fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) 
 
 /// Logical-pt margin between the drawer's bottom edge and the dock /
 /// screen bottom, so the bottom rounded corners aren't clipped flush.
-const DRAWER_BOTTOM_MARGIN: f64 = 14.0;
+/// Must be ≥ the corner radius (22pt) to let the bottom curves fully show.
+const DRAWER_BOTTOM_MARGIN: f64 = 28.0;
 
 fn position_drawer<R: Runtime>(win: &WebviewWindow<R>) {
     if let Ok(Some(m)) = win.current_monitor() {
