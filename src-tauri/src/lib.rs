@@ -331,25 +331,19 @@ fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) 
         fn CGPathRelease(path: *const c_void);
     }
 
-    /// Build a fresh CGPath: full rounded rectangle (all four corners).
-    /// Uses NSView's standard bottom-left origin (Y up).
+    /// Build a fresh CGPath: rectangle with only the top two corners rounded.
+    /// The bottom rests flush against dock/screen bottom, so rounding the
+    /// bottom corners just shifts the visible curve below the dock — not
+    /// what we want. NSView's bottom-left origin (Y up) means "top" = MaxY.
     unsafe fn make_rounded_path(w: f64, h: f64, r: f64) -> *mut c_void {
         let path = CGPathCreateMutable();
         let nil = std::ptr::null();
-        // Start at bottom edge just past bottom-left corner
-        CGPathMoveToPoint(path, nil, r, 0.0);
-        // bottom edge → bottom-right
-        CGPathAddLineToPoint(path, nil, w - r, 0.0);
-        CGPathAddQuadCurveToPoint(path, nil, w, 0.0, w, r);
-        // right edge → top-right
-        CGPathAddLineToPoint(path, nil, w, h - r);
-        CGPathAddQuadCurveToPoint(path, nil, w, h, w - r, h);
-        // top edge → top-left
-        CGPathAddLineToPoint(path, nil, r, h);
-        CGPathAddQuadCurveToPoint(path, nil, 0.0, h, 0.0, h - r);
-        // left edge → back to bottom-left
-        CGPathAddLineToPoint(path, nil, 0.0, r);
-        CGPathAddQuadCurveToPoint(path, nil, 0.0, 0.0, r, 0.0);
+        CGPathMoveToPoint(path, nil, 0.0, 0.0);
+        CGPathAddLineToPoint(path, nil, 0.0, h - r);
+        CGPathAddQuadCurveToPoint(path, nil, 0.0, h, r, h);
+        CGPathAddLineToPoint(path, nil, w - r, h);
+        CGPathAddQuadCurveToPoint(path, nil, w, h, w, h - r);
+        CGPathAddLineToPoint(path, nil, w, 0.0);
         CGPathCloseSubpath(path);
         path
     }
@@ -444,9 +438,9 @@ fn view_height_pts(view: *mut objc2::runtime::AnyObject) -> f64 {
 }
 
 /// Logical-pt margin between the drawer's bottom edge and the dock /
-/// screen bottom, so the bottom rounded corners aren't clipped flush.
-/// Must be ≥ the corner radius (22pt) to let the bottom curves fully show.
-const DRAWER_BOTTOM_MARGIN: f64 = 28.0;
+/// screen bottom. The drawer rests flush against the dock (or screen
+/// bottom when the dock is hidden) — no gap.
+const DRAWER_BOTTOM_MARGIN: f64 = 0.0;
 
 fn position_drawer<R: Runtime>(win: &WebviewWindow<R>) {
     if let Ok(Some(m)) = win.current_monitor() {
