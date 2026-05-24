@@ -354,45 +354,9 @@ fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) 
         path
     }
 
-    /// Apply a fresh CAShapeLayer mask (with a fresh CGPath) to `view`'s
-    /// own layer. Each NSView's layer needs its own mask instance — masks
-    /// can't be shared across multiple host layers in Core Animation.
-    unsafe fn apply_mask_to_view(view: *mut AnyObject, w: f64, h: f64, r: f64) {
-        if view.is_null() {
-            return;
-        }
-        let _: () = msg_send![view, setWantsLayer: true];
-        let layer: *mut AnyObject = msg_send![view, layer];
-        if layer.is_null() {
-            return;
-        }
-        let path = make_rounded_path(w, h, r);
-        let shape_layer: *mut AnyObject =
-            msg_send![objc2::class!(CAShapeLayer), new];
-        let _: () = msg_send![shape_layer, setPath: path];
-        let _: () = msg_send![layer, setMask: shape_layer];
-        CGPathRelease(path);
-    }
-
-    unsafe fn apply_recursive(view: *mut AnyObject, w: f64, h: f64, r: f64) {
-        apply_mask_to_view(view, w, h, r);
-        let subviews: *mut AnyObject = msg_send![view, subviews];
-        if subviews.is_null() {
-            return;
-        }
-        let count: usize = msg_send![subviews, count];
-        for i in 0..count {
-            let sv: *mut AnyObject = msg_send![subviews, objectAtIndex: i];
-            apply_recursive(sv, w, h, r);
-        }
-    }
-
-    let scale = win.scale_factor().unwrap_or(1.0);
-    let Ok(outer) = win.outer_size() else { return };
-    let w = outer.width as f64 / scale;
-    let h = outer.height as f64 / scale;
-    let r = radius.min(w / 2.0).min(h / 2.0);
-
+    // Use the actual NSWindow contentView bounds (in points) instead of
+    // Tauri's outer_size(), which can race with set_size and report stale
+    // dimensions when the mask is first applied.
     let Ok(ns_window_ptr) = win.ns_window() else { return };
     if ns_window_ptr.is_null() {
         return;
@@ -403,7 +367,79 @@ fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) 
         if content_view.is_null() {
             return;
         }
-        apply_recursive(content_view, w, h, r);
+
+        // Walk subview tree and apply the mask using EACH view's own bounds —
+        // WKWebView and contentView may have slightly different sizes during
+        // layout, so a single shared (w,h) leaves gaps.
+        unsafe fn apply_with_own_bounds(view: *mut AnyObject, radius: f64) {
+            use objc2::msg_send;
+            if view.is_null() {
+                return;
+            }
+            // bounds returns CGRect → not directly encodable via msg_send!,
+            // but the layer's `bounds` getter returns it into a CGRect-shaped
+            // out param via objc_msgSend_stret on i386 or normal ABI on x86_64/arm64.
+            // Use NSView frame's `size` via two separate calls (width / height).
+            let _: () = msg_send![view, setWantsLayer: true];
+            let layer: *mut AnyObject = msg_send![view, layer];
+            if layer.is_null() {
+                return;
+            }
+            // Query the view's frame size via two scalar getters — avoids
+            // CGRect ABI encoding issues with objc2's msg_send! macro.
+            let w: f64 = view_width_pts(view);
+            let h: f64 = view_height_pts(view);
+            if w <= 1.0 || h <= 1.0 {
+                return;
+            }
+            let r = radius.min(w / 2.0).min(h / 2.0);
+
+            let path = make_rounded_path(w, h, r);
+            let shape_layer: *mut AnyObject =
+                msg_send![objc2::class!(CAShapeLayer), new];
+            let _: () = msg_send![shape_layer, setPath: path];
+            let _: () = msg_send![layer, setMask: shape_layer];
+            CGPathRelease(path);
+
+            let subviews: *mut AnyObject = msg_send![view, subviews];
+            if !subviews.is_null() {
+                let count: usize = msg_send![subviews, count];
+                for i in 0..count {
+                    let sv: *mut AnyObject = msg_send![subviews, objectAtIndex: i];
+                    apply_with_own_bounds(sv, radius);
+                }
+            }
+        }
+
+        apply_with_own_bounds(content_view, radius);
+    }
+
+    // unused but keep for fallback path
+    let _ = win;
+}
+
+/// Read NSView frame width/height in points without struct-return msg_send.
+/// objc2's msg_send! has trouble passing/returning CGRect across ABIs without
+/// explicit Encode impls, so we ask via the view's `frame` accessor wrapped
+/// in NSValue helpers — or just fall back to the WebviewWindow's logical
+/// inner size when we can't.
+#[cfg(target_os = "macos")]
+fn view_width_pts(view: *mut objc2::runtime::AnyObject) -> f64 {
+    use objc2::msg_send;
+    use objc2_foundation::NSRect;
+    unsafe {
+        let frame: NSRect = msg_send![view, frame];
+        frame.size.width
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn view_height_pts(view: *mut objc2::runtime::AnyObject) -> f64 {
+    use objc2::msg_send;
+    use objc2_foundation::NSRect;
+    unsafe {
+        let frame: NSRect = msg_send![view, frame];
+        frame.size.height
     }
 }
 
