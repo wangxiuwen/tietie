@@ -167,7 +167,8 @@ pub fn run() {
                 #[cfg(target_os = "macos")]
                 {
                     let _ = win.set_visible_on_all_workspaces(true);
-                    round_drawer_window_corners(&win, 22.0);
+                    // 不再给 bar 加圆角 — 抽屉是个干净的矩形, 跟 dock/屏幕底
+                    // 齐平, 设置弹窗的遮罩也是矩形, 视觉一致。
                 }
             }
 
@@ -302,141 +303,6 @@ fn tray_icon_image() -> Image<'static> {
     Image::new_owned(buf, W, H)
 }
 
-/// Round only the top corners of the drawer NSWindow content via a
-/// CAShapeLayer mask. A mask layer clips every descendant of the layer it's
-/// attached to — except for out-of-process WKWebView content, which uses
-/// a separate compositor and ignores parent masks. So we walk every NSView
-/// in the contentView subtree and attach an independent mask to each
-/// view's layer.
-#[cfg(target_os = "macos")]
-fn round_drawer_window_corners<R: Runtime>(win: &WebviewWindow<R>, radius: f64) {
-    use objc2::msg_send;
-    use objc2::runtime::AnyObject;
-    use std::ffi::c_void;
-
-    #[link(name = "CoreGraphics", kind = "framework")]
-    extern "C" {
-        fn CGPathCreateMutable() -> *mut c_void;
-        fn CGPathMoveToPoint(path: *mut c_void, m: *const c_void, x: f64, y: f64);
-        fn CGPathAddLineToPoint(path: *mut c_void, m: *const c_void, x: f64, y: f64);
-        fn CGPathAddQuadCurveToPoint(
-            path: *mut c_void,
-            m: *const c_void,
-            cpx: f64,
-            cpy: f64,
-            x: f64,
-            y: f64,
-        );
-        fn CGPathCloseSubpath(path: *mut c_void);
-        fn CGPathRelease(path: *const c_void);
-    }
-
-    /// Build a fresh CGPath: rectangle with only the top two corners rounded.
-    /// The bottom rests flush against dock/screen bottom, so rounding the
-    /// bottom corners just shifts the visible curve below the dock — not
-    /// what we want. NSView's bottom-left origin (Y up) means "top" = MaxY.
-    unsafe fn make_rounded_path(w: f64, h: f64, r: f64) -> *mut c_void {
-        let path = CGPathCreateMutable();
-        let nil = std::ptr::null();
-        CGPathMoveToPoint(path, nil, 0.0, 0.0);
-        CGPathAddLineToPoint(path, nil, 0.0, h - r);
-        CGPathAddQuadCurveToPoint(path, nil, 0.0, h, r, h);
-        CGPathAddLineToPoint(path, nil, w - r, h);
-        CGPathAddQuadCurveToPoint(path, nil, w, h, w, h - r);
-        CGPathAddLineToPoint(path, nil, w, 0.0);
-        CGPathCloseSubpath(path);
-        path
-    }
-
-    // Use the actual NSWindow contentView bounds (in points) instead of
-    // Tauri's outer_size(), which can race with set_size and report stale
-    // dimensions when the mask is first applied.
-    let Ok(ns_window_ptr) = win.ns_window() else { return };
-    if ns_window_ptr.is_null() {
-        return;
-    }
-    unsafe {
-        let ns_window = ns_window_ptr as *mut AnyObject;
-        let content_view: *mut AnyObject = msg_send![ns_window, contentView];
-        if content_view.is_null() {
-            return;
-        }
-
-        // Walk subview tree and apply the mask using EACH view's own bounds —
-        // WKWebView and contentView may have slightly different sizes during
-        // layout, so a single shared (w,h) leaves gaps.
-        unsafe fn apply_with_own_bounds(view: *mut AnyObject, radius: f64) {
-            use objc2::msg_send;
-            if view.is_null() {
-                return;
-            }
-            // bounds returns CGRect → not directly encodable via msg_send!,
-            // but the layer's `bounds` getter returns it into a CGRect-shaped
-            // out param via objc_msgSend_stret on i386 or normal ABI on x86_64/arm64.
-            // Use NSView frame's `size` via two separate calls (width / height).
-            let _: () = msg_send![view, setWantsLayer: true];
-            let layer: *mut AnyObject = msg_send![view, layer];
-            if layer.is_null() {
-                return;
-            }
-            // Query the view's frame size via two scalar getters — avoids
-            // CGRect ABI encoding issues with objc2's msg_send! macro.
-            let w: f64 = view_width_pts(view);
-            let h: f64 = view_height_pts(view);
-            if w <= 1.0 || h <= 1.0 {
-                return;
-            }
-            let r = radius.min(w / 2.0).min(h / 2.0);
-
-            let path = make_rounded_path(w, h, r);
-            let shape_layer: *mut AnyObject =
-                msg_send![objc2::class!(CAShapeLayer), new];
-            let _: () = msg_send![shape_layer, setPath: path];
-            let _: () = msg_send![layer, setMask: shape_layer];
-            CGPathRelease(path);
-
-            let subviews: *mut AnyObject = msg_send![view, subviews];
-            if !subviews.is_null() {
-                let count: usize = msg_send![subviews, count];
-                for i in 0..count {
-                    let sv: *mut AnyObject = msg_send![subviews, objectAtIndex: i];
-                    apply_with_own_bounds(sv, radius);
-                }
-            }
-        }
-
-        apply_with_own_bounds(content_view, radius);
-    }
-
-    // unused but keep for fallback path
-    let _ = win;
-}
-
-/// Read NSView frame width/height in points without struct-return msg_send.
-/// objc2's msg_send! has trouble passing/returning CGRect across ABIs without
-/// explicit Encode impls, so we ask via the view's `frame` accessor wrapped
-/// in NSValue helpers — or just fall back to the WebviewWindow's logical
-/// inner size when we can't.
-#[cfg(target_os = "macos")]
-fn view_width_pts(view: *mut objc2::runtime::AnyObject) -> f64 {
-    use objc2::msg_send;
-    use objc2_foundation::NSRect;
-    unsafe {
-        let frame: NSRect = msg_send![view, frame];
-        frame.size.width
-    }
-}
-
-#[cfg(target_os = "macos")]
-fn view_height_pts(view: *mut objc2::runtime::AnyObject) -> f64 {
-    use objc2::msg_send;
-    use objc2_foundation::NSRect;
-    unsafe {
-        let frame: NSRect = msg_send![view, frame];
-        frame.size.height
-    }
-}
-
 /// Logical-pt margin between the drawer's bottom edge and the dock /
 /// screen bottom. The drawer rests flush against the dock (or screen
 /// bottom when the dock is hidden) — no gap.
@@ -520,8 +386,6 @@ fn toggle_drawer<R: Runtime>(app: &AppHandle<R>) {
                 position_drawer(&win);
                 let _ = win.show();
                 let _ = win.set_focus();
-                #[cfg(target_os = "macos")]
-                round_drawer_window_corners(&win, 22.0);
                 let _ = app.emit("show-drawer", ());
             }
         }
