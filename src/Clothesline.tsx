@@ -416,16 +416,8 @@ function MemoDetail({
 }
 
 function DetailBody({ memo }: { memo: Memo }) {
-  if (memo.kind === "image" && memo.preview) {
-    return (
-      <div className="line-detail-body">
-        <img
-          className="line-detail-img"
-          src={`data:image/png;base64,${memo.preview}`}
-          alt={memo.content}
-        />
-      </div>
-    );
+  if (memo.kind === "image") {
+    return <ImageDetail memo={memo} />;
   }
   if (memo.kind === "color") {
     return (
@@ -438,6 +430,51 @@ function DetailBody({ memo }: { memo: Memo }) {
   return (
     <div className="line-detail-body">
       <pre className="line-detail-text">{memo.content}</pre>
+    </div>
+  );
+}
+
+/**
+ * Image memo detail: prefer the original clip blob (via source_item_id,
+ * same path copy_memo uses) rendered as a blob URL; fall back to the
+ * stored thumbnail when the source item was trimmed from history.
+ */
+function ImageDetail({ memo }: { memo: Memo }) {
+  const [url, setUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let revoke: string | null = null;
+    let alive = true;
+    (async () => {
+      if (memo.source_item_id != null) {
+        try {
+          const bytes = await invoke<number[]>("get_item_image", { id: memo.source_item_id });
+          if (!alive) return;
+          const blob = new Blob([new Uint8Array(bytes)], { type: "image/png" });
+          revoke = URL.createObjectURL(blob);
+          setUrl(revoke);
+          return;
+        } catch {
+          // source trimmed — fall through to thumbnail
+        }
+      }
+      if (alive && memo.preview) {
+        setUrl(`data:image/png;base64,${memo.preview}`);
+      }
+    })();
+    return () => {
+      alive = false;
+      if (revoke && revoke.startsWith("blob:")) URL.revokeObjectURL(revoke);
+    };
+  }, [memo.source_item_id, memo.preview]);
+
+  return (
+    <div className="line-detail-body">
+      {url ? (
+        <img className="line-detail-img" src={url} alt={memo.content} />
+      ) : (
+        <div className="zoom-loading">{t("line.loading")}</div>
+      )}
     </div>
   );
 }
