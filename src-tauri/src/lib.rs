@@ -380,7 +380,8 @@ pub fn run() {
                 && (window.label() == "drawer"
                     || window.label() == "tray-popover"
                     || window.label() == "clothesline"
-                    || window.label() == "library")
+                    || window.label() == "library"
+                    || window.label() == "settings")
             {
                 let _ = window.hide();
             }
@@ -1216,7 +1217,11 @@ fn write_image_pasteboard(png: &[u8]) {
 
 #[tauri::command]
 fn open_settings(app: AppHandle) {
-    let _ = app.emit("show-settings", ());
+    if let Some(win) = app.get_webview_window("settings") {
+        let _ = win.show();
+        let _ = win.set_focus();
+        let _ = app.emit_to("settings", "settings-open", ());
+    }
 }
 
 #[tauri::command]

@@ -72,6 +72,23 @@
         "skipTaskbar": false,
         "visible": false,
         "shadow": true
+      },
+      {
+        "label": "settings",
+        "title": "贴贴·设置",
+        "url": "index.html?view=settings",
+        "width": 520,
+        "height": 620,
+        "minWidth": 460,
+        "minHeight": 420,
+        "center": true,
+        "resizable": true,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "visible": false,
+        "shadow": true
       }
     ],
     "security": {
