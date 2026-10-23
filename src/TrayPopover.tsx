@@ -5,6 +5,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { ClipItem } from "./types";
 import { KIND_LABEL } from "./types";
 import { MOD } from "./platform";
+import { matchQuery } from "./search";
 
 const RECENT_COUNT = 12;
 
@@ -36,13 +37,7 @@ export default function TrayPopover() {
   };
 
   const filtered = (
-    query
-      ? items.filter(
-          (x) =>
-            x.preview.toLowerCase().includes(query.toLowerCase()) ||
-            x.content.toLowerCase().includes(query.toLowerCase()),
-        )
-      : items
+    query ? items.filter((x) => matchQuery(x.content, x.preview, query)) : items
   ).slice(0, RECENT_COUNT);
 
   const pinned = filtered.filter((x) => x.pinned);

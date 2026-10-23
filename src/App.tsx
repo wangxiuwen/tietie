@@ -9,6 +9,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import type { ClipItem, Folder, ItemKind } from "./types";
 import { KIND_LABEL } from "./types";
 import { IS_MAC, MOD } from "./platform";
+import { matchQuery } from "./search";
 
 type FilterTab = "all" | ItemKind;
 
@@ -157,10 +158,7 @@ export default function App() {
     else if (typeof folderId === "number") xs = xs.filter((x) => x.folder_id === folderId);
     if (tab !== "all") xs = xs.filter((x) => x.kind === tab);
     if (query.trim()) {
-      const q = query.toLowerCase();
-      xs = xs.filter(
-        (x) => x.preview.toLowerCase().includes(q) || x.content.toLowerCase().includes(q),
-      );
+      xs = xs.filter((x) => matchQuery(x.content, x.preview, query));
     }
     return xs.slice().sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
