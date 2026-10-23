@@ -510,6 +510,26 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
     }
   }, []);
 
+  const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const doExportBackup = useCallback(async () => {
+    setBackupMsg("导出中…");
+    try {
+      const path = await invoke<string>("export_backup");
+      setBackupMsg(`已导出: ${path}`);
+    } catch (e) {
+      setBackupMsg(`导出失败: ${e}`);
+    }
+  }, []);
+  const doImportBackup = useCallback(async () => {
+    setBackupMsg("导入中…");
+    try {
+      const msg = await invoke<string>("import_backup");
+      setBackupMsg(msg);
+    } catch (e) {
+      setBackupMsg(`导入失败: ${e}`);
+    }
+  }, []);
+
   const downloadAndInstall = useCallback(async () => {
     if (upd.kind !== "available") return;
     let total = 0;
@@ -614,6 +634,18 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
               </button>
             </span>
           </div>
+          <div className="settings-row">
+            <span className="settings-label">备份</span>
+            <span className="settings-value">
+              <button className="btn ghost" onClick={doExportBackup}>
+                导出 JSON 备份
+              </button>
+              <button className="btn ghost" onClick={doImportBackup}>
+                导入恢复（最新备份）
+              </button>
+            </span>
+          </div>
+          {backupMsg && <pre className="settings-notes">{backupMsg}</pre>}
 
           {IS_MAC && (
             <>

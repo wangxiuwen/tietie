@@ -353,6 +353,8 @@ pub fn run() {
             toggle_clothesline_cmd,
             autostart_enabled,
             set_autostart,
+            export_backup,
+            import_backup,
             show_drawer,
             hide_window,
             paste_back,
@@ -1255,8 +1257,101 @@ fn quit_app(app: AppHandle) {
     app.exit(0);
 }
 
-// ─────────────────────────── autostart ───────────────────────────
+// ─────────────────────── backup export / import ───────────────────────
 
+/// Dump folders + memos + clip items to Documents/tietie-backup-<ts>.json.
+/// Returns the file path written (shown in the settings panel).
+#[tauri::command]
+fn export_backup(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let bak = {
+        let conn = state.conn.lock();
+        db::dump_backup(&conn).map_err(|e| e.to_string())?
+    };
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?;
+    let name = format!("tietie-backup-{}.json", time_fmt(db::now_unix()));
+    let path = dir.join(name);
+    let body = serde_json::to_string(&bak).map_err(|e| e.to_string())?;
+    std::fs::write(&path, body).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// Merge the most recent backup file in Documents back into the database.
+/// (A full file-picker needs the dialog plugin; scanning Documents for
+/// tietie-backup-*.json keeps this dependency-free — pick newest.)
+#[tauri::command]
+fn import_backup(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?;
+    let mut newest: Option<(i64, std::path::PathBuf)> = None;
+    let entries = std::fs::read_dir(&dir).map_err(|e| e.to_string())?;
+    for e in entries.flatten() {
+        let name = e.file_name().to_string_lossy().into_owned();
+        if let Some(ts) = name
+            .strip_prefix("tietie-backup-")
+            .and_then(|s| s.strip_suffix(".json"))
+            // filename is yyyymmdd-hhmmss — drop the dash to compare as one int
+            .and_then(|s| s.replace('-', "").parse::<i64>().ok())
+        {
+            if newest.as_ref().map(|(t, _)| ts > *t).unwrap_or(true) {
+                newest = Some((ts, e.path()));
+            }
+        }
+    }
+    let (_, path) = newest.ok_or_else(|| "Documents 里没有 tietie-backup-*.json".to_string())?;
+    let body = std::fs::read_to_string(&path).map_err(|e| e.to_string())?;
+    let bak: db::BackupV1 =
+        serde_json::from_str(&body).map_err(|e| format!("备份文件无效: {e}"))?;
+    if bak.version != 1 {
+        return Err(format!("不支持的备份版本: {}", bak.version));
+    }
+    let stats = {
+        let conn = state.conn.lock();
+        db::restore_backup(&conn, &bak).map_err(|e| e.to_string())?
+    };
+    let _ = app.emit("clipboard-changed", ());
+    let _ = app.emit_to("clothesline", "memos-changed", ());
+    Ok(format!(
+        "已从 {} 恢复：条目 +{}/{}，文件夹 +{}/{}，便签 +{}/{}",
+        path.file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_default(),
+        stats.items,
+        bak.items.len(),
+        stats.folders,
+        bak.folders.len(),
+        stats.memos,
+        bak.memos.len(),
+    ))
+}
+
+/// yyyymmdd-hhmmss for backup filenames.
+fn time_fmt(unix: i64) -> String {
+    let secs = unix;
+    let days = secs / 86400;
+    let rem = secs % 86400;
+    let (h, mi, s) = (rem / 3600, (rem % 3600) / 60, rem % 60);
+    // civil-from-days (Howard Hinnant's algorithm)
+    let z = days + 719468;
+    let era = z.div_euclid(146097);
+    let doe = z.rem_euclid(146097);
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let y = yoe + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = if m <= 2 { y + 1 } else { y };
+    format!("{y:04}{m:02}{d:02}-{h:02}{mi:02}{s:02}")
+}
+
+// ─────────────────────────── autostart ───────────────────────────
 #[tauri::command]
 fn autostart_enabled(app: AppHandle) -> bool {
     use tauri_plugin_autostart::ManagerExt;

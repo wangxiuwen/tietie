@@ -1,5 +1,5 @@
 use rusqlite::{params, Connection, Result as SqlResult};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize)]
@@ -369,4 +369,232 @@ pub fn now_unix() -> i64 {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs() as i64)
         .unwrap_or(0)
+}
+
+// ─────────────────────────── backup export / import ───────────────────────────
+
+/// Backup file format v1. Blobs ride as base64 strings so the JSON stays
+/// portable; ids are not exported (restored rows get fresh autoincrement ids
+/// and merge by natural keys).
+#[derive(Serialize, Deserialize)]
+pub struct BackupV1 {
+    pub version: u32,
+    pub exported_at: i64,
+    pub folders: Vec<BackupFolder>,
+    pub memos: Vec<BackupMemo>,
+    pub items: Vec<BackupItem>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct BackupFolder {
+    pub name: String,
+    pub color: String,
+    pub sort_order: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct BackupMemo {
+    pub kind: String,
+    pub content: String,
+    pub preview: String,
+    pub color: String,
+    pub pinned: bool,
+    pub created_at: i64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct BackupItem {
+    pub kind: String,
+    pub content: String,
+    pub preview: String,
+    pub meta: String,
+    pub content_hash: String,
+    pub pinned: bool,
+    pub source_app: Option<String>,
+    pub created_at: i64,
+    pub used_at: i64,
+    pub use_count: i64,
+    pub byte_size: i64,
+    pub image_blob_b64: Option<String>,
+    pub rich_html: Option<String>,
+    pub rich_rtf_b64: Option<String>,
+}
+
+pub fn dump_backup(conn: &Connection) -> SqlResult<BackupV1> {
+    use base64::{engine::general_purpose, Engine as _};
+
+    let mut folders = Vec::new();
+    {
+        let mut stmt = conn.prepare("SELECT name, color, sort_order FROM folder")?;
+        let rows = stmt.query_map([], |r| {
+            Ok(BackupFolder {
+                name: r.get(0)?,
+                color: r.get(1)?,
+                sort_order: r.get(2)?,
+            })
+        })?;
+        for f in rows {
+            folders.push(f?);
+        }
+    }
+
+    let mut memos = Vec::new();
+    {
+        let mut stmt =
+            conn.prepare("SELECT kind, content, preview, color, pinned, created_at FROM memo")?;
+        let rows = stmt.query_map([], |r| {
+            Ok(BackupMemo {
+                kind: r.get(0)?,
+                content: r.get(1)?,
+                preview: r.get(2)?,
+                color: r.get(3)?,
+                pinned: r.get::<_, i64>(4)? != 0,
+                created_at: r.get(5)?,
+            })
+        })?;
+        for m in rows {
+            memos.push(m?);
+        }
+    }
+
+    let mut items = Vec::new();
+    {
+        let mut stmt = conn.prepare(
+            "SELECT kind, content, preview, meta, content_hash, pinned, source_app,
+                    created_at, used_at, use_count, byte_size, image_blob, rich_html, rich_rtf
+             FROM clip_item",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            let blob: Option<Vec<u8>> = r.get(11)?;
+            let rtf: Option<Vec<u8>> = r.get(13)?;
+            Ok(BackupItem {
+                kind: r.get(0)?,
+                content: r.get(1)?,
+                preview: r.get(2)?,
+                meta: r.get(3)?,
+                content_hash: r.get(4)?,
+                pinned: r.get::<_, i64>(5)? != 0,
+                source_app: r.get(6)?,
+                created_at: r.get(7)?,
+                used_at: r.get(8)?,
+                use_count: r.get(9)?,
+                byte_size: r.get(10)?,
+                image_blob_b64: blob.map(|b| general_purpose::STANDARD.encode(b)),
+                rich_html: r.get(12)?,
+                rich_rtf_b64: rtf.map(|b| general_purpose::STANDARD.encode(b)),
+            })
+        })?;
+        for it in rows {
+            items.push(it?);
+        }
+    }
+
+    Ok(BackupV1 {
+        version: 1,
+        exported_at: now_unix(),
+        folders,
+        memos,
+        items,
+    })
+}
+
+#[derive(Serialize)]
+pub struct RestoreStats {
+    pub items: usize,
+    pub folders: usize,
+    pub memos: usize,
+}
+
+/// Merge a backup into the live database. Items dedupe on content_hash
+/// (unique index, INSERT OR IGNORE); folders on name+color; memos on content.
+pub fn restore_backup(conn: &Connection, bak: &BackupV1) -> SqlResult<RestoreStats> {
+    use base64::{engine::general_purpose, Engine as _};
+
+    let mut stats = RestoreStats {
+        items: 0,
+        folders: 0,
+        memos: 0,
+    };
+
+    for f in &bak.folders {
+        let exists: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM folder WHERE name = ?1 AND color = ?2",
+                params![f.name, f.color],
+                |r| r.get::<_, i64>(0),
+            )
+            .map(|n| n > 0)
+            .unwrap_or(false);
+        if exists {
+            continue;
+        }
+        conn.execute(
+            "INSERT INTO folder (name, color, sort_order) VALUES (?1, ?2, ?3)",
+            params![f.name, f.color, f.sort_order],
+        )?;
+        stats.folders += 1;
+    }
+
+    for m in &bak.memos {
+        let exists: bool = conn
+            .query_row(
+                "SELECT COUNT(*) FROM memo WHERE content = ?1",
+                params![m.content],
+                |r| r.get::<_, i64>(0),
+            )
+            .map(|n| n > 0)
+            .unwrap_or(false);
+        if exists {
+            continue;
+        }
+        conn.execute(
+            "INSERT INTO memo (kind, content, preview, color, pinned, source_item_id, created_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, NULL, ?6)",
+            params![
+                m.kind,
+                m.content,
+                m.preview,
+                m.color,
+                m.pinned as i64,
+                m.created_at
+            ],
+        )?;
+        stats.memos += 1;
+    }
+
+    for it in &bak.items {
+        let blob = it
+            .image_blob_b64
+            .as_deref()
+            .and_then(|b| general_purpose::STANDARD.decode(b).ok());
+        let rtf = it
+            .rich_rtf_b64
+            .as_deref()
+            .and_then(|b| general_purpose::STANDARD.decode(b).ok());
+        let inserted = conn.execute(
+            "INSERT OR IGNORE INTO clip_item
+                (kind, content, preview, meta, content_hash, pinned, source_app,
+                 created_at, used_at, use_count, byte_size, image_blob, rich_html, rich_rtf)
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14)",
+            params![
+                it.kind,
+                it.content,
+                it.preview,
+                it.meta,
+                it.content_hash,
+                it.pinned as i64,
+                it.source_app,
+                it.created_at,
+                it.used_at,
+                it.use_count,
+                it.byte_size,
+                blob,
+                it.rich_html,
+                rtf,
+            ],
+        )?;
+        stats.items += inserted;
+    }
+
+    Ok(stats)
 }
