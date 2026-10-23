@@ -36,6 +36,7 @@ pub struct Memo {
     pub content: String,
     pub preview: String,
     pub color: String,
+    pub pinned: bool,
     pub source_item_id: Option<i64>,
     pub created_at: i64,
 }
@@ -101,6 +102,11 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
     // Idempotent migrations for older databases (created before rich-text support).
     let _ = conn.execute("ALTER TABLE clip_item ADD COLUMN rich_html TEXT", []);
     let _ = conn.execute("ALTER TABLE clip_item ADD COLUMN rich_rtf BLOB", []);
+    // memo pinned (clothesline sticky notes)
+    let _ = conn.execute(
+        "ALTER TABLE memo ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
+        [],
+    );
     Ok(conn)
 }
 
@@ -314,8 +320,8 @@ pub fn delete_folder(conn: &Connection, id: i64) -> SqlResult<()> {
 
 pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
     let mut stmt = conn.prepare(
-        "SELECT id, kind, content, preview, color, source_item_id, created_at
-         FROM memo ORDER BY id ASC",
+        "SELECT id, kind, content, preview, color, pinned, source_item_id, created_at
+         FROM memo ORDER BY pinned DESC, id ASC",
     )?;
     let ms = stmt
         .query_map([], |row| {
@@ -325,8 +331,9 @@ pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
                 content: row.get(2)?,
                 preview: row.get(3)?,
                 color: row.get(4)?,
-                source_item_id: row.get(5)?,
-                created_at: row.get(6)?,
+                pinned: row.get::<_, i64>(5)? != 0,
+                source_item_id: row.get(6)?,
+                created_at: row.get(7)?,
             })
         })?
         .collect::<SqlResult<Vec<_>>>()?;
@@ -345,6 +352,14 @@ pub fn hang_memo(conn: &Connection, item_id: i64, color: &str) -> SqlResult<i64>
 
 pub fn remove_memo(conn: &Connection, id: i64) -> SqlResult<()> {
     conn.execute("DELETE FROM memo WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+pub fn toggle_memo_pin(conn: &Connection, id: i64) -> SqlResult<()> {
+    conn.execute(
+        "UPDATE memo SET pinned = 1 - pinned WHERE id = ?1",
+        params![id],
+    )?;
     Ok(())
 }
 

@@ -347,6 +347,7 @@ pub fn run() {
             remove_memo,
             add_memo_direct,
             update_memo,
+            toggle_memo_pin,
             copy_memo,
             hang_preview,
             toggle_clothesline_cmd,
@@ -888,6 +889,21 @@ fn update_memo(
             rusqlite::params![trimmed, trimmed.chars().take(120).collect::<String>(), id],
         )
         .map_err(|e| e.to_string())?;
+    }
+    emit_memos_changed(&app);
+    Ok(())
+}
+
+/// Pin / unpin a memo — pinned notes sort to the front of the clothesline.
+#[tauri::command]
+fn toggle_memo_pin(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: i64,
+) -> Result<(), String> {
+    {
+        let conn = state.conn.lock();
+        db::toggle_memo_pin(&conn, id).map_err(|e| e.to_string())?;
     }
     emit_memos_changed(&app);
     Ok(())

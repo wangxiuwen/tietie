@@ -38,8 +38,11 @@ export default function Clothesline() {
   memosRef.current = memos;
 
   const refresh = useCallback(async () => {
-    setMemos(await invoke<Memo[]>("list_memos"));
+    const ms = await invoke<Memo[]>("list_memos");
+    setMemos(ms);
     setPreviewing(false);
+    // keep the open detail view in sync (pin flag may have flipped)
+    setViewing((v) => (v ? (ms.find((m) => m.id === v.id) ?? v) : v));
   }, []);
 
   useEffect(() => {
@@ -149,6 +152,7 @@ export default function Clothesline() {
           onClose={() => setViewing(null)}
           onRemove={() => remove(viewing.id)}
           onSave={(content) => saveMemo(viewing.id, content)}
+          onTogglePin={() => invoke("toggle_memo_pin", { id: viewing.id }).catch(() => {})}
         />
       ) : (
         <>
@@ -298,7 +302,11 @@ function HangingCard({
       }}
       title="单击查看 · 按住往下拖摘下来"
     >
-      <div className="line-pin" style={{ background: memo.color }} />
+      <div
+        className="line-pin"
+        style={{ background: memo.pinned ? "#ff9500" : memo.color }}
+        title={memo.pinned ? "已置顶" : undefined}
+      />
       <span className="line-badge">
         {KIND_LABEL[memo.kind as keyof typeof KIND_LABEL] ?? "文本"}
       </span>
@@ -324,6 +332,7 @@ function MemoDetail({
   onClose,
   onRemove,
   onSave,
+  onTogglePin,
 }: {
   memo: Memo;
   copied: boolean;
@@ -331,6 +340,7 @@ function MemoDetail({
   onClose: () => void;
   onRemove: () => void;
   onSave: (content: string) => void;
+  onTogglePin: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(memo.content);
@@ -361,6 +371,9 @@ function MemoDetail({
             </>
           ) : (
             <>
+              <button className="btn ghost" onClick={onTogglePin}>
+                {memo.pinned ? "取消置顶" : "置顶"}
+              </button>
               <button className="btn primary" onClick={onCopy}>
                 {copied ? "已复制 ✓" : "复制"}
               </button>
