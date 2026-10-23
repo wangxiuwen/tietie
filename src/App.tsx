@@ -12,6 +12,24 @@ import { IS_MAC, MOD } from "./platform";
 
 type FilterTab = "all" | ItemKind;
 
+// ─── drawer drag-to-hang: one shared tracker, listeners live in App ───
+// WebView2 only honors DOM pointer capture on activated windows, so tracking
+// runs on window-level listeners (verified on real hardware). A single mouse
+// means a single active drag — one module-level record shared by all cards,
+// with ONE set of window listeners in App instead of one per card (500 cards
+// used to install 1500 handlers that every pointermove had to walk).
+const cardDrag = {
+  current: null as null | {
+    itemId: number;
+    startY: number;
+    moved: boolean;
+    inZone: boolean;
+  },
+};
+// set when a drag actually moved; cards swallow the trailing click for 150ms
+let lastCardDragEnd = 0;
+const CARD_DRAG_SUPPRESS_MS = 150;
+
 const TYPE_TABS: { id: FilterTab; label: string; dot: string }[] = [
   { id: "all", label: "全部", dot: "var(--accent)" },
   { id: "text", label: "文本", dot: "var(--cat-text)" },
@@ -32,6 +50,10 @@ export default function App() {
   const [editValue, setEditValue] = useState("");
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [dragGhost, setDragGhost] = useState<{ x: number; y: number; inZone: boolean } | null>(
+    null,
+  );
+  const [draggingId, setDraggingId] = useState<number | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -68,6 +90,65 @@ export default function App() {
     listen<null>("show-settings", () => setSettingsOpen(true)).then((u) => unlistens.push(u));
     return () => unlistens.forEach((u) => u());
   }, [refresh]);
+
+  // One window-level drag tracker for every card (see cardDrag above).
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const st = cardDrag.current;
+      if (!st || (e.buttons & 1) === 0) return;
+      if (!st.moved) {
+        if (Math.abs(st.startY - e.screenY) < 12) return;
+        st.moved = true;
+        setDraggingId(st.itemId);
+        // grab the OS cursor so events keep flowing after leaving the window
+        getCurrentWindow().setCursorGrab(true).catch(() => {});
+        document.body.classList.add("dragging-hang");
+      }
+      // Top zone = near the clothesline. WebView2 may clamp client coords
+      // at the window edge, so also accept "clearly dragged out the top".
+      const screenTop = e.screenY < 320;
+      const outTop = e.clientY <= 1 && st.startY - e.screenY > 140;
+      const inZone = screenTop || outTop;
+      if (inZone !== st.inZone) {
+        st.inZone = inZone;
+        invoke("hang_preview", { id: inZone ? st.itemId : null }).catch(() => {});
+      }
+      setDragGhost({
+        x: e.screenX - window.screenX,
+        y: e.screenY - window.screenY,
+        inZone,
+      });
+    };
+    const onFinish = (hangIfZone: boolean) => {
+      const st = cardDrag.current;
+      if (!st) return;
+      cardDrag.current = null;
+      document.body.classList.remove("dragging-hang");
+      getCurrentWindow().setCursorGrab(false).catch(() => {});
+      setDragGhost(null);
+      setDraggingId(null);
+      if (st.moved) {
+        lastCardDragEnd = Date.now();
+        if (hangIfZone && st.inZone) {
+          invoke("hang_item", { id: st.itemId })
+            .catch(() => {})
+            .finally(() => invoke("hang_preview", { id: null }).catch(() => {}));
+        } else {
+          invoke("hang_preview", { id: null }).catch(() => {});
+        }
+      }
+    };
+    const onUp = () => onFinish(true);
+    const onCancel = () => onFinish(false);
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("pointercancel", onCancel, true);
+    return () => {
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("pointercancel", onCancel, true);
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     let xs = items;
@@ -277,6 +358,7 @@ export default function App() {
                     item={it}
                     idx={idx}
                     selected={idx === selectedIdx}
+                    beingDragged={draggingId === it.id}
                     onClick={() => setSelectedIdx(idx)}
                     onDoubleClick={() => paste(it)}
                     onPin={() => togglePin(it.id)}
@@ -291,6 +373,13 @@ export default function App() {
         </div>
         <Footer count={filtered.length} total={items.length} />
         {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
+        {dragGhost &&
+          createPortal(
+            <div className="drag-ghost" style={{ left: dragGhost.x, top: dragGhost.y }}>
+              {dragGhost.inZone ? "松手挂上 ↩" : "拖到顶部挂上"}
+            </div>,
+            document.body,
+          )}
       </div>
     </div>
   );
@@ -796,6 +885,7 @@ function Card({
   item,
   idx,
   selected,
+  beingDragged,
   onClick,
   onDoubleClick,
   onPin,
@@ -806,6 +896,7 @@ function Card({
   item: ClipItem;
   idx: number;
   selected: boolean;
+  beingDragged: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
   onPin: () => void;
@@ -813,92 +904,25 @@ function Card({
   onDelete: () => void;
   onPaste: () => void;
 }) {
-  // Drag-to-hang tracking lives on window-level listeners, not element
-  // handlers: WebView2 only honors DOM pointer capture while the window is
-  // properly activated, and a freshly shown drawer isn't always — moves/ups
-  // then stop reaching the card and the drop is silently lost. Window
-  // listeners receive the full stream regardless (verified on real hardware).
-  const drag = useRef<{
-    startY: number;
-    moved: boolean;
-    inZone: boolean;
-  } | null>(null);
-  const suppressClick = useRef(false);
-  const [ghost, setGhost] = useState<{ x: number; y: number; inZone: boolean } | null>(null);
-
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      const st = drag.current;
-      if (!st || (e.buttons & 1) === 0) return;
-      if (!st.moved) {
-        if (Math.abs(st.startY - e.screenY) < 12) return;
-        st.moved = true;
-        // grab the OS cursor so events keep flowing after leaving the window
-        getCurrentWindow().setCursorGrab(true).catch(() => {});
-        document.body.classList.add("dragging-hang");
-      }
-      // Top zone = near the clothesline. WebView2 may clamp client coords
-      // at the window edge, so also accept "clearly dragged out the top".
-      const screenTop = e.screenY < 320;
-      const outTop = e.clientY <= 1 && st.startY - e.screenY > 140;
-      const inZone = screenTop || outTop;
-      if (inZone !== st.inZone) {
-        st.inZone = inZone;
-        invoke("hang_preview", { id: inZone ? item.id : null }).catch(() => {});
-      }
-      // ghost chip follows the cursor via screen coords → client space,
-      // which keeps tracking even outside this window
-      setGhost({
-        x: e.screenX - window.screenX,
-        y: e.screenY - window.screenY,
-        inZone,
-      });
-    };
-    const onFinish = (hangIfZone: boolean) => {
-      const st = drag.current;
-      if (!st) return;
-      drag.current = null;
-      document.body.classList.remove("dragging-hang");
-      getCurrentWindow().setCursorGrab(false).catch(() => {});
-      setGhost(null);
-      if (st.moved) {
-        suppressClick.current = true;
-        setTimeout(() => (suppressClick.current = false), 150);
-        if (hangIfZone && st.inZone) {
-          invoke("hang_item", { id: item.id })
-            .catch(() => {})
-            .finally(() => invoke("hang_preview", { id: null }).catch(() => {}));
-        } else {
-          invoke("hang_preview", { id: null }).catch(() => {});
-        }
-      }
-    };
-    const onUp = () => onFinish(true);
-    const onCancel = () => onFinish(false);
-    window.addEventListener("pointermove", onMove, true);
-    window.addEventListener("pointerup", onUp, true);
-    window.addEventListener("pointercancel", onCancel, true);
-    return () => {
-      window.removeEventListener("pointermove", onMove, true);
-      window.removeEventListener("pointerup", onUp, true);
-      window.removeEventListener("pointercancel", onCancel, true);
-    };
-  }, [item.id]);
+  // Drag tracking (window listeners + ghost) lives in App — see cardDrag.
+  // The card only registers the drag start and swallows the click that
+  // trails a real drag.
+  const clickSuppressed = () => Date.now() - lastCardDragEnd < CARD_DRAG_SUPPRESS_MS;
 
   return (
     <div
       data-idx={idx}
-      className={"card" + (selected ? " selected" : "") + (ghost ? " lifting" : "")}
+      className={"card" + (selected ? " selected" : "") + (beingDragged ? " lifting" : "")}
       onClick={() => {
-        if (suppressClick.current) return;
+        if (clickSuppressed()) return;
         onClick();
       }}
       onDoubleClick={() => {
-        if (!suppressClick.current) onDoubleClick();
+        if (!clickSuppressed()) onDoubleClick();
       }}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
-        drag.current = { startY: e.screenY, moved: false, inZone: false };
+        cardDrag.current = { itemId: item.id, startY: e.screenY, moved: false, inZone: false };
       }}
       title="回车粘贴 · 按住往上拖可以挂到晾衣架"
     >
@@ -920,13 +944,6 @@ function Card({
         <button className="action" onClick={onEdit} title="编辑">✎</button>
         <button className="action" onClick={onDelete} title="删除">🗑</button>
       </div>
-      {ghost &&
-        createPortal(
-          <div className="drag-ghost" style={{ left: ghost.x, top: ghost.y }}>
-            {ghost.inZone ? "松手挂上 ↩" : "拖到顶部挂上"}
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }

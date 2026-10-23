@@ -6,6 +6,16 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Memo } from "./types";
 import { KIND_LABEL } from "./types";
 
+// ─── take-off drag: one shared tracker, listeners live in Clothesline ───
+// This window is never focused (focus:false) and Chromium does not honor
+// DOM pointer capture on inactive windows, so tracking runs on window-level
+// listeners (verified against WebView2). One mouse ⇒ one active drag — a
+// single module record shared by every hanging card, with ONE listener set
+// in Clothesline instead of one per card.
+const lineDrag = {
+  current: null as null | { memoId: number; startY: number; moved: boolean; off: boolean },
+};
+
 /**
  * 晾衣架 — a rope across the top of the screen with memo cards hanging
  * from clothespins.
@@ -20,6 +30,12 @@ export default function Clothesline() {
   const [previewing, setPreviewing] = useState(false);
   const [viewing, setViewing] = useState<Memo | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  // take-off drag UI (ghost + lifted/dropping card), null when idle
+  const [dragUI, setDragUI] = useState<{ id: number; x: number; y: number; off: boolean } | null>(
+    null,
+  );
+  const memosRef = useRef<Memo[]>([]);
+  memosRef.current = memos;
 
   const refresh = useCallback(async () => {
     setMemos(await invoke<Memo[]>("list_memos"));
@@ -35,6 +51,54 @@ export default function Clothesline() {
     );
     return () => unlistens.forEach((u) => u());
   }, [refresh]);
+
+  // one window-level tracker for every hanging card (see lineDrag above)
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const st = lineDrag.current;
+      if (!st || (e.buttons & 1) === 0) return;
+      const dy = e.screenY - st.startY;
+      if (!st.moved) {
+        if (Math.abs(dy) < 14) return;
+        st.moved = true;
+        // grab the OS cursor so events keep flowing outside the 230px window
+        getCurrentWindow().setCursorGrab(true).catch(() => {});
+      }
+      st.off = dy > 70;
+      setDragUI({
+        id: st.memoId,
+        x: e.screenX - window.screenX,
+        y: e.screenY - window.screenY,
+        off: st.off,
+      });
+    };
+    const onFinish = () => {
+      const st = lineDrag.current;
+      if (!st) return;
+      lineDrag.current = null;
+      setDragUI(null);
+      getCurrentWindow().setCursorGrab(false).catch(() => {});
+      if (st.moved) {
+        // dragged — take it off when pulled past the rope zone, never a click
+        if (st.off) {
+          invoke("remove_memo", { id: st.memoId }).catch((err) =>
+            console.warn("[tietie] remove_memo failed:", err),
+          );
+        }
+        return;
+      }
+      const m = memosRef.current.find((x) => x.id === st.memoId);
+      if (m) setViewing(m);
+    };
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onFinish, true);
+    window.addEventListener("pointercancel", onFinish, true);
+    return () => {
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onFinish, true);
+      window.removeEventListener("pointercancel", onFinish, true);
+    };
+  }, []);
 
   const copy = useCallback(
     async (m: Memo) => {
@@ -99,7 +163,8 @@ export default function Clothesline() {
                   key={m.id}
                   memo={m}
                   swing={i % 2 === 1}
-                  onOpen={() => setViewing(m)}
+                  draggedOff={dragUI?.id === m.id && dragUI.off}
+                  lifted={dragUI?.id === m.id}
                 />
               ))
             )}
@@ -132,6 +197,13 @@ export default function Clothesline() {
           </button>
         </>
       )}
+      {dragUI &&
+        createPortal(
+          <div className="drag-ghost" style={{ left: dragUI.x, top: dragUI.y }}>
+            {dragUI.off ? "松手摘下 ✕" : "拖出绳区摘下"}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -198,106 +270,50 @@ function Rope({ hot }: { hot: boolean }) {
 
 /**
  * A hanging memo card. Click opens the detail view; dragging down past the
- * rope zone takes the memo off the line (ghost follows the pointer).
- *
- * Drag tracking lives on window-level listeners, not element handlers: this
- * window is never focused (focus:false), and Chromium does not honor DOM
- * pointer capture for an inactive window — moves/ups stop reaching the card
- * element once the cursor leaves it. Window listeners receive the full
- * stream regardless (verified against WebView2).
+ * rope zone takes the memo off the line. Tracking (window listeners + ghost)
+ * lives in Clothesline — see lineDrag; the card only registers the start.
  */
 function HangingCard({
   memo,
   swing,
-  onOpen,
+  draggedOff,
+  lifted,
 }: {
   memo: Memo;
   swing: boolean;
-  onOpen: () => void;
+  draggedOff: boolean;
+  lifted: boolean;
 }) {
-  const [off, setOff] = useState(false); // being taken off (render only)
-  const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
-  const drag = useRef<{ startY: number; moved: boolean; off: boolean } | null>(null);
-
-  useEffect(() => {
-    const onMove = (e: PointerEvent) => {
-      const st = drag.current;
-      if (!st || (e.buttons & 1) === 0) return;
-      const dy = e.screenY - st.startY;
-      if (!st.moved) {
-        if (Math.abs(dy) < 14) return;
-        st.moved = true;
-        // grab the OS cursor so events keep flowing outside the 230px window
-        getCurrentWindow().setCursorGrab(true).catch(() => {});
-      }
-      setGhost({ x: e.screenX - window.screenX, y: e.screenY - window.screenY });
-      st.off = dy > 70;
-      setOff(st.off);
-    };
-    const onFinish = () => {
-      const st = drag.current;
-      if (!st) return;
-      drag.current = null;
-      setGhost(null);
-      setOff(false);
-      getCurrentWindow().setCursorGrab(false).catch(() => {});
-      if (st.moved) {
-        // dragged — take it off when pulled past the rope zone, never a click
-        if (st.off) {
-          invoke("remove_memo", { id: memo.id }).catch((err) =>
-            console.warn("[tietie] remove_memo failed:", err),
-          );
-        }
-        return;
-      }
-      onOpen();
-    };
-    window.addEventListener("pointermove", onMove, true);
-    window.addEventListener("pointerup", onFinish, true);
-    window.addEventListener("pointercancel", onFinish, true);
-    return () => {
-      window.removeEventListener("pointermove", onMove, true);
-      window.removeEventListener("pointerup", onFinish, true);
-      window.removeEventListener("pointercancel", onFinish, true);
-    };
-  }, [memo.id, onOpen]);
-
   return (
-    <>
-      <div
-        className={
-          "line-card" + (swing ? " swing" : "") + (off ? " dropping" : "") + (ghost ? " lifted" : "")
-        }
-        onPointerDown={(e) => {
-          if (e.button !== 0) return;
-          drag.current = { startY: e.screenY, moved: false, off: false };
+    <div
+      className={
+        "line-card" +
+        (swing ? " swing" : "") +
+        (draggedOff ? " dropping" : "") +
+        (lifted ? " lifted" : "")
+      }
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        lineDrag.current = { memoId: memo.id, startY: e.screenY, moved: false, off: false };
+      }}
+      title="单击查看 · 按住往下拖摘下来"
+    >
+      <div className="line-pin" style={{ background: memo.color }} />
+      <span className="line-badge">
+        {KIND_LABEL[memo.kind as keyof typeof KIND_LABEL] ?? "文本"}
+      </span>
+      <CardBody memo={memo} />
+      <button
+        className="line-x"
+        onClick={(e) => {
+          e.stopPropagation();
+          invoke("remove_memo", { id: memo.id }).catch(() => {});
         }}
-        title="单击查看 · 按住往下拖摘下来"
+        title="摘下来"
       >
-        <div className="line-pin" style={{ background: memo.color }} />
-        <span className="line-badge">
-          {KIND_LABEL[memo.kind as keyof typeof KIND_LABEL] ?? "文本"}
-        </span>
-        <CardBody memo={memo} />
-        <button
-          className="line-x"
-          onClick={(e) => {
-            e.stopPropagation();
-            invoke("remove_memo", { id: memo.id }).catch(() => {});
-          }}
-          title="摘下来"
-        >
-          ✕
-        </button>
-      </div>
-      {ghost &&
-        createPortal(
-          <div className="drag-ghost" style={{ left: ghost.x, top: ghost.y }}>
-            {off ? "松手摘下 ✕" : "拖出绳区摘下"}
-          </div>,
-          document.body,
-        )}
-    </>
+        ✕
+      </button>
+    </div>
   );
 }
 
