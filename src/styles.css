@@ -1520,3 +1520,14 @@ body.dragging-hang * {
   display: flex;
   gap: 8px;
 }
+
+.lang-select {
+  height: 26px;
+  border: 1px solid var(--card-stroke);
+  border-radius: 7px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 12px;
+  padding: 0 6px;
+  outline: none;
+}

@@ -7,9 +7,10 @@ import { check as checkUpdate, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 // clipboard plugin no longer needed at JS layer — Rust paste_item handles it
 import type { ClipItem, Folder, ItemKind } from "./types";
-import { KIND_LABEL } from "./types";
+import { kindLabel } from "./types";
 import { IS_MAC, MOD } from "./platform";
 import { matchQuery } from "./search";
+import { t, useLang, setPref, getPref, type LangPref } from "./i18n";
 
 type FilterTab = "all" | ItemKind;
 
@@ -31,16 +32,17 @@ const cardDrag = {
 let lastCardDragEnd = 0;
 const CARD_DRAG_SUPPRESS_MS = 150;
 
-const TYPE_TABS: { id: FilterTab; label: string; dot: string }[] = [
-  { id: "all", label: "全部", dot: "var(--accent)" },
-  { id: "text", label: "文本", dot: "var(--cat-text)" },
-  { id: "link", label: "链接", dot: "var(--cat-link)" },
-  { id: "image", label: "图片", dot: "var(--cat-image)" },
-  { id: "code", label: "代码", dot: "var(--cat-code)" },
-  { id: "color", label: "颜色", dot: "var(--cat-color)" },
+const TYPE_TABS: { id: FilterTab; labelKey: string; dot: string }[] = [
+  { id: "all", labelKey: "tab.all", dot: "var(--accent)" },
+  { id: "text", labelKey: "kind.text", dot: "var(--cat-text)" },
+  { id: "link", labelKey: "kind.link", dot: "var(--cat-link)" },
+  { id: "image", labelKey: "kind.image", dot: "var(--cat-image)" },
+  { id: "code", labelKey: "kind.code", dot: "var(--cat-code)" },
+  { id: "color", labelKey: "kind.color", dot: "var(--cat-color)" },
 ];
 
 export default function App() {
+  useLang(); // re-render the whole drawer on language switch
   const [items, setItems] = useState<ClipItem[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [tab, setTab] = useState<FilterTab>("all");
@@ -451,6 +453,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
   const [hks, setHks] = useState<HotkeysInfo | null>(null);
   const [autostart, setAutostart] = useState<boolean>(false);
+  const [langPref, setLangPref] = useState<LangPref>(() => getPref());
 
   const reloadHotkeys = useCallback(async () => {
     setHks(await invoke<HotkeysInfo>("get_hotkeys"));
@@ -512,21 +515,21 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
 
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const doExportBackup = useCallback(async () => {
-    setBackupMsg("导出中…");
+    setBackupMsg(t("settings.exporting"));
     try {
       const path = await invoke<string>("export_backup");
-      setBackupMsg(`已导出: ${path}`);
+      setBackupMsg(`${t("settings.exported")} ${path}`);
     } catch (e) {
-      setBackupMsg(`导出失败: ${e}`);
+      setBackupMsg(`${t("settings.exportFail")} ${e}`);
     }
   }, []);
   const doImportBackup = useCallback(async () => {
-    setBackupMsg("导入中…");
+    setBackupMsg(t("settings.importing"));
     try {
       const msg = await invoke<string>("import_backup");
       setBackupMsg(msg);
     } catch (e) {
-      setBackupMsg(`导入失败: ${e}`);
+      setBackupMsg(`${t("settings.importFail")} ${e}`);
     }
   }, []);
 
@@ -564,84 +567,102 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
     <div className="settings-overlay" onClick={onClose}>
       <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
         <div className="settings-head">
-          <h3>设置</h3>
+          <h3>{t("settings.title")}</h3>
           <button className="settings-close" onClick={onClose} title="关闭">✕</button>
         </div>
         <div className="settings-section">
           <div className="settings-row">
-            <span className="settings-label">版本</span>
+            <span className="settings-label">{t("settings.version")}</span>
             <span className="settings-value">
               <span>{version || "..."}</span>
-              {upd.kind === "checking" && <span className="settings-tag muted">检查中…</span>}
+              {upd.kind === "checking" && <span className="settings-tag muted">{t("settings.checking")}</span>}
               {upd.kind === "uptodate" && (
                 <>
-                  <span className="settings-tag ok">已是最新</span>
-                  <button className="btn ghost" onClick={checkForUpdate}>重新检查</button>
+                  <span className="settings-tag ok">{t("settings.uptodate")}</span>
+                  <button className="btn ghost" onClick={checkForUpdate}>{t("settings.recheck")}</button>
                 </>
               )}
               {upd.kind === "available" && (
                 <button className="btn primary" onClick={downloadAndInstall}>
-                  升级到 {upd.version}
+                  {t("settings.upgrade")} {upd.version}
                 </button>
               )}
               {upd.kind === "downloading" && (
-                <span className="settings-tag muted">下载 {upd.pct}%</span>
+                <span className="settings-tag muted">{t("settings.download")} {upd.pct}%</span>
               )}
-              {upd.kind === "ready" && <span className="settings-tag ok">即将重启…</span>}
+              {upd.kind === "ready" && <span className="settings-tag ok">{t("settings.restarting")}</span>}
               {(upd.kind === "error" || upd.kind === "idle") && (
-                <button className="btn ghost" onClick={checkForUpdate}>检查更新</button>
+                <button className="btn ghost" onClick={checkForUpdate}>{t("settings.checkUpdate")}</button>
               )}
             </span>
           </div>
           {upd.kind === "error" && (
-            <pre className="settings-err">更新检查失败:{upd.msg}</pre>
+            <pre className="settings-err">{t("settings.updateFailed")}:{upd.msg}</pre>
           )}
           {upd.kind === "available" && upd.notes && (
             <pre className="settings-notes">{upd.notes}</pre>
           )}
 
-          <div className="settings-subhead">快捷键（可自定义）</div>
+          <div className="settings-subhead">{t("settings.hotkeys")}</div>
           <HotkeyRow
             kind="drawer"
-            label="唤起剪切板抽屉"
+            label={t("settings.hk.drawer")}
             value={hks?.drawer ?? ""}
             onSaved={reloadHotkeys}
           />
           <HotkeyRow
             kind="screenshot"
-            label="截图到剪切板"
+            label={t("settings.hk.screenshot")}
             value={hks?.screenshot ?? ""}
             registered={hks?.screenshot_registered ?? true}
             onSaved={reloadHotkeys}
           />
           <HotkeyRow
             kind="clothesline"
-            label="晾衣架开关"
+            label={t("settings.hk.clothesline")}
             value={hks?.clothesline ?? ""}
             registered={hks?.clothesline_registered ?? true}
             onSaved={reloadHotkeys}
           />
 
-          <div className="settings-subhead">通用</div>
+          <div className="settings-subhead">{t("settings.general")}</div>
           <div className="settings-row">
-            <span className="settings-label">开机自启</span>
+            <span className="settings-label">{t("settings.language")}</span>
+            <span className="settings-value">
+              <select
+                className="lang-select"
+                value={langPref}
+                onChange={(e) => {
+                  const v = e.target.value as "auto" | "zh" | "en";
+                  setPref(v);
+                  setLangPref(v);
+                }}
+              >
+                <option value="auto">{t("settings.langAuto")}</option>
+                <option value="zh">中文</option>
+                <option value="en">English</option>
+              </select>
+            </span>
+          </div>
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.autostart")}</span>
             <span className="settings-value">
               <button
                 className={"btn " + (autostart ? "primary" : "ghost")}
                 onClick={() => toggleAutostart(!autostart)}
               >
-                {autostart ? "已开启" : "已关闭"}
+                {autostart ? t("settings.on") : t("settings.off")}
               </button>
             </span>
           </div>
           <div className="settings-row">
-            <span className="settings-label">备份</span>
+            <span className="settings-label">{t("settings.backup")}</span>
             <span className="settings-value">
               <button className="btn ghost" onClick={doExportBackup}>
-                导出 JSON 备份
+                {t("settings.export")}
               </button>
               <button className="btn ghost" onClick={doImportBackup}>
-                导入恢复（最新备份）
+                {t("settings.import")}
               </button>
             </span>
           </div>
@@ -650,21 +671,20 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {IS_MAC && (
             <>
               <div className="settings-row">
-                <span className="settings-label">辅助功能</span>
+                <span className="settings-label">{t("settings.accessibility")}</span>
                 <span className="settings-value">
                   {acc === null ? (
-                    <span className="settings-tag muted">检测中…</span>
+                    <span className="settings-tag muted">{t("settings.detecting")}</span>
                   ) : acc ? (
-                    <span className="settings-tag ok">已授权</span>
+                    <span className="settings-tag ok">{t("settings.granted")}</span>
                   ) : (
-                    <button className="btn primary" onClick={grant}>去授权</button>
+                    <button className="btn primary" onClick={grant}>{t("settings.grant")}</button>
                   )}
                 </span>
               </div>
               {acc === false && (
                 <p className="settings-hint">
-                  粘贴功能需要「辅助功能」权限。点击「去授权」打开系统设置 → 隐私与安全 →
-                  辅助功能，把 Tietie 打开即可，授权后状态自动刷新。
+                  {t("settings.accHint")}
                 </p>
               )}
             </>
@@ -759,7 +779,7 @@ function HotkeyRow({
         c.startsWith("Key") || c.startsWith("Digit") || /^F\d+$/.test(c) || c === "Space";
       if (!isKey) return; // wait for a real key, ignore standalone modifier presses
       if (mods.length === 0) {
-        setErr("全局快捷键需要至少一个修饰键");
+        setErr(t("settings.needMod"));
         return;
       }
       setPending([...mods, c].join("+"));
@@ -778,25 +798,25 @@ function HotkeyRow({
               className="hotkey-capture"
               autoFocus
               readOnly
-              placeholder="按下组合 (Esc 取消 / Enter 确定)…"
+              placeholder={t("settings.capturePlaceholder")}
               value={pending ? formatHotkey(pending) : ""}
               onKeyDown={captureHotkey}
             />
             <button className="btn primary" onClick={confirmRecording} disabled={!pending}>
-              确定
+              {t("settings.ok")}
             </button>
             <button className="btn ghost" onClick={cancelRecording}>
-              取消
+              {t("settings.cancel")}
             </button>
           </>
         ) : (
           <>
             <span className="hotkey-badge">{value ? formatHotkey(value) : "..."}</span>
             {!registered && (
-              <span className="settings-tag err">注册失败（组合被占用），请修改</span>
+              <span className="settings-tag err">{t("settings.regFail")}</span>
             )}
             <button className="btn ghost" onClick={startRecording}>
-              修改
+              {t("settings.modify")}
             </button>
           </>
         )}
@@ -828,22 +848,22 @@ function Header({
         <SearchIcon />
         <input
           ref={searchRef}
-          placeholder="搜索剪切板历史 …"
+          placeholder={t("search.placeholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <span className="kbd">{MOD}F</span>
       </label>
       <div className="type-tabs">
-        {TYPE_TABS.map((t) => (
+        {TYPE_TABS.map((tb) => (
           <button
-            key={t.id}
-            className={"tab" + (tab === t.id ? " active" : "")}
-            onClick={() => setTab(t.id)}
+            key={tb.id}
+            className={"tab" + (tab === tb.id ? " active" : "")}
+            onClick={() => setTab(tb.id)}
           >
-            <span className="dot-sm" style={{ background: t.dot }} />
-            {t.label}
-            <span className="count">{counts[t.id] ?? 0}</span>
+            <span className="dot-sm" style={{ background: tb.dot }} />
+            {t(tb.labelKey)}
+            <span className="count">{counts[tb.id] ?? 0}</span>
           </button>
         ))}
       </div>
@@ -882,13 +902,13 @@ function FolderChips({
         className={"chip" + (folderId === null ? " active" : "")}
         onClick={() => setFolderId(null)}
       >
-        全部
+        {t("tab.all")}
       </button>
       <button
         className={"chip" + (folderId === "pinned" ? " active" : "")}
         onClick={() => setFolderId("pinned")}
       >
-        <PinIcon size={11} /> 置顶 <span className="dim">{counts.pinned}</span>
+        <PinIcon size={11} /> {t("tab.pinned")} <span className="dim">{counts.pinned}</span>
       </button>
       {folders.map((f) => (
         <button
@@ -904,7 +924,7 @@ function FolderChips({
         <input
           className="chip-input"
           autoFocus
-          placeholder="文件夹名称，回车新建"
+          placeholder={t("folder.newPlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
           onBlur={() => {
@@ -923,7 +943,7 @@ function FolderChips({
         />
       ) : (
         <button className="chip ghost" onClick={() => setAdding(true)}>
-          + 新建
+          {t("folder.new")}
         </button>
       )}
     </div>
@@ -973,9 +993,9 @@ function Card({
         if (e.button !== 0) return;
         cardDrag.current = { itemId: item.id, startY: e.screenY, moved: false, inZone: false };
       }}
-      title="回车粘贴 · 按住往上拖可以挂到晾衣架"
+      title={t("card.hint")}
     >
-      <span className={"badge " + item.kind}>{KIND_LABEL[item.kind]}</span>
+      <span className={"badge " + item.kind}>{kindLabel(item.kind)}</span>
       {item.pinned && (
         <span className="pin">
           <PinIcon />
@@ -988,7 +1008,7 @@ function Card({
       </div>
       {idx < 10 && <div className="index-kbd">{MOD}{idx === 9 ? 0 : idx + 1}</div>}
       <div className="actions" onClick={(e) => e.stopPropagation()}>
-        <button className="action primary" onClick={onPaste}>↵ 粘贴</button>
+        <button className="action primary" onClick={onPaste}>{t("card.paste")}</button>
         <button className="action" onClick={onPin} title="置顶">📌</button>
         <button className="action" onClick={onEdit} title="编辑">✎</button>
         <button className="action" onClick={onDelete} title="删除">🗑</button>
@@ -1052,8 +1072,8 @@ function EditCard({
   return (
     <div className="edit-card">
       <div className="edit-head">
-        <span className={"badge " + item.kind}>{KIND_LABEL[item.kind]}</span>
-        <span className="edit-hint">编辑中 · 不影响其它条</span>
+        <span className={"badge " + item.kind}>{kindLabel(item.kind)}</span>
+        <span className="edit-hint">{t("edit.badge")}</span>
       </div>
       <textarea
         ref={textareaRef}
@@ -1075,8 +1095,8 @@ function EditCard({
       <div className="edit-foot">
         <span>{value.length} 字符 · {value.split("\n").length} 行</span>
         <div className="edit-btns">
-          <button className="btn ghost" onClick={onCancel}>Esc 取消</button>
-          <button className="btn primary" onClick={onSaveAndPaste}>⌘↵ 保存并粘贴</button>
+          <button className="btn ghost" onClick={onCancel}>{t("edit.cancel")}</button>
+          <button className="btn primary" onClick={onSaveAndPaste}>{t("edit.savePaste")}</button>
         </div>
       </div>
     </div>
@@ -1087,15 +1107,15 @@ function Footer({ count, total }: { count: number; total: number }) {
   return (
     <div className="bar-foot">
       <div className="hints">
-        <span><span className="kbd">←</span> <span className="kbd">→</span> 切换</span>
-        <span><span className="kbd">↵</span> 粘贴</span>
-        <span><span className="kbd">{MOD}</span><span className="kbd">1-0</span> 直选</span>
-        <span><span className="kbd">{MOD}</span><span className="kbd">E</span> 编辑</span>
-        <span><span className="kbd">{MOD}</span><span className="kbd">P</span> 置顶</span>
-        <span><span className="kbd">{MOD}</span><span className="kbd">D</span> 删除</span>
+        <span><span className="kbd">←</span> <span className="kbd">→</span> {t("footer.switch")}</span>
+        <span><span className="kbd">↵</span> {t("footer.paste")}</span>
+        <span><span className="kbd">{MOD}</span><span className="kbd">1-0</span> {t("footer.direct")}</span>
+        <span><span className="kbd">{MOD}</span><span className="kbd">E</span> {t("footer.edit")}</span>
+        <span><span className="kbd">{MOD}</span><span className="kbd">P</span> {t("footer.pin")}</span>
+        <span><span className="kbd">{MOD}</span><span className="kbd">D</span> {t("footer.del")}</span>
       </div>
       <div>
-        {count}/{total} <span className="kbd">Esc</span> 关闭
+        {count}/{total} <span className="kbd">Esc</span> {t("footer.close")}
       </div>
     </div>
   );
@@ -1167,8 +1187,8 @@ function Empty() {
   return (
     <div className="empty">
       <div className="empty-icon">📋</div>
-      <h3>剪切板还是空的</h3>
-      <p>复制任何文本、链接、图片或代码，它会出现在这里</p>
+      <h3>{t("empty.title")}</h3>
+      <p>{t("empty.desc")}</p>
     </div>
   );
 }

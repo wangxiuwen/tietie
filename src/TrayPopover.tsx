@@ -3,13 +3,15 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { ClipItem } from "./types";
-import { KIND_LABEL } from "./types";
+import { kindLabel } from "./types";
 import { MOD } from "./platform";
 import { matchQuery } from "./search";
+import { t, useLang } from "./i18n";
 
 const RECENT_COUNT = 12;
 
 export default function TrayPopover() {
+  useLang();
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
 
@@ -48,7 +50,7 @@ export default function TrayPopover() {
       <div className="po-search">
         <input
           autoFocus
-          placeholder="搜索 …"
+          placeholder={t("search.tray")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
@@ -65,7 +67,7 @@ export default function TrayPopover() {
       <div className="po-scroll">
         {pinned.length > 0 && (
           <div className="po-section">
-            <div className="po-title">📌 置顶</div>
+            <div className="po-title">{t("tray.pinned")}</div>
             <div className="po-list">
               {pinned.map((it) => (
                 <Row key={it.id} item={it} onClick={() => copyBack(it)} />
@@ -76,7 +78,7 @@ export default function TrayPopover() {
 
         <div className="po-section">
           <div className="po-title">
-            <span>{query ? "搜索结果" : "最近"}</span>
+            <span>{query ? t("tray.results") : t("tray.recent")}</span>
             <button
               className="po-link"
               onClick={async () => {
@@ -84,11 +86,11 @@ export default function TrayPopover() {
                 await getCurrentWindow().hide();
               }}
             >
-              查看全部 →
+              {t("tray.viewAll")}
             </button>
           </div>
           {recent.length === 0 ? (
-            <div className="po-empty">{query ? "没找到匹配项" : "暂无内容"}</div>
+            <div className="po-empty">{query ? t("tray.noMatch") : t("tray.none")}</div>
           ) : (
             <div className="po-list">
               {recent.map((it) => (
@@ -101,10 +103,10 @@ export default function TrayPopover() {
 
       <div className="po-foot">
         <span className="po-foot-hint">
-          <span className="kbd">{MOD}</span><span className="kbd">⇧</span><span className="kbd">V</span> 唤起完整面板
+          <span className="kbd">{MOD}</span><span className="kbd">⇧</span><span className="kbd">V</span> {t("tray.full")}
         </span>
         <button className="po-foot-btn" onClick={() => invoke("quit_app")}>
-          退出
+          {t("tray.quit")}
         </button>
       </div>
     </div>
@@ -114,7 +116,7 @@ export default function TrayPopover() {
 function Row({ item, onClick }: { item: ClipItem; onClick: () => void }) {
   return (
     <button className="po-row" onClick={onClick}>
-      <span className={"po-kind kind-" + item.kind}>{KIND_LABEL[item.kind]}</span>
+      <span className={"po-kind kind-" + item.kind}>{kindLabel(item.kind)}</span>
       <span className="po-text">{trimOne(item.preview || item.content)}</span>
     </button>
   );

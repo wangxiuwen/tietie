@@ -3,8 +3,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { ClipItem } from "./types";
-import { KIND_LABEL } from "./types";
+import { kindLabel } from "./types";
 import { matchQuery } from "./search";
+import { t, useLang } from "./i18n";
 
 /**
  * 剪贴板库 — full-window management table over the whole history:
@@ -12,6 +13,7 @@ import { matchQuery } from "./search";
  * text export. Opened from the tray menu; closing hides the window.
  */
 export default function Library() {
+  useLang();
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
@@ -56,7 +58,7 @@ export default function Library() {
     if (ids.length === 0) return;
     const n = await invoke<number>("delete_items", { ids });
     setSelected(new Set());
-    setMsg(`已删除 ${n} 条`);
+    setMsg(`${t("lib.deleted")} ${n}`);
     await refresh();
   }, [selected, refresh]);
 
@@ -74,15 +76,15 @@ export default function Library() {
   return (
     <div className="lib">
       <div className="lib-head">
-        <h2>剪贴板库</h2>
+        <h2>{t("lib.title")}</h2>
         <input
           className="lib-search"
-          placeholder="搜索（支持拼音首字母，如 nz 找「内存」）…"
+          placeholder={t("search.library")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <button className="btn ghost" onClick={() => getCurrentWindow().hide()}>
-          收起
+          {t("lib.collapse")}
         </button>
       </div>
       <div className="lib-table-wrap">
@@ -92,11 +94,11 @@ export default function Library() {
               <th className="w-check">
                 <input type="checkbox" checked={allSelected} onChange={toggleAll} />
               </th>
-              <th className="w-kind">类型</th>
-              <th>内容</th>
-              <th className="w-src">来源</th>
-              <th className="w-size">大小</th>
-              <th className="w-time">时间</th>
+              <th className="w-kind">{t("lib.kind")}</th>
+              <th>{t("lib.content")}</th>
+              <th className="w-src">{t("lib.source")}</th>
+              <th className="w-size">{t("lib.size")}</th>
+              <th className="w-time">{t("lib.time")}</th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +118,7 @@ export default function Library() {
                 </td>
                 <td className="w-kind">
                   <span className={"badge " + it.kind}>
-                    {KIND_LABEL[it.kind as keyof typeof KIND_LABEL] ?? it.kind}
+                    {kindLabel(it.kind)}
                   </span>
                 </td>
                 <td className="w-content" title={it.content}>
@@ -130,7 +132,7 @@ export default function Library() {
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={6} className="lib-empty">
-                  {query ? "没有匹配的条目" : "剪贴板历史还是空的"}
+                  {query ? t("lib.noMatch") : t("lib.empty")}
                 </td>
               </tr>
             )}
@@ -139,15 +141,15 @@ export default function Library() {
       </div>
       <div className="lib-foot">
         <span>
-          共 {filtered.length} 条 · 已选 {selected.size} 条
+          {t("lib.total")} {filtered.length} {t("lib.items")} · {t("lib.selected")} {selected.size} {t("lib.items")}
         </span>
         {msg && <span className="lib-msg">{msg}</span>}
         <div className="lib-actions">
           <button className="btn ghost" onClick={exportText} disabled={selected.size === 0}>
-            导出所选文本
+            {t("lib.export")}
           </button>
           <button className="btn primary" onClick={del} disabled={selected.size === 0}>
-            删除所选
+            {t("lib.delete")}
           </button>
         </div>
       </div>
@@ -167,9 +169,9 @@ function fmtBytes(n: number): string {
 
 function relTime(unixSec: number): string {
   const diff = Math.floor(Date.now() / 1000 - unixSec);
-  if (diff < 60) return "刚刚";
-  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
-  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}天前`;
+  if (diff < 60) return t("rt.now");
+  if (diff < 3600) return `${Math.floor(diff / 60)}${t("rt.min")}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}${t("rt.hour")}`;
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}${t("rt.day")}`;
   return new Date(unixSec * 1000).toLocaleDateString();
 }

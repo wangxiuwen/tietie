@@ -4,7 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Memo } from "./types";
-import { KIND_LABEL } from "./types";
+import { kindLabel } from "./types";
+import { t, useLang } from "./i18n";
 
 // ─── take-off drag: one shared tracker, listeners live in Clothesline ───
 // This window is never focused (focus:false) and Chromium does not honor
@@ -26,6 +27,7 @@ const lineDrag = {
  * - 摘: drag a card down out of the rope zone (ghost follows) or ✕
  */
 export default function Clothesline() {
+  useLang(); // re-render on language switch
   const [memos, setMemos] = useState<Memo[]>([]);
   const [previewing, setPreviewing] = useState(false);
   const [viewing, setViewing] = useState<Memo | null>(null);
@@ -159,7 +161,7 @@ export default function Clothesline() {
           <div className="line-cards">
             {memos.length === 0 && !previewing ? (
               <div className="line-empty">
-                晾衣架空着 — 从下面的抽屉按住一张卡片往上拖，松手就挂上
+                {t("line.empty")}
               </div>
             ) : (
               memos.map((m, i) => (
@@ -172,7 +174,7 @@ export default function Clothesline() {
                 />
               ))
             )}
-            {previewing && <div className="line-ghost">松手挂上 ↩</div>}
+            {previewing && <div className="line-ghost">{t("line.hang")}</div>}
             {composing && (
               <NoteComposer
                 onCancel={() => setComposing(false)}
@@ -187,24 +189,24 @@ export default function Clothesline() {
           </div>
           <button
             className="line-new"
-            title="新建便签"
+            title={t("line.newNote")}
             onClick={() => setComposing((c) => !c)}
           >
-            ＋ 便签
+            {t("line.newNote")}
           </button>
           <button
             className="line-collapse"
-            title="收起（快捷键可在设置中修改）"
+            title={t("line.collapse")}
             onClick={collapse}
           >
-            收起
+            {t("line.collapse")}
           </button>
         </>
       )}
       {dragUI &&
         createPortal(
           <div className="drag-ghost" style={{ left: dragUI.x, top: dragUI.y }}>
-            {dragUI.off ? "松手摘下 ✕" : "拖出绳区摘下"}
+            {dragUI.off ? t("line.takeoffNow") : t("line.takeoff")}
           </div>,
           document.body,
         )}
@@ -228,11 +230,11 @@ function NoteComposer({
   return (
     <div className="line-card composer">
       <div className="line-pin" style={{ background: "#007aff" }} />
-      <span className="line-badge">新便签</span>
+      <span className="line-badge">{t("line.composing")}</span>
       <textarea
         className="line-compose"
         autoFocus
-        placeholder="写点什么挂上？Esc 取消"
+        placeholder={t("line.composePlaceholder")}
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
@@ -248,10 +250,10 @@ function NoteComposer({
       />
       <div className="line-compose-foot">
         <button className="btn ghost" onClick={onCancel}>
-          取消
+          {t("line.composeCancel")}
         </button>
         <button className="btn primary" onClick={submit} disabled={!text.trim()}>
-          挂上 (Ctrl+↵)
+          {t("line.commit")}
         </button>
       </div>
     </div>
@@ -300,15 +302,15 @@ function HangingCard({
         if (e.button !== 0) return;
         lineDrag.current = { memoId: memo.id, startY: e.screenY, moved: false, off: false };
       }}
-      title="单击查看 · 按住往下拖摘下来"
+      title={t("line.view")}
     >
       <div
         className="line-pin"
         style={{ background: memo.pinned ? "#ff9500" : memo.color }}
-        title={memo.pinned ? "已置顶" : undefined}
+        title={memo.pinned ? t("line.pinned") : undefined}
       />
       <span className="line-badge">
-        {KIND_LABEL[memo.kind as keyof typeof KIND_LABEL] ?? "文本"}
+        {kindLabel(memo.kind)}
       </span>
       <CardBody memo={memo} />
       <button
@@ -317,7 +319,7 @@ function HangingCard({
           e.stopPropagation();
           invoke("remove_memo", { id: memo.id }).catch(() => {});
         }}
-        title="摘下来"
+        title={t("line.takeOff")}
       >
         ✕
       </button>
@@ -351,39 +353,39 @@ function MemoDetail({
     <div className="line-detail" onClick={(e) => e.stopPropagation()}>
       <div className="line-detail-head">
         <span className="line-badge" style={{ position: "static" }}>
-          {KIND_LABEL[memo.kind as keyof typeof KIND_LABEL] ?? "文本"}
+          {kindLabel(memo.kind)}
         </span>
         <span className="line-detail-time">{relTime(memo.created_at)}</span>
         <div className="line-detail-actions">
           {canEdit && !editing && (
             <button className="btn ghost" onClick={() => setEditing(true)}>
-              编辑
+              {t("line.edit")}
             </button>
           )}
           {editing ? (
             <>
               <button className="btn primary" onClick={() => onSave(draft)}>
-                保存 (⌘↵)
+                {t("line.save")}
               </button>
               <button className="btn ghost" onClick={() => setEditing(false)}>
-                取消编辑
+                {t("line.cancelEdit")}
               </button>
             </>
           ) : (
             <>
               <button className="btn ghost" onClick={onTogglePin}>
-                {memo.pinned ? "取消置顶" : "置顶"}
+                {memo.pinned ? t("line.unpin") : t("line.pin")}
               </button>
               <button className="btn primary" onClick={onCopy}>
-                {copied ? "已复制 ✓" : "复制"}
+                {copied ? t("line.copied") : t("line.copy")}
               </button>
               <button className="btn ghost" onClick={onRemove}>
-                摘下来
+                {t("line.takeOff")}
               </button>
             </>
           )}
           <button className="btn ghost" onClick={onClose}>
-            关闭 (Esc)
+            {t("line.close")}
           </button>
         </div>
       </div>
@@ -463,8 +465,8 @@ function CardBody({ memo }: { memo: Memo }) {
 
 function relTime(unixSec: number): string {
   const diff = Math.floor(Date.now() / 1000 - unixSec);
-  if (diff < 60) return "刚刚挂上";
-  if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前挂上`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前挂上`;
+  if (diff < 60) return t("line.justNow");
+  if (diff < 3600) return `${Math.floor(diff / 60)}${t("line.minAgo")}`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}${t("line.hourAgo")}`;
   return new Date(unixSec * 1000).toLocaleDateString();
 }

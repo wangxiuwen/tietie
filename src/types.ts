@@ -33,14 +33,6 @@ export interface Memo {
   created_at: number;
 }
 
-export const KIND_LABEL: Record<ItemKind, string> = {
-  text: "文本",
-  link: "链接",
-  image: "图片",
-  code: "代码",
-  color: "颜色",
-};
-
 export const KIND_COLOR: Record<ItemKind, string> = {
   text: "var(--cat-text)",
   link: "var(--cat-link)",
@@ -48,3 +40,10 @@ export const KIND_COLOR: Record<ItemKind, string> = {
   code: "var(--cat-code)",
   color: "var(--cat-color)",
 };
+
+import { t } from "./i18n";
+
+/** Localized kind label (i18n-aware replacement for the old KIND_LABEL map). */
+export function kindLabel(kind: string): string {
+  return t("kind." + (kind in KIND_COLOR ? kind : "text"));
+}
