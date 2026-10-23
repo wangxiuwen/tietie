@@ -79,6 +79,9 @@ const zh: Dict = {
   "tray.pinned": "📌 置顶", "tray.recent": "最近", "tray.results": "搜索结果",
   "tray.viewAll": "查看全部 →", "tray.noMatch": "没找到匹配项", "tray.none": "暂无内容",
   "tray.full": "唤起完整面板", "tray.quit": "退出",
+  // batch
+  "batch.selected": "已选", "batch.hang": "批量挂绳",
+  "batch.delete": "批量删除", "batch.clear": "取消选择",
   // rel time
   "rt.now": "刚刚", "rt.min": "分钟前", "rt.hour": "小时前", "rt.day": "天前",
 };
@@ -141,6 +144,8 @@ const en: Dict = {
   "tray.pinned": "📌 Pinned", "tray.recent": "Recent", "tray.results": "Results",
   "tray.viewAll": "View all →", "tray.noMatch": "No matches", "tray.none": "Nothing yet",
   "tray.full": "Open full panel", "tray.quit": "Quit",
+  "batch.selected": "Selected", "batch.hang": "Hang all",
+  "batch.delete": "Delete all", "batch.clear": "Clear selection",
   "rt.now": "just now", "rt.min": " min ago", "rt.hour": " h ago", "rt.day": " d ago",
 };
 

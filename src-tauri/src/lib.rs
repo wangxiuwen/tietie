@@ -344,6 +344,7 @@ pub fn run() {
             get_item_image,
             list_memos,
             hang_item,
+            hang_items,
             remove_memo,
             add_memo_direct,
             update_memo,
@@ -845,6 +846,43 @@ fn hang_item(app: AppHandle, state: tauri::State<'_, AppState>, id: i64) -> Resu
     }
     emit_memos_changed(&app);
     Ok(memo_id)
+}
+
+/// Hang several clip items on the clothesline in one go (multi-select batch).
+/// Shows the line if hidden; returns how many actually hung.
+#[tauri::command]
+fn hang_items(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    ids: Vec<i64>,
+) -> Result<usize, String> {
+    let mut hung = 0usize;
+    {
+        let conn = state.conn.lock();
+        for id in &ids {
+            let kind: Option<String> = conn
+                .query_row(
+                    "SELECT kind FROM clip_item WHERE id = ?1",
+                    rusqlite::params![id],
+                    |r| r.get(0),
+                )
+                .ok();
+            let Some(kind) = kind else { continue };
+            if db::hang_memo(&conn, *id, kind_color(&kind)).is_ok() {
+                hung += 1;
+            }
+        }
+    }
+    if hung > 0 {
+        if let Some(win) = app.get_webview_window("clothesline") {
+            if !win.is_visible().unwrap_or(false) {
+                position_clothesline(&win);
+                let _ = win.show();
+            }
+        }
+        emit_memos_changed(&app);
+    }
+    Ok(hung)
 }
 
 #[tauri::command]

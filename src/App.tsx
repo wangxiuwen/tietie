@@ -58,6 +58,8 @@ export default function App() {
   );
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [zoomId, setZoomId] = useState<number | null>(null);
+  // ⌘/Ctrl+click multi-select for batch delete / hang
+  const [multiSel, setMultiSel] = useState<Set<number>>(new Set());
   const cardsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -241,6 +243,11 @@ export default function App() {
           setZoomId(null);
           return;
         }
+        if (multiSel.size > 0) {
+          e.preventDefault();
+          setMultiSel(new Set());
+          return;
+        }
         invoke("hide_window");
         return;
       }
@@ -294,7 +301,7 @@ export default function App() {
     // so preventDefault actually stops ⌘D / ⌘P / etc. from typing into search.
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [filtered, selectedIdx, tab, editing, zoomId, paste, togglePin, deleteItem, startEdit]);
+  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, paste, togglePin, deleteItem, startEdit]);
 
   // scroll selected into view
   useEffect(() => {
@@ -369,7 +376,18 @@ export default function App() {
                     idx={idx}
                     selected={idx === selectedIdx}
                     beingDragged={draggingId === it.id}
-                    onClick={() => {
+                    multiSelected={multiSel.has(it.id)}
+                    onClick={(e) => {
+                      if (e.metaKey || e.ctrlKey) {
+                        // multi-select toggle — no zoom, no single selection
+                        setMultiSel((s) => {
+                          const n = new Set(s);
+                          if (n.has(it.id)) n.delete(it.id);
+                          else n.add(it.id);
+                          return n;
+                        });
+                        return;
+                      }
                       setSelectedIdx(idx);
                       // 单击图片卡顺手弹大图（回车仍是粘贴，浮层 Esc 关闭）
                       if (it.kind === "image") setZoomId(it.id);
@@ -386,6 +404,36 @@ export default function App() {
             </div>
           )}
         </div>
+        {multiSel.size > 0 && (
+          <div className="batch-bar">
+            <span>
+              {t("batch.selected")} {multiSel.size}
+            </span>
+            <button
+              className="btn ghost"
+              onClick={async () => {
+                const ids = [...multiSel];
+                setMultiSel(new Set());
+                await invoke("hang_items", { ids }).catch(() => {});
+              }}
+            >
+              {t("batch.hang")}
+            </button>
+            <button
+              className="btn primary"
+              onClick={async () => {
+                const ids = [...multiSel];
+                setMultiSel(new Set());
+                await invoke("delete_items", { ids }).catch(() => {});
+              }}
+            >
+              {t("batch.delete")}
+            </button>
+            <button className="btn ghost" onClick={() => setMultiSel(new Set())}>
+              {t("batch.clear")}
+            </button>
+          </div>
+        )}
         <Footer count={filtered.length} total={items.length} />
         {zoomId !== null && (
           <ZoomOverlay
@@ -957,6 +1005,7 @@ function Card({
   idx,
   selected,
   beingDragged,
+  multiSelected,
   onClick,
   onDoubleClick,
   onPin,
@@ -968,7 +1017,8 @@ function Card({
   idx: number;
   selected: boolean;
   beingDragged: boolean;
-  onClick: () => void;
+  multiSelected: boolean;
+  onClick: (e: React.MouseEvent) => void;
   onDoubleClick: () => void;
   onPin: () => void;
   onEdit: () => void;
@@ -983,10 +1033,15 @@ function Card({
   return (
     <div
       data-idx={idx}
-      className={"card" + (selected ? " selected" : "") + (beingDragged ? " lifting" : "")}
-      onClick={() => {
+      className={
+        "card" +
+        (selected ? " selected" : "") +
+        (beingDragged ? " lifting" : "") +
+        (multiSelected ? " multi-sel" : "")
+      }
+      onClick={(e) => {
         if (clickSuppressed()) return;
-        onClick();
+        onClick(e);
       }}
       onDoubleClick={() => {
         if (!clickSuppressed()) onDoubleClick();
