@@ -218,11 +218,13 @@ export default function App() {
       const isMod = e.metaKey || e.ctrlKey;
 
       // Arrow keys always switch selection — bail out of edit mode if needed.
-      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+      // ↑/↓ alias ←/→: the strip is a single horizontal row, but up/down
+      // matches the muscle memory of vertical list navigation.
+      if (["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) {
         e.preventDefault();
         if (editing) setEditing(null);
         if (zoomId !== null) setZoomId(null);
-        if (e.key === "ArrowRight") {
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") {
           setSelectedIdx((i) => Math.min(i + 1, Math.max(0, filtered.length - 1)));
         } else {
           setSelectedIdx((i) => Math.max(0, i - 1));
