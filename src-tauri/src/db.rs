@@ -26,6 +26,20 @@ pub struct Folder {
     pub sort_order: i64,
 }
 
+/// A note hung on the clothesline. Created by dragging a clip item up
+/// from the drawer; content is a snapshot copy of the item at hang time.
+/// source_item_id keeps a link back so image memos can copy the full blob.
+#[derive(Debug, Clone, Serialize)]
+pub struct Memo {
+    pub id: i64,
+    pub kind: String,
+    pub content: String,
+    pub preview: String,
+    pub color: String,
+    pub source_item_id: Option<i64>,
+    pub created_at: i64,
+}
+
 pub fn open(path: &Path) -> SqlResult<Connection> {
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
@@ -71,6 +85,16 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
         CREATE TABLE IF NOT EXISTS setting (
             key TEXT PRIMARY KEY,
             value TEXT NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS memo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kind TEXT NOT NULL,
+            content TEXT NOT NULL,
+            preview TEXT NOT NULL DEFAULT '',
+            color TEXT NOT NULL DEFAULT '#007aff',
+            source_item_id INTEGER,
+            created_at INTEGER NOT NULL
         );
         "#,
     )?;
@@ -283,6 +307,44 @@ pub fn create_folder(conn: &Connection, name: &str, color: &str) -> SqlResult<i6
 
 pub fn delete_folder(conn: &Connection, id: i64) -> SqlResult<()> {
     conn.execute("DELETE FROM folder WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+// ─────────────────────────── memos (clothesline) ───────────────────────────
+
+pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, kind, content, preview, color, source_item_id, created_at
+         FROM memo ORDER BY id ASC",
+    )?;
+    let ms = stmt
+        .query_map([], |row| {
+            Ok(Memo {
+                id: row.get(0)?,
+                kind: row.get(1)?,
+                content: row.get(2)?,
+                preview: row.get(3)?,
+                color: row.get(4)?,
+                source_item_id: row.get(5)?,
+                created_at: row.get(6)?,
+            })
+        })?
+        .collect::<SqlResult<Vec<_>>>()?;
+    Ok(ms)
+}
+
+/// Hang a clip item on the line as a memo (snapshot copy + source link).
+pub fn hang_memo(conn: &Connection, item_id: i64, color: &str) -> SqlResult<i64> {
+    conn.execute(
+        "INSERT INTO memo (kind, content, preview, color, source_item_id, created_at)
+         SELECT kind, content, preview, ?2, id, ?3 FROM clip_item WHERE id = ?1",
+        params![item_id, color, now_unix()],
+    )?;
+    Ok(conn.last_insert_rowid())
+}
+
+pub fn remove_memo(conn: &Connection, id: i64) -> SqlResult<()> {
+    conn.execute("DELETE FROM memo WHERE id = ?1", params![id])?;
     Ok(())
 }
 

@@ -9,6 +9,9 @@ Bottom-drawer popup, all-keyboard driven, Tauri 2 + React + Rust, ~10 MB install
 ## Features
 
 - **Bottom drawer** — `⌘⇧V` slides up a full-width frosted-glass panel over the current app
+- **Clothesline** — a rope across the top of the screen. Press-and-drag a drawer card upward (a ghost chip follows the cursor), release at the rope to hang it as a memo; click a hanging card for the full-content view (copy / edit / take off); drag a card down out of the rope zone to take it off; `＋ 便签` creates a brand-new sticky note without the clipboard; `Ctrl+Alt+H` collapses / expands the line
+- **Rebindable hotkeys** — drawer / screenshot / clothesline global shortcuts are all customizable in settings (press-combo capture); the drawer falls back to a working combo when its configured one is taken, the others surface a visible warning
+- **Launch at login** — one toggle in settings
 - **Auto categorization** — text / link / image / code / color, detected by content heuristics
 - **User folders** — colored chips for custom organization
 - **Pin** — keep frequently-used items at the front
@@ -31,6 +34,12 @@ Bottom-drawer popup, all-keyboard driven, Tauri 2 + React + Rust, ~10 MB install
 | `←` `→` `↵` | Select + paste |
 | `Tab` | Switch type tabs |
 | `Esc` | Close drawer |
+
+> **Platform notes**: `⌘` maps to `Win` on Windows and `Super` on Linux (the tray menu always shows the real combo).
+> Screenshot hotkey `Ctrl+Alt+4`: interactive area select on macOS (`screencapture`), full screen on Windows (GDI, all monitors),
+> on Linux it tries `gnome-screenshot` / `spectacle` / `maim` / `scrot` / `import` in order.
+> Paste writes the clipboard and synthesizes the paste keystroke automatically: native `SendInput` on Windows;
+> X11 needs `xdotool` on Linux (Wayland forbids synthetic input — copy-only fallback).
 
 ## Download
 

@@ -1,0 +1,441 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { invoke } from "@tauri-apps/api/core";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import type { Memo } from "./types";
+import { KIND_LABEL } from "./types";
+
+/**
+ * 晾衣架 — a rope across the top of the screen with memo cards hanging
+ * from clothespins.
+ *
+ * Interactions:
+ * - 挂: drag a drawer card up to the top (drawer side drives this)
+ * - 看: click a hanging card → full-content view with 复制/摘下
+ * - 摘: drag a card down out of the rope zone (ghost follows) or ✕
+ */
+export default function Clothesline() {
+  const [memos, setMemos] = useState<Memo[]>([]);
+  const [previewing, setPreviewing] = useState(false);
+  const [viewing, setViewing] = useState<Memo | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
+
+  const refresh = useCallback(async () => {
+    setMemos(await invoke<Memo[]>("list_memos"));
+    setPreviewing(false);
+  }, []);
+
+  useEffect(() => {
+    refresh();
+    const unlistens: UnlistenFn[] = [];
+    listen("memos-changed", refresh).then((u) => unlistens.push(u));
+    listen<number | null>("hang-preview", (e) => setPreviewing(e.payload != null)).then((u) =>
+      unlistens.push(u),
+    );
+    return () => unlistens.forEach((u) => u());
+  }, [refresh]);
+
+  const copy = useCallback(
+    async (m: Memo) => {
+      await invoke("copy_memo", { id: m.id });
+      setCopiedId(m.id);
+      setTimeout(() => setCopiedId((cur) => (cur === m.id ? null : cur)), 1200);
+    },
+    [],
+  );
+
+  const remove = useCallback(async (id: number) => {
+    setViewing((v) => (v?.id === id ? null : v));
+    await invoke("remove_memo", { id });
+  }, []);
+
+  const collapse = useCallback(async () => {
+    await invoke("toggle_clothesline_cmd");
+  }, []);
+
+  // native window.prompt dialogs never open inside WebView2/WKWebView —
+  // the composer is an inline card under the rope instead
+  const [composing, setComposing] = useState(false);
+
+  const saveMemo = useCallback(async (id: number, content: string) => {
+    await invoke("update_memo", { id, content }).catch((e) =>
+      console.warn("update_memo failed:", e),
+    );
+    setViewing(null);
+  }, []);
+
+  useEffect(() => {
+    if (!viewing) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setViewing(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [viewing]);
+
+  return (
+    <div className={"line" + (previewing ? " line-hot" : "")}>
+      <Rope hot={previewing || !!viewing || composing} />
+      {viewing ? (
+        <MemoDetail
+          memo={viewing}
+          copied={copiedId === viewing.id}
+          onCopy={() => copy(viewing)}
+          onClose={() => setViewing(null)}
+          onRemove={() => remove(viewing.id)}
+          onSave={(content) => saveMemo(viewing.id, content)}
+        />
+      ) : (
+        <>
+          <div className="line-cards">
+            {memos.length === 0 && !previewing ? (
+              <div className="line-empty">
+                晾衣架空着 — 从下面的抽屉按住一张卡片往上拖，松手就挂上
+              </div>
+            ) : (
+              memos.map((m, i) => (
+                <HangingCard
+                  key={m.id}
+                  memo={m}
+                  swing={i % 2 === 1}
+                  onOpen={() => setViewing(m)}
+                />
+              ))
+            )}
+            {previewing && <div className="line-ghost">松手挂上 ↩</div>}
+            {composing && (
+              <NoteComposer
+                onCancel={() => setComposing(false)}
+                onCommit={async (content) => {
+                  setComposing(false);
+                  await invoke("add_memo_direct", { content }).catch((e) =>
+                    console.warn("add_memo_direct failed:", e),
+                  );
+                }}
+              />
+            )}
+          </div>
+          <button
+            className="line-new"
+            title="新建便签"
+            onClick={() => setComposing((c) => !c)}
+          >
+            ＋ 便签
+          </button>
+          <button
+            className="line-collapse"
+            title="收起（快捷键可在设置中修改）"
+            onClick={collapse}
+          >
+            收起
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** Inline sticky-note composer pinned under the rope. */
+function NoteComposer({
+  onCommit,
+  onCancel,
+}: {
+  onCommit: (content: string) => void;
+  onCancel: () => void;
+}) {
+  const [text, setText] = useState("");
+  const submit = () => {
+    if (text.trim()) onCommit(text);
+    else onCancel();
+  };
+  return (
+    <div className="line-card composer">
+      <div className="line-pin" style={{ background: "#007aff" }} />
+      <span className="line-badge">新便签</span>
+      <textarea
+        className="line-compose"
+        autoFocus
+        placeholder="写点什么挂上？Esc 取消"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Escape") {
+            e.preventDefault();
+            onCancel();
+          } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+            e.preventDefault();
+            submit();
+          }
+        }}
+      />
+      <div className="line-compose-foot">
+        <button className="btn ghost" onClick={onCancel}>
+          取消
+        </button>
+        <button className="btn primary" onClick={submit} disabled={!text.trim()}>
+          挂上 (Ctrl+↵)
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function Rope({ hot }: { hot: boolean }) {
+  return (
+    <svg className="line-rope" preserveAspectRatio="none" viewBox="0 0 1000 26">
+      <path
+        d="M0,2 C 250,26 750,26 1000,2"
+        fill="none"
+        className={"line-rope-path" + (hot ? " hot" : "")}
+      />
+      <circle cx="0" cy="2" r="5" className="line-rope-anchor" />
+      <circle cx="1000" cy="2" r="5" className="line-rope-anchor" />
+    </svg>
+  );
+}
+
+/**
+ * A hanging memo card. Click opens the detail view; dragging down past the
+ * rope zone takes the memo off the line (ghost follows the pointer).
+ *
+ * Drag tracking lives on window-level listeners, not element handlers: this
+ * window is never focused (focus:false), and Chromium does not honor DOM
+ * pointer capture for an inactive window — moves/ups stop reaching the card
+ * element once the cursor leaves it. Window listeners receive the full
+ * stream regardless (verified against WebView2).
+ */
+function HangingCard({
+  memo,
+  swing,
+  onOpen,
+}: {
+  memo: Memo;
+  swing: boolean;
+  onOpen: () => void;
+}) {
+  const [off, setOff] = useState(false); // being taken off (render only)
+  const [ghost, setGhost] = useState<{ x: number; y: number } | null>(null);
+  const drag = useRef<{ startY: number; moved: boolean; off: boolean } | null>(null);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const st = drag.current;
+      if (!st || (e.buttons & 1) === 0) return;
+      const dy = e.screenY - st.startY;
+      if (!st.moved) {
+        if (Math.abs(dy) < 14) return;
+        st.moved = true;
+        // grab the OS cursor so events keep flowing outside the 230px window
+        getCurrentWindow().setCursorGrab(true).catch(() => {});
+      }
+      setGhost({ x: e.screenX - window.screenX, y: e.screenY - window.screenY });
+      st.off = dy > 70;
+      setOff(st.off);
+    };
+    const onFinish = () => {
+      const st = drag.current;
+      if (!st) return;
+      drag.current = null;
+      setGhost(null);
+      setOff(false);
+      getCurrentWindow().setCursorGrab(false).catch(() => {});
+      if (st.moved) {
+        // dragged — take it off when pulled past the rope zone, never a click
+        if (st.off) {
+          invoke("remove_memo", { id: memo.id }).catch((err) =>
+            console.warn("[tietie] remove_memo failed:", err),
+          );
+        }
+        return;
+      }
+      onOpen();
+    };
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onFinish, true);
+    window.addEventListener("pointercancel", onFinish, true);
+    return () => {
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onFinish, true);
+      window.removeEventListener("pointercancel", onFinish, true);
+    };
+  }, [memo.id, onOpen]);
+
+  return (
+    <>
+      <div
+        className={
+          "line-card" + (swing ? " swing" : "") + (off ? " dropping" : "") + (ghost ? " lifted" : "")
+        }
+        onPointerDown={(e) => {
+          if (e.button !== 0) return;
+          drag.current = { startY: e.screenY, moved: false, off: false };
+        }}
+        title="单击查看 · 按住往下拖摘下来"
+      >
+        <div className="line-pin" style={{ background: memo.color }} />
+        <span className="line-badge">
+          {KIND_LABEL[memo.kind as keyof typeof KIND_LABEL] ?? "文本"}
+        </span>
+        <CardBody memo={memo} />
+        <button
+          className="line-x"
+          onClick={(e) => {
+            e.stopPropagation();
+            invoke("remove_memo", { id: memo.id }).catch(() => {});
+          }}
+          title="摘下来"
+        >
+          ✕
+        </button>
+      </div>
+      {ghost &&
+        createPortal(
+          <div className="drag-ghost" style={{ left: ghost.x, top: ghost.y }}>
+            {off ? "松手摘下 ✕" : "拖出绳区摘下"}
+          </div>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+function MemoDetail({
+  memo,
+  copied,
+  onCopy,
+  onClose,
+  onRemove,
+  onSave,
+}: {
+  memo: Memo;
+  copied: boolean;
+  onCopy: () => void;
+  onClose: () => void;
+  onRemove: () => void;
+  onSave: (content: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(memo.content);
+
+  const canEdit = memo.kind !== "image"; // image memos carry no editable text
+
+  return (
+    <div className="line-detail" onClick={(e) => e.stopPropagation()}>
+      <div className="line-detail-head">
+        <span className="line-badge" style={{ position: "static" }}>
+          {KIND_LABEL[memo.kind as keyof typeof KIND_LABEL] ?? "文本"}
+        </span>
+        <span className="line-detail-time">{relTime(memo.created_at)}</span>
+        <div className="line-detail-actions">
+          {canEdit && !editing && (
+            <button className="btn ghost" onClick={() => setEditing(true)}>
+              编辑
+            </button>
+          )}
+          {editing ? (
+            <>
+              <button className="btn primary" onClick={() => onSave(draft)}>
+                保存 (⌘↵)
+              </button>
+              <button className="btn ghost" onClick={() => setEditing(false)}>
+                取消编辑
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="btn primary" onClick={onCopy}>
+                {copied ? "已复制 ✓" : "复制"}
+              </button>
+              <button className="btn ghost" onClick={onRemove}>
+                摘下来
+              </button>
+            </>
+          )}
+          <button className="btn ghost" onClick={onClose}>
+            关闭 (Esc)
+          </button>
+        </div>
+      </div>
+      {editing ? (
+        <div className="line-detail-body">
+          <textarea
+            className="line-detail-edit"
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setEditing(false);
+                setDraft(memo.content);
+              } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                onSave(draft);
+              }
+            }}
+          />
+        </div>
+      ) : (
+        <DetailBody memo={memo} />
+      )}
+    </div>
+  );
+}
+
+function DetailBody({ memo }: { memo: Memo }) {
+  if (memo.kind === "image" && memo.preview) {
+    return (
+      <div className="line-detail-body">
+        <img
+          className="line-detail-img"
+          src={`data:image/png;base64,${memo.preview}`}
+          alt={memo.content}
+        />
+      </div>
+    );
+  }
+  if (memo.kind === "color") {
+    return (
+      <div className="line-detail-body line-color">
+        <span className="line-swatch big" style={{ background: memo.content }} />
+        <code>{memo.content}</code>
+      </div>
+    );
+  }
+  return (
+    <div className="line-detail-body">
+      <pre className="line-detail-text">{memo.content}</pre>
+    </div>
+  );
+}
+
+function CardBody({ memo }: { memo: Memo }) {
+  if (memo.kind === "image" && memo.preview) {
+    return (
+      <div
+        className="line-img"
+        style={{ backgroundImage: `url(data:image/png;base64,${memo.preview})` }}
+      />
+    );
+  }
+  if (memo.kind === "color") {
+    return (
+      <div className="line-color">
+        <span className="line-swatch" style={{ background: memo.content }} />
+        <code>{memo.content}</code>
+      </div>
+    );
+  }
+  const text = memo.content.replace(/\s+/g, " ").trim();
+  return <div className="line-text">{text.length > 90 ? text.slice(0, 90) + "…" : text}</div>;
+}
+
+function relTime(unixSec: number): string {
+  const diff = Math.floor(Date.now() / 1000 - unixSec);
+  if (diff < 60) return "刚刚挂上";
+  if (diff < 3600) return `${Math.floor(diff / 60)} 分钟前挂上`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} 小时前挂上`;
+  return new Date(unixSec * 1000).toLocaleDateString();
+}

@@ -906,3 +906,455 @@ button {
   margin: 0;
   font-size: 12px;
 }
+
+/* ───────────────────────── 晾衣架 clothesline ───────────────────────── */
+
+.line {
+  position: relative;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.line-rope {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  width: 100%;
+  height: 26px;
+  pointer-events: none;
+}
+
+.line-rope-path {
+  stroke: var(--text-2);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  transition: stroke 0.15s;
+}
+
+.line-rope-path.hot {
+  stroke: var(--accent);
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 6px var(--accent-dim));
+}
+
+.line-rope-anchor {
+  fill: var(--text-3);
+}
+
+.line-hot .line-rope-path {
+  stroke: var(--accent);
+  stroke-width: 3.5;
+}
+
+.line-cards {
+  position: absolute;
+  top: 30px;
+  left: 24px;
+  right: 88px;
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 6px 4px 10px;
+  scrollbar-width: none;
+}
+
+.line-cards::-webkit-scrollbar {
+  display: none;
+}
+
+.line-card {
+  position: relative;
+  flex: 0 0 auto;
+  width: 176px;
+  min-height: 96px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-stroke);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  padding: 20px 12px 10px;
+  cursor: grab;
+  transform-origin: top center;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    opacity 0.18s;
+  animation: line-sway 5.2s ease-in-out infinite alternate;
+}
+
+.line-card.swing {
+  animation-duration: 6.1s;
+  animation-delay: -2.3s;
+}
+
+.line-card:hover {
+  transform: translateY(2px) rotate(0deg);
+  animation-play-state: paused;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+}
+
+.line-card.dropping {
+  opacity: 0.35;
+  transform: translateY(26px);
+}
+
+.line-card.copied {
+  outline: 2px solid var(--accent);
+}
+
+@keyframes line-sway {
+  from {
+    transform: rotate(-1.1deg);
+  }
+  to {
+    transform: rotate(1.1deg);
+  }
+}
+
+/* clothespin holding the card onto the rope */
+.line-pin {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  width: 12px;
+  height: 22px;
+  margin-left: -6px;
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 1.5px rgba(0, 0, 0, 0.22),
+    0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.line-badge {
+  position: absolute;
+  top: 5px;
+  left: 10px;
+  font-size: 10px;
+  color: var(--text-3);
+}
+
+.line-text {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text);
+  word-break: break-all;
+  max-height: 66px;
+  overflow: hidden;
+}
+
+.line-img {
+  width: 100%;
+  height: 64px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  border-radius: 6px;
+}
+
+.line-color {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.line-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid var(--card-stroke);
+}
+
+.line-color code {
+  font-size: 12px;
+}
+
+.line-x {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 2px 5px;
+  border-radius: 5px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+
+.line-card:hover .line-x {
+  opacity: 1;
+}
+
+.line-x:hover {
+  color: var(--text);
+  background: var(--accent-dim);
+}
+
+.line-copied-tip {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  font-size: 10px;
+  color: var(--accent);
+}
+
+.line-empty {
+  align-self: flex-start;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-3);
+  background: var(--bar-bg);
+  border: 1px dashed var(--card-stroke);
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+
+.line-ghost {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px dashed var(--accent);
+  border-radius: 10px;
+  padding: 10px 16px;
+  animation: line-pulse 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes line-pulse {
+  from {
+    opacity: 0.65;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.line-collapse {
+  position: absolute;
+  right: 10px;
+  top: 6px;
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.line-collapse:hover {
+  color: var(--text);
+  background: var(--accent-dim);
+}
+
+/* drawer body while a card is being dragged up to the line */
+body.dragging-hang,
+body.dragging-hang * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+/* ───────── drag ghost (follows the cursor, both windows) ───────── */
+
+.drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  transform: translate(-50%, 26px);
+  pointer-events: none;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+  color: var(--text);
+  background: var(--card-bg);
+  border: 1px solid var(--accent);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
+  animation: line-pulse 0.8s ease-in-out infinite alternate;
+}
+
+.card.lifting {
+  opacity: 0.45;
+  animation: none;
+}
+
+/* ───────── memo detail view (inside the line window) ───────── */
+
+.line-detail {
+  position: absolute;
+  inset: 30px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--card-stroke);
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.line-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--card-stroke);
+  flex: 0 0 auto;
+}
+
+.line-detail-time {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.line-detail-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+}
+
+.line-detail-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 10px 14px;
+  user-select: text;
+}
+
+.line-detail-text {
+  margin: 0;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text);
+}
+
+.line-detail-img {
+  display: block;
+  max-width: 100%;
+  max-height: 140px;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+
+.line-swatch.big {
+  width: 56px;
+  height: 56px;
+}
+
+.btn {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 7px;
+  cursor: default;
+}
+
+.btn.primary {
+  color: #fff;
+  background: var(--accent);
+}
+
+.btn.ghost {
+  color: var(--text-2);
+  border: 1px solid var(--card-stroke);
+}
+
+/* ───────── settings subhead + hotkey rows + autostart ───────── */
+
+.settings-subhead {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  margin: 14px 0 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--card-stroke);
+}
+
+.settings-tag.err {
+  color: #ff3b30;
+  border: 1px solid rgba(255, 59, 48, 0.4);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-size: 11px;
+}
+
+/* ───────── clothesline new-note button + memo editing ───────── */
+
+.line-new {
+  position: absolute;
+  right: 60px;
+  top: 6px;
+  font-size: 11px;
+  color: var(--text-3);
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: transparent;
+}
+
+.line-new:hover {
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.line-detail-edit {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  border: none;
+  outline: none;
+  resize: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 0;
+}
+
+/* ───────── inline note composer + folder input (no native dialogs) ───────── */
+
+.line-card.composer {
+  width: 240px;
+  cursor: default;
+}
+
+.line-card.composer:hover {
+  transform: none;
+}
+
+.line-compose {
+  width: 100%;
+  min-height: 56px;
+  border: 1px solid var(--card-stroke);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 6px 8px;
+  outline: none;
+  resize: vertical;
+}
+
+.line-compose:focus {
+  border-color: var(--accent);
+}
+
+.line-compose-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.chip-input {
+  height: 24px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 12px;
+  padding: 0 10px;
+  outline: none;
+  width: 150px;
+}

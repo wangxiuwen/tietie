@@ -4,6 +4,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { ClipItem } from "./types";
 import { KIND_LABEL } from "./types";
+import { MOD } from "./platform";
 
 const RECENT_COUNT = 12;
 
@@ -105,7 +106,7 @@ export default function TrayPopover() {
 
       <div className="po-foot">
         <span className="po-foot-hint">
-          <span className="kbd">⌘⇧V</span> 唤起完整面板
+          <span className="kbd">{MOD}</span><span className="kbd">⇧</span><span className="kbd">V</span> 唤起完整面板
         </span>
         <button className="po-foot-btn" onClick={() => invoke("quit_app")}>
           退出

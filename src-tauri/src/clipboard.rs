@@ -72,22 +72,24 @@ pub fn start_polling(app: AppHandle, conn: Arc<Mutex<rusqlite::Connection>>) {
                 }
             }
 
-            // Then image
+            // Then image. Hash the raw pixels + dims (cheap) — encoding the
+            // full PNG on every poll just to compare would burn serious CPU
+            // while a large image sits in the clipboard.
             if let Ok(img) = clipboard.get_image() {
                 if img.width == 0 || img.height == 0 {
                     continue;
                 }
-                let png = match encode_png(&img) {
-                    Ok(p) => p,
-                    Err(e) => {
-                        log::warn!("encode png: {e}");
-                        continue;
-                    }
-                };
-                let hash = hash_bytes(&png);
+                let hash = hash_image(&img);
                 if Some(&hash) != last_image_hash.as_ref() {
                     last_image_hash = Some(hash.clone());
                     last_text_hash = None;
+                    let png = match encode_png(&img) {
+                        Ok(p) => p,
+                        Err(e) => {
+                            log::warn!("encode png: {e}");
+                            continue;
+                        }
+                    };
                     let thumb = thumbnail_b64(&img, 320);
                     let meta = format!("{}x{}", img.width, img.height);
                     let item = db::InsertItem {
@@ -174,10 +176,13 @@ fn hash_str(s: &str) -> String {
     format!("t:{}", hex(&h.finalize()))
 }
 
-fn hash_bytes(b: &[u8]) -> String {
+/// Hash raw pixel buffer + dimensions — avoids a full PNG re-encode per poll.
+fn hash_image(img: &ImageData) -> String {
     let mut h = Sha256::new();
-    h.update(b);
-    format!("i:{}", hex(&h.finalize()))
+    h.update(img.width.to_le_bytes());
+    h.update(img.height.to_le_bytes());
+    h.update(&img.bytes);
+    format!("i:{}x{}:{}", img.width, img.height, hex(&h.finalize()))
 }
 
 fn hex(b: &[u8]) -> String {

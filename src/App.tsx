@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -7,6 +8,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 // clipboard plugin no longer needed at JS layer — Rust paste_item handles it
 import type { ClipItem, Folder, ItemKind } from "./types";
 import { KIND_LABEL } from "./types";
+import { IS_MAC, MOD } from "./platform";
 
 type FilterTab = "all" | ItemKind;
 
@@ -58,6 +60,10 @@ export default function App() {
       setDrawerVisible(false);
       setEditing(null);
       setSettingsOpen(false);
+      // The drawer can hide mid-drag (Esc, focus loss) while the OS cursor
+      // is grabbed — release it or the hidden window keeps eating the mouse.
+      getCurrentWindow().setCursorGrab(false).catch(() => {});
+      document.body.classList.remove("dragging-hang");
     }).then((u) => unlistens.push(u));
     listen<null>("show-settings", () => setSettingsOpen(true)).then((u) => unlistens.push(u));
     return () => unlistens.forEach((u) => u());
@@ -300,29 +306,49 @@ type UpdateStatus =
   | { kind: "error"; msg: string };
 
 function formatHotkey(s: string): string {
-  return s
-    .split("+")
-    .map((p) => p.trim())
-    .map((p) => {
-      if (p === "Super" || p === "Meta" || p === "Cmd" || p === "Command") return "⌘";
-      if (p === "Shift") return "⇧";
-      if (p === "Control" || p === "Ctrl") return "⌃";
-      if (p === "Alt" || p === "Option") return "⌥";
-      if (p.startsWith("Key")) return p.slice(3);
-      if (p.startsWith("Digit")) return p.slice(5);
-      return p;
-    })
-    .join("");
+  // macOS: "Super+Shift+KeyV" → "⌘⇧V"; elsewhere → "Win+Shift+V" / "Ctrl+Alt+4".
+  const parts = s.split("+").map((p) => p.trim()).filter(Boolean);
+  if (IS_MAC) {
+    const glyph: Record<string, string> = {
+      Super: "⌘", Meta: "⌘", Cmd: "⌘", Command: "⌘",
+      Shift: "⇧", Control: "⌃", Ctrl: "⌃", Alt: "⌥", Option: "⌥",
+    };
+    return parts.map((p) => glyph[p] ?? trimCode(p)).join("");
+  }
+  const name: Record<string, string> = {
+    Super: "Win", Meta: "Win", Cmd: "Win", Command: "Win",
+    Shift: "Shift", Control: "Ctrl", Ctrl: "Ctrl", Alt: "Alt", Option: "Alt",
+  };
+  const keys = parts.map((p) => name[p] ?? trimCode(p));
+  const mods = keys.slice(0, -1);
+  const last = keys[keys.length - 1];
+  return `${mods.map((m) => m + "+").join("")}${last}`;
+}
+
+function trimCode(p: string): string {
+  if (p.startsWith("Key")) return p.slice(3);
+  if (p.startsWith("Digit")) return p.slice(5);
+  return p;
+}
+
+interface HotkeysInfo {
+  drawer: string;
+  screenshot: string;
+  clothesline: string;
+  screenshot_registered: boolean;
+  clothesline_registered: boolean;
 }
 
 function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [version, setVersion] = useState<string>("");
   const [acc, setAcc] = useState<boolean | null>(null);
   const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
-  const [hotkey, setHotkey] = useState<string>("");
-  const [recording, setRecording] = useState(false);
-  const [pendingHotkey, setPendingHotkey] = useState<string | null>(null);
-  const [hotkeyErr, setHotkeyErr] = useState<string | null>(null);
+  const [hks, setHks] = useState<HotkeysInfo | null>(null);
+  const [autostart, setAutostart] = useState<boolean>(false);
+
+  const reloadHotkeys = useCallback(async () => {
+    setHks(await invoke<HotkeysInfo>("get_hotkeys"));
+  }, []);
 
   const recheck = useCallback(async () => {
     const ok = await invoke<boolean>("check_accessibility");
@@ -350,12 +376,12 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     invoke<string>("app_version").then(setVersion);
-    invoke<string>("get_drawer_hotkey").then(setHotkey);
+    reloadHotkeys();
+    invoke<boolean>("autostart_enabled").then(setAutostart);
     recheck();
     checkForUpdate();
     const t = setInterval(recheck, 1500);
     const onKey = (e: KeyboardEvent) => {
-      if (recording) return; // capture handler owns the keys
       if (e.key === "Escape") {
         e.stopPropagation();
         onClose();
@@ -365,85 +391,17 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
     return () => {
       clearInterval(t);
       window.removeEventListener("keydown", onKey, true);
-      // If the panel unmounts mid-capture, restore the previous hotkey
-      // so the global shortcut isn't left dangling.
-      if (recording) {
-        invoke("cancel_hotkey_capture").catch(() => {});
-      }
     };
-  }, [recheck, onClose, checkForUpdate, recording]);
+  }, [recheck, onClose, checkForUpdate, reloadHotkeys]);
 
-  const startRecording = useCallback(async () => {
-    setHotkeyErr(null);
-    setPendingHotkey(null);
-    // Suspend the current global drawer hotkey so pressing it during capture
-    // doesn't fire the OS handler (which would close the drawer).
-    await invoke("begin_hotkey_capture").catch(() => {});
-    setRecording(true);
-  }, []);
-
-  const cancelRecording = useCallback(async () => {
-    setRecording(false);
-    setPendingHotkey(null);
-    setHotkeyErr(null);
-    await invoke("cancel_hotkey_capture").catch(() => {});
-  }, []);
-
-  const confirmRecording = useCallback(async () => {
-    if (!pendingHotkey) {
-      cancelRecording();
-      return;
-    }
+  const toggleAutostart = useCallback(async (on: boolean) => {
+    setAutostart(on);
     try {
-      await invoke("set_drawer_hotkey", { value: pendingHotkey });
-      setHotkey(pendingHotkey);
-      setRecording(false);
-      setPendingHotkey(null);
-      setHotkeyErr(null);
-    } catch (err) {
-      setHotkeyErr(String(err));
-      // re-register prior hotkey on failure so global stays alive
-      await invoke("cancel_hotkey_capture").catch(() => {});
-      setRecording(false);
-      setPendingHotkey(null);
+      await invoke("set_autostart", { enabled: on });
+    } catch (e) {
+      setAutostart(!on);
+      console.warn("set_autostart failed:", e);
     }
-  }, [pendingHotkey, cancelRecording]);
-
-  const captureHotkey = useCallback(
-    (e: React.KeyboardEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      if (e.key === "Escape") {
-        cancelRecording();
-        return;
-      }
-      if (e.key === "Enter") {
-        confirmRecording();
-        return;
-      }
-      const mods: string[] = [];
-      if (e.metaKey) mods.push("Super");
-      if (e.ctrlKey) mods.push("Control");
-      if (e.altKey) mods.push("Alt");
-      if (e.shiftKey) mods.push("Shift");
-      const c = e.code;
-      const isKey =
-        c.startsWith("Key") || c.startsWith("Digit") || /^F\d+$/.test(c) || c === "Space";
-      if (!isKey) return; // wait for a real key, ignore standalone modifier presses
-      if (mods.length === 0) {
-        setHotkeyErr("全局快捷键需要至少一个修饰键");
-        return;
-      }
-      // Stage the combo — don't save until user clicks 确定 / hits Enter.
-      setPendingHotkey([...mods, c].join("+"));
-      setHotkeyErr(null);
-    },
-    [cancelRecording, confirmRecording],
-  );
-
-  const grant = useCallback(async () => {
-    await invoke("request_accessibility");
-    await invoke("open_accessibility_settings");
   }, []);
 
   const downloadAndInstall = useCallback(async () => {
@@ -470,6 +428,11 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
       setUpd({ kind: "error", msg: e instanceof Error ? e.message : String(e) });
     }
   }, [upd]);
+
+  const grant = useCallback(async () => {
+    await invoke("request_accessibility");
+    await invoke("open_accessibility_settings");
+  }, []);
 
   return (
     <div className="settings-overlay" onClick={onClose}>
@@ -498,9 +461,7 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
               {upd.kind === "downloading" && (
                 <span className="settings-tag muted">下载 {upd.pct}%</span>
               )}
-              {upd.kind === "ready" && (
-                <span className="settings-tag ok">即将重启…</span>
-              )}
+              {upd.kind === "ready" && <span className="settings-tag ok">即将重启…</span>}
               {(upd.kind === "error" || upd.kind === "idle") && (
                 <button className="btn ghost" onClick={checkForUpdate}>检查更新</button>
               )}
@@ -512,63 +473,201 @@ function SettingsPanel({ onClose }: { onClose: () => void }) {
           {upd.kind === "available" && upd.notes && (
             <pre className="settings-notes">{upd.notes}</pre>
           )}
+
+          <div className="settings-subhead">快捷键（可自定义）</div>
+          <HotkeyRow
+            kind="drawer"
+            label="唤起剪切板抽屉"
+            value={hks?.drawer ?? ""}
+            onSaved={reloadHotkeys}
+          />
+          <HotkeyRow
+            kind="screenshot"
+            label="截图到剪切板"
+            value={hks?.screenshot ?? ""}
+            registered={hks?.screenshot_registered ?? true}
+            onSaved={reloadHotkeys}
+          />
+          <HotkeyRow
+            kind="clothesline"
+            label="晾衣架开关"
+            value={hks?.clothesline ?? ""}
+            registered={hks?.clothesline_registered ?? true}
+            onSaved={reloadHotkeys}
+          />
+
+          <div className="settings-subhead">通用</div>
           <div className="settings-row">
-            <span className="settings-label">辅助功能</span>
+            <span className="settings-label">开机自启</span>
             <span className="settings-value">
-              {acc === null ? (
-                <span className="settings-tag muted">检测中…</span>
-              ) : acc ? (
-                <span className="settings-tag ok">已授权</span>
-              ) : (
-                <button className="btn primary" onClick={grant}>去授权</button>
-              )}
+              <button
+                className={"btn " + (autostart ? "primary" : "ghost")}
+                onClick={() => toggleAutostart(!autostart)}
+              >
+                {autostart ? "已开启" : "已关闭"}
+              </button>
             </span>
           </div>
-          {acc === false && (
-            <p className="settings-hint">
-              粘贴功能需要"辅助功能"权限。点击「去授权」会打开系统设置 → 隐私与安全 → 辅助功能,把 Tietie 开关打开即可。授权后状态会自动刷新。
-            </p>
+
+          {IS_MAC && (
+            <>
+              <div className="settings-row">
+                <span className="settings-label">辅助功能</span>
+                <span className="settings-value">
+                  {acc === null ? (
+                    <span className="settings-tag muted">检测中…</span>
+                  ) : acc ? (
+                    <span className="settings-tag ok">已授权</span>
+                  ) : (
+                    <button className="btn primary" onClick={grant}>去授权</button>
+                  )}
+                </span>
+              </div>
+              {acc === false && (
+                <p className="settings-hint">
+                  粘贴功能需要「辅助功能」权限。点击「去授权」打开系统设置 → 隐私与安全 →
+                  辅助功能，把 Tietie 打开即可，授权后状态自动刷新。
+                </p>
+              )}
+            </>
           )}
-          <div className="settings-row">
-            <span className="settings-label">唤起快捷键</span>
-            <span className="settings-value">
-              {recording ? (
-                <>
-                  <input
-                    className="hotkey-capture"
-                    autoFocus
-                    readOnly
-                    placeholder="按下组合 (Esc 取消 / Enter 确定)…"
-                    value={pendingHotkey ? formatHotkey(pendingHotkey) : ""}
-                    onKeyDown={captureHotkey}
-                  />
-                  <button
-                    className="btn primary"
-                    onClick={confirmRecording}
-                    disabled={!pendingHotkey}
-                  >
-                    确定
-                  </button>
-                  <button className="btn ghost" onClick={cancelRecording}>
-                    取消
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="hotkey-badge">{hotkey ? formatHotkey(hotkey) : "..."}</span>
-                  <button className="btn ghost" onClick={startRecording}>
-                    修改
-                  </button>
-                </>
-              )}
-            </span>
-          </div>
-          {hotkeyErr && <pre className="settings-err">{hotkeyErr}</pre>}
         </div>
       </div>
     </div>
   );
 }
+
+/** One rebindable hotkey row: current combo, 修改 → capture → 确定/取消. */
+function HotkeyRow({
+  kind,
+  label,
+  value,
+  registered = true,
+  onSaved,
+}: {
+  kind: string;
+  label: string;
+  value: string;
+  registered?: boolean;
+  onSaved: () => void;
+}) {
+  const [recording, setRecording] = useState(false);
+  const [pending, setPending] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const startRecording = useCallback(async () => {
+    setErr(null);
+    setPending(null);
+    // suspend the current global combo so pressing it during capture
+    // doesn't fire the OS handler (e.g. close the drawer)
+    await invoke("begin_hotkey_capture", { kind }).catch(() => {});
+    setRecording(true);
+  }, [kind]);
+
+  const cancelRecording = useCallback(async () => {
+    setRecording(false);
+    setPending(null);
+    setErr(null);
+    await invoke("cancel_hotkey_capture", { kind }).catch(() => {});
+  }, [kind]);
+
+  const confirmRecording = useCallback(async () => {
+    if (!pending) {
+      cancelRecording();
+      return;
+    }
+    try {
+      await invoke("set_hotkey", { kind, value: pending });
+      setRecording(false);
+      setPending(null);
+      setErr(null);
+      onSaved();
+    } catch (e) {
+      setErr(String(e));
+      await invoke("cancel_hotkey_capture", { kind }).catch(() => {});
+      setRecording(false);
+      setPending(null);
+    }
+  }, [pending, cancelRecording, kind, onSaved]);
+
+  // restore the global combo if the row unmounts mid-capture
+  useEffect(() => {
+    return () => {
+      if (recording) {
+        invoke("cancel_hotkey_capture", { kind }).catch(() => {});
+      }
+    };
+  }, [recording, kind]);
+
+  const captureHotkey = useCallback(
+    (e: React.KeyboardEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.key === "Escape") {
+        cancelRecording();
+        return;
+      }
+      if (e.key === "Enter") {
+        confirmRecording();
+        return;
+      }
+      const mods: string[] = [];
+      if (e.metaKey) mods.push("Super");
+      if (e.ctrlKey) mods.push("Control");
+      if (e.altKey) mods.push("Alt");
+      if (e.shiftKey) mods.push("Shift");
+      const c = e.code;
+      const isKey =
+        c.startsWith("Key") || c.startsWith("Digit") || /^F\d+$/.test(c) || c === "Space";
+      if (!isKey) return; // wait for a real key, ignore standalone modifier presses
+      if (mods.length === 0) {
+        setErr("全局快捷键需要至少一个修饰键");
+        return;
+      }
+      setPending([...mods, c].join("+"));
+      setErr(null);
+    },
+    [cancelRecording, confirmRecording],
+  );
+
+  return (
+    <div className="settings-row">
+      <span className="settings-label">{label}</span>
+      <span className="settings-value">
+        {recording ? (
+          <>
+            <input
+              className="hotkey-capture"
+              autoFocus
+              readOnly
+              placeholder="按下组合 (Esc 取消 / Enter 确定)…"
+              value={pending ? formatHotkey(pending) : ""}
+              onKeyDown={captureHotkey}
+            />
+            <button className="btn primary" onClick={confirmRecording} disabled={!pending}>
+              确定
+            </button>
+            <button className="btn ghost" onClick={cancelRecording}>
+              取消
+            </button>
+          </>
+        ) : (
+          <>
+            <span className="hotkey-badge">{value ? formatHotkey(value) : "..."}</span>
+            {!registered && (
+              <span className="settings-tag err">注册失败（组合被占用），请修改</span>
+            )}
+            <button className="btn ghost" onClick={startRecording}>
+              修改
+            </button>
+          </>
+        )}
+      </span>
+      {err && <pre className="settings-err">{err}</pre>}
+    </div>
+  );
+}
+
 
 function Header({
   query,
@@ -595,7 +694,7 @@ function Header({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <span className="kbd">⌘F</span>
+        <span className="kbd">{MOD}F</span>
       </label>
       <div className="type-tabs">
         {TYPE_TABS.map((t) => (
@@ -630,6 +729,15 @@ function FolderChips({
   setFolderId: (id: number | "pinned" | null) => void;
   counts: { pinned: number };
 }) {
+  // native prompt() dialogs never open inside WebView2 — inline input instead
+  const [adding, setAdding] = useState(false);
+  const [name, setName] = useState("");
+  const submit = async () => {
+    const n = name.trim();
+    setAdding(false);
+    setName("");
+    if (n) await invoke("create_folder", { name: n, color: pickColor() });
+  };
   return (
     <div className="folders">
       <button
@@ -654,16 +762,32 @@ function FolderChips({
           {f.name}
         </button>
       ))}
-      <button
-        className="chip ghost"
-        onClick={async () => {
-          const name = prompt("新建文件夹名称");
-          if (!name) return;
-          await invoke("create_folder", { name, color: pickColor() });
-        }}
-      >
-        + 新建
-      </button>
+      {adding ? (
+        <input
+          className="chip-input"
+          autoFocus
+          placeholder="文件夹名称，回车新建"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => {
+            if (!name.trim()) setAdding(false);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              submit();
+            } else if (e.key === "Escape") {
+              e.preventDefault();
+              setAdding(false);
+              setName("");
+            }
+          }}
+        />
+      ) : (
+        <button className="chip ghost" onClick={() => setAdding(true)}>
+          + 新建
+        </button>
+      )}
     </div>
   );
 }
@@ -689,12 +813,94 @@ function Card({
   onDelete: () => void;
   onPaste: () => void;
 }) {
+  // Drag-to-hang tracking lives on window-level listeners, not element
+  // handlers: WebView2 only honors DOM pointer capture while the window is
+  // properly activated, and a freshly shown drawer isn't always — moves/ups
+  // then stop reaching the card and the drop is silently lost. Window
+  // listeners receive the full stream regardless (verified on real hardware).
+  const drag = useRef<{
+    startY: number;
+    moved: boolean;
+    inZone: boolean;
+  } | null>(null);
+  const suppressClick = useRef(false);
+  const [ghost, setGhost] = useState<{ x: number; y: number; inZone: boolean } | null>(null);
+
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const st = drag.current;
+      if (!st || (e.buttons & 1) === 0) return;
+      if (!st.moved) {
+        if (Math.abs(st.startY - e.screenY) < 12) return;
+        st.moved = true;
+        // grab the OS cursor so events keep flowing after leaving the window
+        getCurrentWindow().setCursorGrab(true).catch(() => {});
+        document.body.classList.add("dragging-hang");
+      }
+      // Top zone = near the clothesline. WebView2 may clamp client coords
+      // at the window edge, so also accept "clearly dragged out the top".
+      const screenTop = e.screenY < 320;
+      const outTop = e.clientY <= 1 && st.startY - e.screenY > 140;
+      const inZone = screenTop || outTop;
+      if (inZone !== st.inZone) {
+        st.inZone = inZone;
+        invoke("hang_preview", { id: inZone ? item.id : null }).catch(() => {});
+      }
+      // ghost chip follows the cursor via screen coords → client space,
+      // which keeps tracking even outside this window
+      setGhost({
+        x: e.screenX - window.screenX,
+        y: e.screenY - window.screenY,
+        inZone,
+      });
+    };
+    const onFinish = (hangIfZone: boolean) => {
+      const st = drag.current;
+      if (!st) return;
+      drag.current = null;
+      document.body.classList.remove("dragging-hang");
+      getCurrentWindow().setCursorGrab(false).catch(() => {});
+      setGhost(null);
+      if (st.moved) {
+        suppressClick.current = true;
+        setTimeout(() => (suppressClick.current = false), 150);
+        if (hangIfZone && st.inZone) {
+          invoke("hang_item", { id: item.id })
+            .catch(() => {})
+            .finally(() => invoke("hang_preview", { id: null }).catch(() => {}));
+        } else {
+          invoke("hang_preview", { id: null }).catch(() => {});
+        }
+      }
+    };
+    const onUp = () => onFinish(true);
+    const onCancel = () => onFinish(false);
+    window.addEventListener("pointermove", onMove, true);
+    window.addEventListener("pointerup", onUp, true);
+    window.addEventListener("pointercancel", onCancel, true);
+    return () => {
+      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointerup", onUp, true);
+      window.removeEventListener("pointercancel", onCancel, true);
+    };
+  }, [item.id]);
+
   return (
     <div
       data-idx={idx}
-      className={"card" + (selected ? " selected" : "")}
-      onClick={onClick}
-      onDoubleClick={onDoubleClick}
+      className={"card" + (selected ? " selected" : "") + (ghost ? " lifting" : "")}
+      onClick={() => {
+        if (suppressClick.current) return;
+        onClick();
+      }}
+      onDoubleClick={() => {
+        if (!suppressClick.current) onDoubleClick();
+      }}
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        drag.current = { startY: e.screenY, moved: false, inZone: false };
+      }}
+      title="回车粘贴 · 按住往上拖可以挂到晾衣架"
     >
       <span className={"badge " + item.kind}>{KIND_LABEL[item.kind]}</span>
       {item.pinned && (
@@ -707,13 +913,20 @@ function Card({
         <span className="src">{item.source_app || "—"}</span>
         <span>{relTime(item.used_at)}</span>
       </div>
-      {idx < 10 && <div className="index-kbd">⌘{idx === 9 ? 0 : idx + 1}</div>}
+      {idx < 10 && <div className="index-kbd">{MOD}{idx === 9 ? 0 : idx + 1}</div>}
       <div className="actions" onClick={(e) => e.stopPropagation()}>
         <button className="action primary" onClick={onPaste}>↵ 粘贴</button>
         <button className="action" onClick={onPin} title="置顶">📌</button>
         <button className="action" onClick={onEdit} title="编辑">✎</button>
         <button className="action" onClick={onDelete} title="删除">🗑</button>
       </div>
+      {ghost &&
+        createPortal(
+          <div className="drag-ghost" style={{ left: ghost.x, top: ghost.y }}>
+            {ghost.inZone ? "松手挂上 ↩" : "拖到顶部挂上"}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
@@ -810,10 +1023,10 @@ function Footer({ count, total }: { count: number; total: number }) {
       <div className="hints">
         <span><span className="kbd">←</span> <span className="kbd">→</span> 切换</span>
         <span><span className="kbd">↵</span> 粘贴</span>
-        <span><span className="kbd">⌘</span><span className="kbd">1-0</span> 直选</span>
-        <span><span className="kbd">⌘</span><span className="kbd">E</span> 编辑</span>
-        <span><span className="kbd">⌘</span><span className="kbd">P</span> 置顶</span>
-        <span><span className="kbd">⌘</span><span className="kbd">D</span> 删除</span>
+        <span><span className="kbd">{MOD}</span><span className="kbd">1-0</span> 直选</span>
+        <span><span className="kbd">{MOD}</span><span className="kbd">E</span> 编辑</span>
+        <span><span className="kbd">{MOD}</span><span className="kbd">P</span> 置顶</span>
+        <span><span className="kbd">{MOD}</span><span className="kbd">D</span> 删除</span>
       </div>
       <div>
         {count}/{total} <span className="kbd">Esc</span> 关闭

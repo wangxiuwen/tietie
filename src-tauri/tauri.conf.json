@@ -41,6 +41,21 @@
         "visible": false,
         "shadow": true,
         "focus": true
+      },
+      {
+        "label": "clothesline",
+        "title": "贴贴·晾衣架",
+        "url": "index.html?view=line",
+        "width": 1280,
+        "height": 230,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": true,
+        "shadow": false,
+        "focus": false
       }
     ],
     "security": {

@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "默认能力：剪切板、全局快捷键、窗口控制",
-  "windows": ["drawer", "tray-popover"],
+  "windows": ["drawer", "tray-popover", "clothesline"],
   "permissions": [
     "core:default",
     "core:window:allow-show",
@@ -12,6 +12,7 @@
     "core:window:allow-set-focus",
     "core:window:allow-set-always-on-top",
     "core:window:allow-set-skip-taskbar",
+    "core:window:allow-set-cursor-grab",
     "core:window:allow-close",
     "core:window:allow-start-dragging",
     "core:webview:allow-create-webview-window",

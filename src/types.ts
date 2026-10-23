@@ -22,6 +22,16 @@ export interface Folder {
   sort_order: number;
 }
 
+export interface Memo {
+  id: number;
+  kind: ItemKind | string;
+  content: string;
+  preview: string;
+  color: string;
+  source_item_id: number | null;
+  created_at: number;
+}
+
 export const KIND_LABEL: Record<ItemKind, string> = {
   text: "文本",
   link: "链接",
