@@ -54,6 +54,7 @@ export default function App() {
     null,
   );
   const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [zoomId, setZoomId] = useState<number | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -220,6 +221,7 @@ export default function App() {
       if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
         e.preventDefault();
         if (editing) setEditing(null);
+        if (zoomId !== null) setZoomId(null);
         if (e.key === "ArrowRight") {
           setSelectedIdx((i) => Math.min(i + 1, Math.max(0, filtered.length - 1)));
         } else {
@@ -231,6 +233,12 @@ export default function App() {
       if (editing) return; // textarea handles the rest
 
       if (e.key === "Escape") {
+        if (zoomId !== null) {
+          e.preventDefault();
+          e.stopPropagation();
+          setZoomId(null);
+          return;
+        }
         invoke("hide_window");
         return;
       }
@@ -284,7 +292,7 @@ export default function App() {
     // so preventDefault actually stops ⌘D / ⌘P / etc. from typing into search.
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [filtered, selectedIdx, tab, editing, paste, togglePin, deleteItem, startEdit]);
+  }, [filtered, selectedIdx, tab, editing, zoomId, paste, togglePin, deleteItem, startEdit]);
 
   // scroll selected into view
   useEffect(() => {
@@ -359,7 +367,12 @@ export default function App() {
                     idx={idx}
                     selected={idx === selectedIdx}
                     beingDragged={draggingId === it.id}
-                    onClick={() => setSelectedIdx(idx)}
+                    onClick={() => {
+                      setSelectedIdx(idx);
+                      // 单击图片卡顺手弹大图（回车仍是粘贴，浮层 Esc 关闭）
+                      if (it.kind === "image") setZoomId(it.id);
+                      else setZoomId(null);
+                    }}
                     onDoubleClick={() => paste(it)}
                     onPin={() => togglePin(it.id)}
                     onEdit={() => startEdit(it)}
@@ -372,6 +385,12 @@ export default function App() {
           )}
         </div>
         <Footer count={filtered.length} total={items.length} />
+        {zoomId !== null && (
+          <ZoomOverlay
+            item={items.find((x) => x.id === zoomId) ?? filtered.find((x) => x.id === zoomId)}
+            onClose={() => setZoomId(null)}
+          />
+        )}
         {settingsOpen && <SettingsPanel onClose={() => setSettingsOpen(false)} />}
         {dragGhost &&
           createPortal(
@@ -1050,6 +1069,68 @@ function Footer({ count, total }: { count: number; total: number }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Full-size image preview overlay. Pulls the original PNG bytes via
+ * get_item_image and renders them as a blob URL; falls back to the stored
+ * thumbnail when the full blob has been trimmed away. Esc / backdrop click
+ * closes (Esc is handled in App's key handler, which closes before the
+ * drawer gets it).
+ */
+function ZoomOverlay({ item, onClose }: { item?: ClipItem; onClose: () => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [full, setFull] = useState(true);
+
+  useEffect(() => {
+    let revoke: string | null = null;
+    let alive = true;
+    (async () => {
+      if (!item) return;
+      try {
+        const bytes = await invoke<number[]>("get_item_image", { id: item.id });
+        if (!alive) return;
+        const blob = new Blob([new Uint8Array(bytes)], { type: "image/png" });
+        revoke = URL.createObjectURL(blob);
+        setUrl(revoke);
+      } catch {
+        // blob trimmed — fall back to the base64 thumbnail
+        if (!alive || !item.preview) return;
+        revoke = `data:image/png;base64,${item.preview}`;
+        setUrl(revoke);
+        setFull(false);
+      }
+    })();
+    return () => {
+      alive = false;
+      if (revoke && revoke.startsWith("blob:")) URL.revokeObjectURL(revoke);
+    };
+  }, [item]);
+
+  if (!item) return null;
+  return (
+    <div className="zoom-overlay" onClick={onClose}>
+      <div className="zoom-stage" onClick={(e) => e.stopPropagation()}>
+        {url ? (
+          <img className="zoom-img" src={url} alt={item.content} />
+        ) : (
+          <div className="zoom-loading">原图加载中…</div>
+        )}
+        <div className="zoom-meta">
+          <span>{item.content}</span>
+          <span>
+            {full ? "原图" : "缩略图"} · {fmtBytes(item.byte_size)} · Esc 关闭
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function fmtBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
 function Empty() {

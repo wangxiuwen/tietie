@@ -1358,3 +1358,51 @@ body.dragging-hang * {
   outline: none;
   width: 150px;
 }
+
+/* ───────── image zoom overlay ───────── */
+
+.zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+.zoom-stage {
+  max-width: 92%;
+  max-height: 92%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: default;
+}
+
+.zoom-img {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 10px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.zoom-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.zoom-loading {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+  padding: 40px 60px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+}
