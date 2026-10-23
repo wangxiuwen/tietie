@@ -351,6 +351,9 @@ pub fn run() {
             copy_memo,
             hang_preview,
             toggle_clothesline_cmd,
+            open_library,
+            delete_items,
+            export_selected_text,
             autostart_enabled,
             set_autostart,
             export_backup,
@@ -375,7 +378,8 @@ pub fn run() {
             if matches!(event, tauri::WindowEvent::CloseRequested { .. })
                 && (window.label() == "drawer"
                     || window.label() == "tray-popover"
-                    || window.label() == "clothesline")
+                    || window.label() == "clothesline"
+                    || window.label() == "library")
             {
                 let _ = window.hide();
             }
@@ -444,10 +448,14 @@ fn create_tray<R: Runtime>(app: &AppHandle<R>, effective_drawer_hotkey: &str) ->
         true,
         None::<&str>,
     )?;
+    let library = MenuItem::with_id(app, "library", "剪贴板库（管理窗）", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
     let about = MenuItem::with_id(app, "about", "关于贴贴", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
-    let menu = Menu::with_items(app, &[&show, &recent, &shot, &line, &sep, &about, &quit])?;
+    let menu = Menu::with_items(
+        app,
+        &[&show, &recent, &shot, &line, &library, &sep, &about, &quit],
+    )?;
 
     let tooltip = format!(
         "贴贴 — {} 唤起剪切板 · {} 晾衣架",
@@ -467,6 +475,13 @@ fn create_tray<R: Runtime>(app: &AppHandle<R>, effective_drawer_hotkey: &str) ->
             "screenshot" => trigger_screenshot(),
             "clothesline" => {
                 toggle_clothesline(app);
+            }
+            "library" => {
+                if let Some(win) = app.get_webview_window("library") {
+                    let _ = win.show();
+                    let _ = win.set_focus();
+                    let _ = app.emit_to("library", "library-open", ());
+                }
             }
             "about" => {
                 let _ = app.emit("show-about", ());
@@ -964,6 +979,78 @@ fn hang_preview(app: AppHandle, id: Option<i64>) {
 #[tauri::command]
 fn toggle_clothesline_cmd(app: AppHandle) -> bool {
     toggle_clothesline(&app)
+}
+
+// ─────────────────────── library window commands ───────────────────────
+
+/// Open (show + focus) the full-screen clipboard library window.
+#[tauri::command]
+fn open_library(app: AppHandle) {
+    if let Some(win) = app.get_webview_window("library") {
+        let _ = win.show();
+        let _ = win.set_focus();
+        let _ = app.emit_to("library", "library-open", ());
+    }
+}
+
+/// Batch-delete clip items from the library table.
+#[tauri::command]
+fn delete_items(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    ids: Vec<i64>,
+) -> Result<usize, String> {
+    let n = {
+        let conn = state.conn.lock();
+        let mut n = 0;
+        for id in &ids {
+            if db::delete_item(&conn, *id).is_ok() {
+                n += 1;
+            }
+        }
+        n
+    };
+    let _ = app.emit("clipboard-changed", ());
+    Ok(n)
+}
+
+/// Dump the selected items' text content to Documents/tietie-export-<ts>.txt.
+#[tauri::command]
+fn export_selected_text(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    ids: Vec<i64>,
+) -> Result<String, String> {
+    let mut parts = Vec::new();
+    {
+        let conn = state.conn.lock();
+        for id in &ids {
+            if let Ok(row) = conn.query_row(
+                "SELECT kind, content FROM clip_item WHERE id = ?1",
+                rusqlite::params![id],
+                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            ) {
+                if row.0 == "image" {
+                    parts.push(format!("[图片 {}]", row.1));
+                } else {
+                    parts.push(row.1);
+                }
+                parts.push("\n─".repeat(24).to_string());
+            }
+        }
+    }
+    if parts.is_empty() {
+        return Err("没有可导出的条目".into());
+    }
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("tietie-export-{}.txt", time_fmt(db::now_unix())));
+    std::fs::write(&path, parts.join("\n")).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 #[tauri::command]

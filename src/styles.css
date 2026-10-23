@@ -1406,3 +1406,117 @@ body.dragging-hang * {
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* ───────── library window ───────── */
+
+.lib {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 14px 18px;
+  gap: 10px;
+  background: var(--bar-bg);
+}
+
+.lib-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.lib-head h2 {
+  font-size: 15px;
+  margin: 0;
+}
+
+.lib-search {
+  flex: 1;
+  height: 30px;
+  border: 1px solid var(--card-stroke);
+  border-radius: 8px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 13px;
+  padding: 0 12px;
+  outline: none;
+}
+
+.lib-search:focus {
+  border-color: var(--accent);
+}
+
+.lib-table-wrap {
+  flex: 1;
+  overflow: auto;
+  border: 1px solid var(--card-stroke);
+  border-radius: 10px;
+  background: var(--card-bg);
+}
+
+.lib-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.lib-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bar-bg);
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-2);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--card-stroke);
+}
+
+.lib-table tbody td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--card-stroke);
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 480px;
+}
+
+.lib-table tbody tr:hover {
+  background: var(--accent-dim);
+}
+
+.lib-table tbody tr.sel {
+  background: var(--accent-dim);
+}
+
+.w-check { width: 34px; }
+.w-kind { width: 60px; }
+.w-src { width: 110px; }
+.w-size { width: 70px; }
+.w-time { width: 90px; }
+
+.lib-empty {
+  text-align: center;
+  color: var(--text-3);
+  padding: 40px 0 !important;
+}
+
+.lib-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.lib-msg {
+  color: var(--accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lib-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}

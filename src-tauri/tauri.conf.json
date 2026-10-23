@@ -56,6 +56,22 @@
         "visible": true,
         "shadow": false,
         "focus": false
+      },
+      {
+        "label": "library",
+        "title": "贴贴·剪贴板库",
+        "url": "index.html?view=library",
+        "width": 1100,
+        "height": 700,
+        "minWidth": 720,
+        "minHeight": 440,
+        "center": true,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "visible": false,
+        "shadow": true
       }
     ],
     "security": {

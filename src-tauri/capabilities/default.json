@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "默认能力：剪切板、全局快捷键、窗口控制",
-  "windows": ["drawer", "tray-popover", "clothesline"],
+  "windows": ["drawer", "tray-popover", "clothesline", "library"],
   "permissions": [
     "core:default",
     "core:window:allow-show",
