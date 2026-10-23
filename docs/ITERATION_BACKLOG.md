@@ -10,7 +10,7 @@
 ## 方向列表
 
 - [x] 1. 拖拽监听上提到容器级：抽屉/晾衣架目前每张卡一组 window listener（500 卡=500 组），改为 cards 容器挂一份、事件按 target 找卡，降低事件遍历开销
-- [ ] 2. 剪切板条目记录来源应用 source_app：Windows 用拖拽前的 GetForegroundWindow 进程名、mac 用 NSWorkspace frontmostApplication、Linux 尽力而为；卡片 meta 区显示真实来源
+- [x] 2. 剪切板条目记录来源应用 source_app：Windows 用拖拽前的 GetForegroundWindow 进程名、mac 用 NSWorkspace frontmostApplication、Linux 尽力而为；卡片 meta 区显示真实来源
 - [ ] 3. 抽屉图片条目大图预览：单击/回车前的选中态弹出放大浮层（原图 blob 经 get_item_image 拉取），Esc 关闭
 - [ ] 4. 搜索增强：文本条目支持拼音首字母匹配（如输 nz 找「内存」），不引重库，内置常用汉字→拼音首字母映射表生成一次即可
 - [ ] 5. 便签置顶：memo 表加 pinned，详情视图加置顶按钮，挂卡排前且衣夹变色

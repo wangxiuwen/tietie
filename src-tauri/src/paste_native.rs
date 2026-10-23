@@ -12,8 +12,11 @@ mod imp {
     use once_cell::sync::OnceCell;
     use parking_lot::Mutex;
     use std::time::Duration;
-    use windows::Win32::Foundation::HWND;
-    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+    use windows::Win32::Foundation::{CloseHandle, HWND};
+    use windows::Win32::System::Threading::{
+        AttachThreadInput, GetCurrentThreadId, OpenProcess, QueryFullProcessImageNameW,
+        PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
+    };
     use windows::Win32::UI::Input::KeyboardAndMouse::{
         SendInput, INPUT, INPUT_0, INPUT_KEYBOARD, KEYBDINPUT, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP,
         VIRTUAL_KEY, VK_CONTROL, VK_V,
@@ -26,6 +29,41 @@ mod imp {
 
     fn slot() -> &'static Mutex<isize> {
         PREV_HWND.get_or_init(|| Mutex::new(0))
+    }
+
+    /// Name of the foreground app's process ("Notepad", "Code"), without the
+    /// .exe suffix — the poller records it as the likely copy source.
+    pub fn frontmost_app_name() -> Option<String> {
+        unsafe {
+            let hwnd = GetForegroundWindow();
+            if hwnd.0.is_null() {
+                return None;
+            }
+            let mut pid = 0u32;
+            GetWindowThreadProcessId(hwnd, Some(&mut pid));
+            if pid == 0 || pid == std::process::id() {
+                return None;
+            }
+            let proc = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+            let mut buf = [0u16; 512];
+            let mut len = buf.len() as u32;
+            let queried = QueryFullProcessImageNameW(
+                proc,
+                PROCESS_NAME_WIN32,
+                windows::core::PWSTR(buf.as_mut_ptr()),
+                &mut len,
+            );
+            let _ = CloseHandle(proc);
+            queried.ok()?;
+            let full = String::from_utf16_lossy(&buf[..len as usize]);
+            let name = full.rsplit(['\\', '/']).next()?.to_string();
+            let name = name.strip_suffix(".exe").unwrap_or(&name).to_string();
+            if name.is_empty() {
+                None
+            } else {
+                Some(name)
+            }
+        }
     }
 
     pub fn snapshot_frontmost() {
@@ -121,6 +159,32 @@ mod imp {
             }
         }
     }
+
+    /// Best-effort frontmost app on X11: xdotool → window pid → /proc/comm.
+    /// Returns None on Wayland (no protocol for this) or without xdotool.
+    pub fn frontmost_app_name() -> Option<String> {
+        if std::env::var_os("WAYLAND_DISPLAY").is_some() {
+            return None;
+        }
+        let out = std::process::Command::new("xdotool")
+            .args(["getactivewindow", "getwindowpid"])
+            .output()
+            .ok()?;
+        if !out.status.success() {
+            return None;
+        }
+        let pid = String::from_utf8_lossy(&out.stdout).trim().to_string();
+        if pid.is_empty() {
+            return None;
+        }
+        let comm = std::fs::read_to_string(format!("/proc/{pid}/comm")).ok()?;
+        let name = comm.trim().to_string();
+        if name.is_empty() {
+            None
+        } else {
+            Some(name)
+        }
+    }
 }
 
 pub fn snapshot_frontmost() {
@@ -129,4 +193,10 @@ pub fn snapshot_frontmost() {
 
 pub fn paste_back() -> bool {
     imp::paste_back()
+}
+
+/// Name of the app that most likely produced the clipboard content (the
+/// frontmost app at the moment the poller spots new content).
+pub fn frontmost_app_name() -> Option<String> {
+    imp::frontmost_app_name()
 }

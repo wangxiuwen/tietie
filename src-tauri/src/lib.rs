@@ -18,6 +18,20 @@ use tauri::{
 };
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
+/// Name of the app that most likely produced new clipboard content: the
+/// frontmost app at the instant the poller spots it. Called from the polling
+/// thread — the macOS hop to the main thread makes this ~ms-fast, never block.
+fn frontmost_app_name<R: Runtime>(_app: &AppHandle<R>) -> Option<String> {
+    #[cfg(target_os = "macos")]
+    {
+        paste::frontmost_app_name(_app)
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        paste_native::frontmost_app_name()
+    }
+}
+
 const DRAWER_HEIGHT: u32 = 380;
 const TRAY_POPOVER_W: u32 = 320;
 const TRAY_POPOVER_H: u32 = 460;

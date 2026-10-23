@@ -38,6 +38,8 @@ pub fn start_polling(app: AppHandle, conn: Arc<Mutex<rusqlite::Connection>>) {
                     last_text_hash = Some(hash.clone());
                     last_image_hash = None;
                     let (kind, preview) = classify_text(&text);
+                    // record who copied it (frontmost app right now)
+                    let source = crate::frontmost_app_name(&app);
 
                     // Snapshot rich variants (HTML / RTF) from NSPasteboard if present.
                     #[cfg(target_os = "macos")]
@@ -54,7 +56,7 @@ pub fn start_polling(app: AppHandle, conn: Arc<Mutex<rusqlite::Connection>>) {
                         preview: &preview,
                         meta: "",
                         content_hash: &hash,
-                        source_app: None,
+                        source_app: source.as_deref(),
                         byte_size: text.len() as i64,
                         image_blob: None,
                         rich_html: snap.html.as_deref(),
@@ -83,6 +85,7 @@ pub fn start_polling(app: AppHandle, conn: Arc<Mutex<rusqlite::Connection>>) {
                 if Some(&hash) != last_image_hash.as_ref() {
                     last_image_hash = Some(hash.clone());
                     last_text_hash = None;
+                    let source = crate::frontmost_app_name(&app);
                     let png = match encode_png(&img) {
                         Ok(p) => p,
                         Err(e) => {
@@ -98,7 +101,7 @@ pub fn start_polling(app: AppHandle, conn: Arc<Mutex<rusqlite::Connection>>) {
                         preview: &thumb,
                         meta: &meta,
                         content_hash: &hash,
-                        source_app: None,
+                        source_app: source.as_deref(),
                         byte_size: png.len() as i64,
                         image_blob: Some(&png),
                         rich_html: None,

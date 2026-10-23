@@ -39,6 +39,27 @@ pub fn is_accessibility_trusted() -> bool {
     unsafe { AXIsProcessTrusted() }
 }
 
+/// Localized name of the frontmost app — the likely source of new clipboard
+/// content. NSWorkspace must be touched on the main thread, so hop over via
+/// run_on_main_thread and wait for the answer.
+pub fn frontmost_app_name<R: tauri::Runtime>(app: &tauri::AppHandle<R>) -> Option<String> {
+    let (tx, rx) = std::sync::mpsc::channel();
+    let app = app.clone();
+    let sent = app.run_on_main_thread(move || {
+        let name = {
+            let ws = NSWorkspace::sharedWorkspace();
+            ws.frontmostApplication()
+                .and_then(|a| a.localizedName())
+                .map(|s| s.to_string())
+        };
+        let _ = tx.send(name);
+    });
+    if sent.is_err() {
+        return None;
+    }
+    rx.recv().ok().flatten()
+}
+
 /// PID of the app that was frontmost just before tietie's drawer was shown.
 static PREV_APP_PID: OnceCell<Mutex<Option<i32>>> = OnceCell::new();
 
