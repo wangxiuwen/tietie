@@ -82,7 +82,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-24 | 42+43 | TBD | vitest 前端测试上线：search 拼音三层/i18n key 双向 diff(92 key 全等)/hexToRgb 15 断言全绿，npm test 进 CI；hexToRgb 抽 color.ts 纯模块
+2026-10-24 | 42+43 | ac89034 | vitest 前端测试上线：search 拼音三层/i18n key 双向 diff(92 key 全等)/hexToRgb 15 断言全绿，npm test 进 CI；hexToRgb 抽 color.ts 纯模块
 2026-10-24 | 41 | 975c083 | 冷启动计时打点：run 入口 Instant→setup 首尾两条 boot 日志，装机实测 pre-setup 630ms / complete 705ms
 2026-10-24 | 40 | c70d040 | panic hook 上线：PANIC+位置+强制 backtrace 写 tietie.log（panic=abort 下仍执行），端到端单测+装机日志实证
 2026-10-24 | 38 | 223f5c8 | Windows 跳转列表重试成功：AUMID 显式钉窗口+PKEY_TITLE 补显名双根因修复，customDestinations-ms 落盘+--paste 转发 0.6s 实测
