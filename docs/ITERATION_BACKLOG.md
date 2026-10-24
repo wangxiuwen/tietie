@@ -20,7 +20,7 @@
 - [x] 9. 键盘导航增强：抽屉支持 ↑/↓ 跨行移动选择（当前只有 ←/→），与 Tab/Enter 语义不冲突
 - [x] 10. 剪切板批量操作：抽屉卡片多选模式（⌘/Ctrl+点击），批量删除/批量挂绳
 - [x] 11. 便签图片详情显示原图：memo 加 image 引用时详情视图按 source_item_id 拉原图（copy_memo 已有同款逻辑，复用）
-- [ ] 12. 颜色条目复制变体：颜色卡片操作条加 HEX/RGB 格式切换复制
+- [x] 12. 颜色条目复制变体：颜色卡片操作条加 HEX/RGB 格式切换复制
 - [ ] 13. 启动自检与日志轮转：日志写文件（app local data）按大小轮转；启动时自检热键注册状态并在托盘 tooltip 反映
 - [ ] 14. 单元测试补齐：db.rs（upsert/trim/迁移）与 clipboard.rs（分类启发式）的 cargo test，CI 跑测试
 - [ ] 15. 发布流程自动化：scripts/bump-version.py 一次同步 Cargo.toml/tauri.conf.json/package.json 三处版本 + 生成 tag 建议，README 写明
@@ -33,6 +33,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 12 | 9e83703 | 颜色卡 rgb() 显示+一键复制（#3b82f6→rgb(59,130,246) 实测）
 2026-10-24 | 11 | 46b2766 | 便签图片详情原图（source_item_id→blob URL 3840x1080 验证）
 2026-10-24 | 10 | 1f56d10 | ⌘/Ctrl 多选+批量挂绳/删除（hang_items 命令），CDP 全链路验证
 2026-10-24 | 9 | 7cb29ee | ↑/↓ 导航同义 ←/→，CDP 四方向验证
