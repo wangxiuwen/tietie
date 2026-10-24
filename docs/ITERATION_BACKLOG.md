@@ -61,7 +61,7 @@
 - [x] 42. 前端纯函数测试：vitest 跑 search.ts（拼音匹配）/i18n.ts（key 完整性 zh=en）/hexToRgb
 - [x] 43. i18n key 完整性校验：zh/en 字典 key 集合 diff 测试（防漏译）
   - 2026-10-24 与方向42同批完成：i18n.test.ts 断言 zh/en key 集合双向 diff 为空 + 双语无空值（当前 92 key 全等）
-- [ ] 44. E2E 冒烟脚本沉淀：把 CDP 方法固化为 scripts/e2e_smoke.py（开抽屉/挂绳/摘下/查库四链路）
+- [x] 44. E2E 冒烟脚本沉淀：把 CDP 方法固化为 scripts/e2e_smoke.py（开抽屉/挂绳/摘下/查库四链路）
 - [ ] 45. 无障碍审计：卡片/按钮 aria-label、焦点环可见性（键盘 Tab 遍历主操作）
 - [ ] 46. macOS 菜单栏 template 深浅色验证：亮暗模式截图对比（代码侧确认 icon_as_template 生效）
 - [ ] 47. Linux .desktop 集成审计：图标主题/名称/注释/分类字段，deb 包验证
@@ -82,6 +82,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 44 | TBD | E2E 冒烟脚本沉淀 scripts/e2e_smoke.py：内嵌 stdlib WebSocket+CDP invoke+Win32 窗口真值+只读 sqlite，四链路（开抽屉/挂绳/摘下/净零库）实测 PASS
 2026-10-24 | 42+43 | ac89034 | vitest 前端测试上线：search 拼音三层/i18n key 双向 diff(92 key 全等)/hexToRgb 15 断言全绿，npm test 进 CI；hexToRgb 抽 color.ts 纯模块
 2026-10-24 | 41 | 975c083 | 冷启动计时打点：run 入口 Instant→setup 首尾两条 boot 日志，装机实测 pre-setup 630ms / complete 705ms
 2026-10-24 | 40 | c70d040 | panic hook 上线：PANIC+位置+强制 backtrace 写 tietie.log（panic=abort 下仍执行），端到端单测+装机日志实证
