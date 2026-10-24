@@ -103,6 +103,17 @@ export default function Library() {
     }
   }, [selected]);
 
+  const exportMarkdown = useCallback(async () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    try {
+      const path = await invoke<string>("export_selected_markdown", { ids });
+      setMsg(`已导出: ${path}`);
+    } catch (e) {
+      setMsg(`导出失败: ${e}`);
+    }
+  }, [selected]);
+
   return (
     <div className="lib">
       <div className="lib-head">
@@ -230,6 +241,9 @@ export default function Library() {
         <div className="lib-actions">
           <button className="btn ghost" onClick={exportText} disabled={selected.size === 0}>
             {t("lib.export")}
+          </button>
+          <button className="btn ghost" onClick={exportMarkdown} disabled={selected.size === 0}>
+            {t("lib.exportMd")}
           </button>
           <button className="btn primary" onClick={del} disabled={selected.size === 0}>
             {t("lib.delete")}

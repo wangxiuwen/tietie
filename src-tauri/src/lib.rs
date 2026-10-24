@@ -454,6 +454,7 @@ pub fn run() {
             open_library,
             delete_items,
             export_selected_text,
+            export_selected_markdown,
             autostart_enabled,
             set_autostart,
             export_backup,
@@ -1349,6 +1350,75 @@ fn delete_items(
     };
     let _ = app.emit("clipboard-changed", ());
     Ok(n)
+}
+
+/// Dump the selected items as Markdown: kind-grouped headings, links as
+/// lists, code wrapped in fenced blocks, colors as hex, images as
+/// dimension placeholders. Documents/tietie-export-<ts>.md.
+#[tauri::command]
+fn export_selected_markdown(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    ids: Vec<i64>,
+) -> Result<String, String> {
+    let mut rows: Vec<(String, String)> = Vec::new();
+    {
+        let conn = state.conn.lock();
+        for id in &ids {
+            if let Ok(row) = conn.query_row(
+                "SELECT kind, content FROM clip_item WHERE id = ?1",
+                rusqlite::params![id],
+                |r| Ok((r.get::<_, String>(0)?, r.get::<_, String>(1)?)),
+            ) {
+                rows.push(row);
+            }
+        }
+    }
+    if rows.is_empty() {
+        return Err("没有可导出的条目".into());
+    }
+
+    let render = |kind: &str, title: &str, items: &[(String, String)]| -> Option<String> {
+        let got: Vec<&(String, String)> = items.iter().filter(|(k, _)| k == kind).collect();
+        if got.is_empty() {
+            return None;
+        }
+        let mut out = format!("## {title}\n\n");
+        for (_, content) in got {
+            match kind {
+                "link" => out.push_str(&format!("- [{}]({})\n", content, content)),
+                "code" => out.push_str(&format!("```\n{content}\n```\n")),
+                "image" => out.push_str(&format!("- [图片 {content}]\n")),
+                "color" => out.push_str(&format!("- `{content}`\n")),
+                _ => out.push_str(&format!("- {}\n", content.replace('\n', " "))),
+            }
+        }
+        Some(out)
+    };
+
+    let mut md = format!("# 贴贴导出（{} 条）\n\n", rows.len());
+    for (kind, title) in [
+        ("text", "文本"),
+        ("link", "链接"),
+        ("code", "代码"),
+        ("color", "颜色"),
+        ("image", "图片"),
+    ] {
+        if let Some(sec) = render(kind, title, &rows) {
+            md.push_str(&sec);
+            md.push('\n');
+        }
+    }
+
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("tietie-export-{}.md", time_fmt(db::now_unix())));
+    std::fs::write(&path, md).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
 }
 
 /// Dump the selected items' text content to Documents/tietie-export-<ts>.txt.

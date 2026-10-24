@@ -86,7 +86,7 @@ export const zh: Dict = {
   "lib.title": "剪贴板库", "lib.kind": "类型", "lib.content": "内容",
   "lib.source": "来源", "lib.size": "大小", "lib.time": "时间",
   "lib.total": "共", "lib.items": "条", "lib.selected": "已选",
-  "lib.export": "导出所选文本", "lib.delete": "删除所选",
+  "lib.export": "导出所选文本", "lib.exportMd": "导出 Markdown", "lib.delete": "删除所选",
   "lib.noMatch": "没有匹配的条目", "lib.empty": "剪贴板历史还是空的",
   "lib.deleted": "已删除", "lib.collapse": "收起",
   // tray popover
@@ -179,7 +179,7 @@ export const en: Dict = {
   "lib.title": "Clipboard Library", "lib.kind": "Kind", "lib.content": "Content",
   "lib.source": "Source", "lib.size": "Size", "lib.time": "Time",
   "lib.total": "Total", "lib.items": "items", "lib.selected": "Selected",
-  "lib.export": "Export selected text", "lib.delete": "Delete selected",
+  "lib.export": "Export selected text", "lib.exportMd": "Export Markdown", "lib.delete": "Delete selected",
   "lib.noMatch": "No matching items", "lib.empty": "Clipboard history is empty",
   "lib.deleted": "Deleted", "lib.collapse": "Collapse",
   "tray.pinned": "📌 Pinned", "tray.recent": "Recent", "tray.results": "Results",
