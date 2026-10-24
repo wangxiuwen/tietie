@@ -56,7 +56,7 @@
 - [x] 38. Windows 跳转列表：任务栏右键显示最近 5 条快速粘贴（jumplist API 或退出）
   - 2026-10-24 重试成功。两个根因：①AUMID 未显式对齐——用 SHGetPropertyStoreForWindow 给进程+全部窗口钉死 PKEY_AppUserModel_ID；②IShellLink 缺 PKEY_Title 显示名——MSDN 规定 jumplist link 必须设该属性，SetDescription 只是 tooltip，缺它 AppendCategory 直接 E_INVALIDARG。落盘证据=Recent\CustomDestinations\<aumid-hash>.customDestinations-ms（上轮盯错 AutomaticDestinations 目录）。点击走 tauri-plugin-single-instance 转发 --paste <id> 到在跑实例。
 - [x] 39. 轮询自适应退避：连续无变化逐步放慢到 2s，检测到变化回到 600ms（省电）
-- [ ] 40. panic hook 写日志：std::panic::set_hook 把 panic 栈写 tietie.log（配合方向13）
+- [x] 40. panic hook 写日志：std::panic::set_hook 把 panic 栈写 tietie.log（配合方向13）
 - [ ] 41. 冷启动计时：启动耗时写日志（毫秒级，setup 首尾打点）
 - [ ] 42. 前端纯函数测试：vitest 跑 search.ts（拼音匹配）/i18n.ts（key 完整性 zh=en）/hexToRgb
 - [ ] 43. i18n key 完整性校验：zh/en 字典 key 集合 diff 测试（防漏译）
@@ -81,6 +81,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 40 | TBD | panic hook 上线：PANIC+位置+强制 backtrace 写 tietie.log（panic=abort 下仍执行），端到端单测+装机日志实证
 2026-10-24 | 38 | 223f5c8 | Windows 跳转列表重试成功：AUMID 显式钉窗口+PKEY_TITLE 补显名双根因修复，customDestinations-ms 落盘+--paste 转发 0.6s 实测
 2026-10-24 | 39 | 68cc0c3 | 轮询自适应退避 600→1000→1500→2000ms（变化即回 600），日志阶梯实证+深退避复制 1.47s 命中
 2026-10-24 | 38 | — | 未完成：jumplist COM 写通但 CommitList 未落盘（AUMID 疑不匹配），按协议回退不合坏代码，原因已标注

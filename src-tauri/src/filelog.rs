@@ -44,6 +44,17 @@ pub fn rotate(path: &Path) -> std::io::Result<()> {
     std::fs::rename(path, prev)
 }
 
+/// Route panics into the file log: payload, location, and a forced
+/// backtrace (release strips symbols, so frames are bare addresses — still
+/// better than nothing). Runs even under `panic = "abort"`, and the logger
+/// writes unbuffered so the line lands before the process dies.
+pub fn install_panic_hook() {
+    std::panic::set_hook(Box::new(|info| {
+        let bt = std::backtrace::Backtrace::force_capture();
+        log::error!("PANIC {info}\n{bt}");
+    }));
+}
+
 fn ts() -> String {
     let d = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -123,5 +134,27 @@ mod tests {
         assert!(log.metadata().is_err()); // moved away
         assert_eq!(std::fs::read_to_string(&old).unwrap(), "current");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn panic_hook_routes_to_file_log() {
+        // unique dir per run: the global logger keeps the file open until
+        // process exit, so a fixed name would collide on Windows
+        let dir = std::env::temp_dir().join(format!("tietie-panic-test-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let log = dir.join("tietie.log");
+        let fl = FileLogger::open(log.clone(), LevelFilter::Info).unwrap();
+        let _ = log::set_boxed_logger(Box::new(fl));
+        log::set_max_level(LevelFilter::Info);
+
+        install_panic_hook();
+        let caught = std::panic::catch_unwind(|| panic!("hook-test-panic"));
+        let _ = std::panic::take_hook(); // restore default for later tests
+
+        assert!(caught.is_err());
+        let s = std::fs::read_to_string(&log).unwrap();
+        assert!(s.contains("PANIC"), "missing marker:\n{s}");
+        assert!(s.contains("hook-test-panic"), "missing payload:\n{s}");
+        assert!(s.contains("filelog.rs"), "missing location:\n{s}");
     }
 }

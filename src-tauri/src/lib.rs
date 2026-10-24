@@ -290,6 +290,10 @@ pub fn run() {
                     eprintln!("file logger unavailable ({e}), falling back to stderr");
                 }
             }
+            // Panics go to the same trail (direction 40): release runs with
+            // panic=abort, so the hook is the only trace we ever get.
+            filelog::install_panic_hook();
+            log::info!("panic hook installed");
 
             // Hide from Dock + Cmd-Tab — clipboard utility lives in the tray,
             // not in the foreground app list. Tray icon + hotkey are the
