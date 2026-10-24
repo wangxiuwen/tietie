@@ -127,6 +127,10 @@ export default function Settings() {
 
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [lineOn, setLineOn] = useState(false);
+  const [wayland, setWayland] = useState(false);
+  useEffect(() => {
+    invoke<boolean>("wayland_session").then(setWayland);
+  }, []);
   useEffect(() => {
     invoke<boolean>("clothesline_visible").then(setLineOn);
   }, []);
@@ -293,6 +297,13 @@ export default function Settings() {
             </span>
           </div>
           {backupMsg && <pre className="settings-notes">{backupMsg}</pre>}
+
+          {wayland && (
+            <div className="settings-row">
+              <span className="settings-label">{t("settings.wayland")}</span>
+              <span className="settings-value settings-tag muted">{t("settings.waylandHint")}</span>
+            </div>
+          )}
 
           {IS_MAC && (
             <>

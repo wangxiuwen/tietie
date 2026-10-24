@@ -55,6 +55,7 @@ const zh: Dict = {
   "settings.capturePlaceholder": "按下组合 (Esc 取消 / Enter 确定)…",
   "settings.needMod": "全局快捷键需要至少一个修饰键",
   "settings.regFail": "注册失败（组合被占用），请修改",
+  "settings.wayland": "Wayland 会话", "settings.waylandHint": "回车仅复制，不自动粘贴（Wayland 安全限制）",
   "settings.accHint": "粘贴功能需要「辅助功能」权限。点击「去授权」打开系统设置 → 隐私与安全 → 辅助功能，把 Tietie 打开即可，授权后状态自动刷新。",
   // clothesline
   "line.empty": "晾衣架空着 — 从下面的抽屉按住一张卡片往上拖，松手就挂上",
@@ -123,6 +124,7 @@ const en: Dict = {
   "settings.capturePlaceholder": "Press combo (Esc cancel / Enter OK)…",
   "settings.needMod": "Global shortcuts need at least one modifier",
   "settings.regFail": "Register failed (combo taken) — change it",
+  "settings.wayland": "Wayland session", "settings.waylandHint": "Enter copies only — no auto-paste (Wayland security)",
   "settings.accHint": "Paste needs Accessibility permission. Click Grant, open System Settings → Privacy & Security → Accessibility and enable Tietie; status refreshes automatically.",
   "line.empty": "The line is empty — drag a drawer card up here and release to hang it",
   "line.hang": "Release to hang ↩", "line.takeoff": "Drag past the rope to take off", "line.takeoffNow": "Release to take off ✕",

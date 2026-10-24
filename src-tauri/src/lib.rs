@@ -396,6 +396,7 @@ pub fn run() {
             hang_preview,
             toggle_clothesline_cmd,
             clothesline_visible,
+            wayland_session,
             open_library,
             delete_items,
             export_selected_text,
@@ -500,8 +501,36 @@ fn create_tray<R: Runtime>(
     )?;
     let library = MenuItem::with_id(app, "library", "剪贴板库（管理窗）", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
+    // on Wayland, auto-paste is impossible — say so right in the tray
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let wayland_note = if is_wayland_session() {
+        Some(MenuItem::with_id(
+            app,
+            "wayland_note",
+            "Wayland 会话：回车仅复制，不自动粘贴",
+            false,
+            None::<&str>,
+        )?)
+    } else {
+        None
+    };
     let about = MenuItem::with_id(app, "about", "关于贴贴", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "退出", true, None::<&str>)?;
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let menu = if let Some(ref note) = wayland_note {
+        Menu::with_items(
+            app,
+            &[
+                &show, &recent, &shot, &line, &library, note, &sep, &about, &quit,
+            ],
+        )?
+    } else {
+        Menu::with_items(
+            app,
+            &[&show, &recent, &shot, &line, &library, &sep, &about, &quit],
+        )?
+    };
+    #[cfg(not(all(unix, not(target_os = "macos"))))]
     let menu = Menu::with_items(
         app,
         &[&show, &recent, &shot, &line, &library, &sep, &about, &quit],
@@ -1545,6 +1574,26 @@ fn time_fmt(unix: i64) -> String {
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
     format!("{y:04}{m:02}{d:02}-{h:02}{mi:02}{s:02}")
+}
+
+// ─────────────────────── wayland session notice ───────────────────────
+
+/// True on a Wayland desktop session (Linux) — synthetic keyboard events
+/// are forbidden there, so auto-paste falls back to copy-only. The UI
+/// surfaces this so users don't wonder why Enter only copies.
+#[cfg(all(unix, not(target_os = "macos")))]
+fn is_wayland_session() -> bool {
+    std::env::var_os("WAYLAND_DISPLAY").is_some()
+}
+
+#[cfg(not(all(unix, not(target_os = "macos"))))]
+fn is_wayland_session() -> bool {
+    false
+}
+
+#[tauri::command]
+fn wayland_session() -> bool {
+    is_wayland_session()
 }
 
 // ─────────────────────────── autostart ───────────────────────────
