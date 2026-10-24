@@ -1,6 +1,8 @@
 mod clipboard;
 mod db;
 mod filelog;
+#[cfg(target_os = "windows")]
+mod jumplist;
 #[cfg(target_os = "macos")]
 mod paste;
 #[cfg(not(target_os = "macos"))]
@@ -219,6 +221,12 @@ fn register_drawer_with_fallback<R: Runtime>(app: &AppHandle<R>) -> (Shortcut, S
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default()
+        // single-instance must be first: secondary launches (e.g. jump-list
+        // paste) exit immediately after forwarding their args to us
+        .plugin(tauri_plugin_single_instance::init(|_app, _args, _cwd| {
+            #[cfg(target_os = "windows")]
+            jumplist::handle_launch_args(_app, &_args);
+        }))
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
@@ -314,6 +322,13 @@ pub fn run() {
             let max_history = load_setting(app.handle(), "max_history", "500")
                 .parse::<i64>()
                 .unwrap_or(500);
+            // Windows: pin the AUMID and build the taskbar jump list before
+            // polling starts (the poll thread refreshes it after inserts).
+            #[cfg(target_os = "windows")]
+            {
+                jumplist::init_aumid(app.handle());
+                jumplist::refresh(&conn);
+            }
             clipboard::start_polling(app.handle().clone(), conn, dedupe, retention, max_history);
 
             // Register all hotkeys FIRST so the tray tooltip can show the

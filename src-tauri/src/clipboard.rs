@@ -97,6 +97,8 @@ pub fn start_polling(
                         let _ = db::trim_expired(&conn_g, retention_days);
                         drop(conn_g);
                         let _ = app.emit("clipboard-changed", ());
+                        #[cfg(target_os = "windows")]
+                        crate::jumplist::refresh(&conn);
                     }
                     continue;
                 }

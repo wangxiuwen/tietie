@@ -53,8 +53,8 @@
 - [x] 35. 便签自定义颜色：详情视图色板选择（8 色预设，更新 memo.color）
 - [x] 36. 拖拽挂绳插入位预览：晾衣架显示将要插入的位置指示（ghost 卡占位）
 - [x] 37. 挂卡容量提示：>15 张时收起按钮旁提示清理（i18n）
-- [ ] 38. Windows 跳转列表：任务栏右键显示最近 5 条快速粘贴（jumplist API 或退出）
-  - 本轮未完成原因（2026-10-24）：ICustomDestinationList COM 全链路已写通并过门禁，但 CommitList 后系统 CustomDestinations 无新文件——AppUserModelID 与 WebView2 窗口实际 AUMID 匹配/线程模型待深查，COM 静默失败无诊断信号。代码已回退保持树干净；下轮需先 dump 窗口真实 AUMID 再对齐，或改用 tauri-plugin-deep-link + 手写 LNK 目录方案。
+- [x] 38. Windows 跳转列表：任务栏右键显示最近 5 条快速粘贴（jumplist API 或退出）
+  - 2026-10-24 重试成功。两个根因：①AUMID 未显式对齐——用 SHGetPropertyStoreForWindow 给进程+全部窗口钉死 PKEY_AppUserModel_ID；②IShellLink 缺 PKEY_Title 显示名——MSDN 规定 jumplist link 必须设该属性，SetDescription 只是 tooltip，缺它 AppendCategory 直接 E_INVALIDARG。落盘证据=Recent\CustomDestinations\<aumid-hash>.customDestinations-ms（上轮盯错 AutomaticDestinations 目录）。点击走 tauri-plugin-single-instance 转发 --paste <id> 到在跑实例。
 - [x] 39. 轮询自适应退避：连续无变化逐步放慢到 2s，检测到变化回到 600ms（省电）
 - [ ] 40. panic hook 写日志：std::panic::set_hook 把 panic 栈写 tietie.log（配合方向13）
 - [ ] 41. 冷启动计时：启动耗时写日志（毫秒级，setup 首尾打点）
@@ -81,6 +81,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 38 | e848eac | Windows 跳转列表重试成功：AUMID 显式钉窗口+PKEY_TITLE 补显名双根因修复，customDestinations-ms 落盘+--paste 转发 0.6s 实测
 2026-10-24 | 39 | 68cc0c3 | 轮询自适应退避 600→1000→1500→2000ms（变化即回 600），日志阶梯实证+深退避复制 1.47s 命中
 2026-10-24 | 38 | — | 未完成：jumplist COM 写通但 CommitList 未落盘（AUMID 疑不匹配），按协议回退不合坏代码，原因已标注
 2026-10-24 | 37 | e8d1329 | 晾衣架>15 张时橙色「已挂 N」提示（title 建议清理），<15 无/16 显示/清理消失实测
