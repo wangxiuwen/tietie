@@ -78,7 +78,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-24 | 16d | TBD | 全拼（tuopan→托盘…）+字母子序列（tln→turing-llm-next）匹配，AND 组合同样生效
+2026-10-24 | 16d | 71fd141 | 全拼（tuopan→托盘…）+字母子序列（tln→turing-llm-next）匹配，AND 组合同样生效
 2026-10-24 | 16c | 79109f5 | 搜索结果按 use_count 加权排前（置顶优先），提升 use_count 后条目跃升实测
 2026-10-24 | 16b | a3a0d62 | 抽屉/托盘命中片段 <mark> 高亮（token 级黄底），turing llm 4 处高亮实测
 2026-10-24 | 16a | edf7b34 | 搜索空格分词 AND（每词都命中才出，拼音按词独立），turing→3/llm→2/zzzz→0 实测
