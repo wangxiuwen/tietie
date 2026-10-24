@@ -1572,3 +1572,9 @@ body.dragging-hang * {
   background: var(--accent-dim);
   outline: 1px solid var(--accent);
 }
+
+.chip.drop-hot {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  background: var(--accent-dim);
+}

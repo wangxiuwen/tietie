@@ -54,6 +54,8 @@ export default function App() {
     null,
   );
   const [draggingId, setDraggingId] = useState<number | null>(null);
+  // folder chip under the pointer during a card drag (drop-to-file target)
+  const [dropFolder, setDropFolder] = useState<string | null>(null);
   const [zoomId, setZoomId] = useState<number | null>(null);
   // ⌘/Ctrl+click multi-select for batch delete / hang
   const [multiSel, setMultiSel] = useState<Set<number>>(new Set());
@@ -94,7 +96,10 @@ export default function App() {
 
   // One window-level drag tracker for every card (see cardDrag above).
   useEffect(() => {
+    const lastPointer = { x: 0, y: 0 };
     const onMove = (e: PointerEvent) => {
+      lastPointer.x = e.clientX;
+      lastPointer.y = e.clientY;
       const st = cardDrag.current;
       if (!st || (e.buttons & 1) === 0) return;
       if (!st.moved) {
@@ -119,6 +124,12 @@ export default function App() {
         y: e.screenY - window.screenY,
         inZone,
       });
+      // drag-to-folder: highlight the chip under the pointer
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const chip = el?.closest?.("[data-folder-id]");
+      const fid = chip?.getAttribute("data-folder-id") ?? null;
+      // "pinned" is a filter, not a folder — not a drop target
+      setDropFolder(fid && fid !== "pinned" ? fid : null);
     };
     const onFinish = (hangIfZone: boolean) => {
       const st = cardDrag.current;
@@ -128,8 +139,22 @@ export default function App() {
       getCurrentWindow().setCursorGrab(false).catch(() => {});
       setDragGhost(null);
       setDraggingId(null);
+      setDropFolder(null);
       if (st.moved) {
         lastCardDragEnd = Date.now();
+        const chip = document
+          .elementFromPoint(lastPointer.x, lastPointer.y)
+          ?.closest?.("[data-folder-id]");
+        const fid = chip?.getAttribute("data-folder-id");
+        if (fid && fid !== "pinned") {
+          // dropped on a folder chip → file it there ("all" clears)
+          const target = fid === "all" ? null : Number(fid);
+          invoke("set_item_folder", { id: st.itemId, folderId: target })
+            .then(() => refresh())
+            .catch(() => {});
+          setDropFolder(null);
+          return;
+        }
         if (hangIfZone && st.inZone) {
           invoke("hang_item", { id: st.itemId })
             .catch(() => {})
@@ -339,6 +364,7 @@ export default function App() {
           searchRef={searchRef}
         />
         <FolderChips
+          dropFolder={dropFolder}
           folders={folders}
           folderId={folderId}
           setFolderId={(f) => {
@@ -498,11 +524,13 @@ function Header({
 }
 
 function FolderChips({
+  dropFolder,
   folders,
   folderId,
   setFolderId,
   counts,
 }: {
+  dropFolder: string | null;
   folders: Folder[];
   folderId: number | "pinned" | null;
   setFolderId: (id: number | "pinned" | null) => void;
@@ -520,7 +548,10 @@ function FolderChips({
   return (
     <div className="folders">
       <button
-        className={"chip" + (folderId === null ? " active" : "")}
+        className={
+          "chip" + (folderId === null ? " active" : "") + (dropFolder === "all" ? " drop-hot" : "")
+        }
+        data-folder-id="all"
         onClick={() => setFolderId(null)}
       >
         {t("tab.all")}
@@ -534,7 +565,12 @@ function FolderChips({
       {folders.map((f) => (
         <button
           key={f.id}
-          className={"chip" + (folderId === f.id ? " active" : "")}
+          className={
+            "chip" +
+            (folderId === f.id ? " active" : "") +
+            (dropFolder === String(f.id) ? " drop-hot" : "")
+          }
+          data-folder-id={f.id}
           onClick={() => setFolderId(f.id)}
         >
           <span className="swatch" style={{ background: f.color }} />
