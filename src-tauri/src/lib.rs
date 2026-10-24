@@ -484,6 +484,22 @@ pub fn run() {
             {
                 let _ = window.hide();
             }
+            // DPI/scale hop (monitor move or zoom change): re-run the
+            // cursor-following placement so the drawer / clothesline fit
+            // the new monitor geometry instead of straddling or clipping.
+            if let tauri::WindowEvent::ScaleFactorChanged { scale_factor, .. } = event {
+                let label = window.label();
+                if label == "drawer" || label == "clothesline" {
+                    if let Some(win) = window.get_webview_window(label) {
+                        if label == "drawer" {
+                            position_drawer(&win);
+                        } else {
+                            position_clothesline(&win);
+                        }
+                        log::info!("scale → {scale_factor:.2}: repositioned {label}");
+                    }
+                }
+            }
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
