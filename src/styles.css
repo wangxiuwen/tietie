@@ -1730,3 +1730,10 @@ mark.hl {
 .th-sort.on {
   color: var(--accent);
 }
+
+/* ───────── code token tinting ───────── */
+
+.tok-comment { color: #7f8c98; }
+.tok-str { color: #2e9e5b; }
+.tok-num { color: #b0640f; }
+.tok-kw { color: #8250df; font-weight: 600; }

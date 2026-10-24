@@ -10,6 +10,7 @@ import { MOD } from "./platform";
 import { matchQuery } from "./search";
 import { HighlightText } from "./highlight";
 import { ContextMenu, type MenuItem } from "./ContextMenu";
+import { CodeView } from "./codeView";
 import { t, useLang } from "./i18n";
 import { onFontScaleChange } from "./fontScale";
 
@@ -822,7 +823,15 @@ function CardBody({ item, query }: { item: ClipItem; query: string }) {
     );
   }
   if (item.kind === "code") {
-    return <pre className="body mono"><HighlightText text={truncate(item.content, 240)} query={query} /></pre>;
+    return (
+      <pre className="body mono">
+        {query.trim() ? (
+          <HighlightText text={truncate(item.content, 240)} query={query} />
+        ) : (
+          <CodeView text={truncate(item.content, 240)} />
+        )}
+      </pre>
+    );
   }
   if (item.kind === "link") {
     return (
