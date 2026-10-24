@@ -85,7 +85,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-24 | 50 | TBD | Library 条目 Markdown 导出：export_selected_markdown 按类型分组（文本列表/链接[c](c)/代码```围栏/颜色`hex`/图片占位），CDP 实测导出文件内容正确
+2026-10-24 | 50 | 57a3748 | Library 条目 Markdown 导出：export_selected_markdown 按类型分组（文本列表/链接[c](c)/代码```围栏/颜色`hex`/图片占位），CDP 实测导出文件内容正确
 2026-10-24 | 49 | 复验 | 方向49 与已完成的18重复（扩池误加）：R18 实现在当前构建合成拖拽全序列复验通过（folder None→临时夹→还原，净零），无需新代码
 2026-10-24 | 48 | e9ec265 | DPI/scale 跳变重定位：on_window_event 接 ScaleFactorChanged 重摆抽屉/晾衣架，WM_DPICHANGED(144) 合成实测窗口 1.5×+repositioned 日志（tao 有 scale 去重缓存，测试要错开值）
 2026-10-24 | 47 | 2f21101 | Linux .desktop 集成收口：category→Utility+deb desktopTemplate（Comment/Keywords 补齐），渲染后 spec 结构校验 PASS，config schema 构建实证
