@@ -109,7 +109,7 @@
     "active": true,
     "targets": "all",
     "createUpdaterArtifacts": true,
-    "category": "Productivity",
+    "category": "Utility",
     "shortDescription": "漂亮、轻量、跨平台的剪切板管理器",
     "longDescription": "贴贴 (Tietie) — 一个底部抽屉式的剪切板管理器，支持文本/链接/图片/代码/颜色分类、置顶、文件夹、全局快捷键和系统托盘。",
     "icon": [
@@ -129,7 +129,8 @@
           "libwebkit2gtk-4.1-0",
           "libgtk-3-0",
           "libayatana-appindicator3-1"
-        ]
+        ],
+        "desktopTemplate": "assets/tietie.desktop"
       }
     },
     "windows": {
