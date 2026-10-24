@@ -1,5 +1,6 @@
 mod clipboard;
 mod db;
+mod filelog;
 #[cfg(target_os = "macos")]
 mod paste;
 #[cfg(not(target_os = "macos"))]
@@ -215,8 +216,6 @@ fn register_drawer_with_fallback<R: Runtime>(app: &AppHandle<R>) -> (Shortcut, S
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
-
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_autostart::init(
@@ -259,6 +258,29 @@ pub fn run() {
 
     builder
         .setup(|app| {
+            // File logger with rotation — releases have no console, so keep a
+            // small diagnostic trail in the app local data dir.
+            match filelog::FileLogger::open(
+                app.path()
+                    .app_local_data_dir()
+                    .expect("no app local data dir")
+                    .join("tietie.log"),
+                log::LevelFilter::Info,
+            ) {
+                Ok(l) => {
+                    let _ = log::set_boxed_logger(Box::new(l))
+                        .map(|()| log::set_max_level(log::LevelFilter::Info));
+                }
+                Err(e) => {
+                    // fall back to stderr rather than run blind
+                    env_logger::Builder::from_env(
+                        env_logger::Env::default().default_filter_or("info"),
+                    )
+                    .init();
+                    eprintln!("file logger unavailable ({e}), falling back to stderr");
+                }
+            }
+
             // Hide from Dock + Cmd-Tab — clipboard utility lives in the tray,
             // not in the foreground app list. Tray icon + hotkey are the
             // only entry points needed.
@@ -294,8 +316,24 @@ pub fn run() {
                     screenshot: Mutex::new(shot),
                     clothesline: Mutex::new(line),
                 });
+                // startup self-check: any hotkey the OS refused?
+                let failed = [
+                    ("screenshot", shot.is_none()),
+                    ("clothesline", line.is_none()),
+                ]
+                .iter()
+                .filter(|(_, f)| *f)
+                .count();
+                log::info!(
+                    "self-check: drawer hotkey {effective_str}, screenshot {}, clothesline {}",
+                    if shot.is_some() { "ok" } else { "FAILED" },
+                    if line.is_some() { "ok" } else { "FAILED" },
+                );
+                if failed > 0 {
+                    log::warn!("self-check: {failed} hotkey(s) failed to register (combo taken)");
+                }
                 // create tray after hotkeys so the tooltip shows the real combo
-                create_tray(app.handle(), &effective_str)?;
+                create_tray(app.handle(), &effective_str, failed)?;
             }
             #[cfg(not(desktop))]
             {
@@ -410,7 +448,11 @@ fn hotkey_to_accel(s: &str) -> String {
 }
 
 #[cfg(desktop)]
-fn create_tray<R: Runtime>(app: &AppHandle<R>, effective_drawer_hotkey: &str) -> tauri::Result<()> {
+fn create_tray<R: Runtime>(
+    app: &AppHandle<R>,
+    effective_drawer_hotkey: &str,
+    failed_hotkeys: usize,
+) -> tauri::Result<()> {
     // muda menu accelerators can't bind the Win/Super key on Windows/Linux —
     // that combo would panic the setup hook. On macOS "Super+Shift+V" renders
     // natively as ⌘⇧V; elsewhere the combo goes into the item text instead.
@@ -459,11 +501,14 @@ fn create_tray<R: Runtime>(app: &AppHandle<R>, effective_drawer_hotkey: &str) ->
         &[&show, &recent, &shot, &line, &library, &sep, &about, &quit],
     )?;
 
-    let tooltip = format!(
+    let mut tooltip = format!(
         "贴贴 — {} 唤起剪切板 · {} 晾衣架",
         hotkey_to_accel(effective_drawer_hotkey),
         hotkey_to_accel(&line_cfg)
     );
+    if failed_hotkeys > 0 {
+        tooltip.push_str(&format!(" ⚠ {failed_hotkeys} 个热键未注册(被占用)"));
+    }
 
     let _tray = TrayIconBuilder::with_id("main")
         .icon(tray_icon_image())
