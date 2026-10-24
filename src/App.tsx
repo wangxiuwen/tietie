@@ -50,6 +50,13 @@ export default function App() {
   const [items, setItems] = useState<ClipItem[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [tab, setTab] = useState<FilterTab>("all");
+  // card / compact-list display mode (direction 52), persisted per machine
+  const [compact, setCompact] = useState(
+    () => localStorage.getItem("tietie-compact") === "1",
+  );
+  useEffect(() => {
+    localStorage.setItem("tietie-compact", compact ? "1" : "0");
+  }, [compact]);
   const [folderId, setFolderId] = useState<number | "pinned" | null>(null);
   const [query, setQuery] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(0);
@@ -386,6 +393,8 @@ export default function App() {
       <div className="bar">
         <div className="bar-handle" />
         <Header
+          compact={compact}
+          setCompact={setCompact}
           query={query}
           setQuery={(v) => {
             setQuery(v);
@@ -425,6 +434,21 @@ export default function App() {
                     onSave={() => saveEdit(false)}
                     onSaveAndPaste={() => saveEdit(true)}
                     textareaRef={editRef}
+                  />
+                ) : compact ? (
+                  <CardRow
+                    key={it.id}
+                    item={it}
+                    idx={idx}
+                    selected={idx === selectedIdx}
+                    query={query}
+                    onContext={(x, y) => setCtxMenu({ x, y, itemId: it.id })}
+                    onClick={() => {
+                      setSelectedIdx(idx);
+                      if (it.kind === "image") setZoomId(it.id);
+                      else setZoomId(null);
+                    }}
+                    onDoubleClick={() => paste(it)}
                   />
                 ) : (
                   <Card
@@ -587,6 +611,8 @@ function buildCtxItems({
 }
 
 function Header({
+  compact,
+  setCompact,
   query,
   setQuery,
   tab,
@@ -594,6 +620,8 @@ function Header({
   counts,
   searchRef,
 }: {
+  compact: boolean;
+  setCompact: (v: boolean) => void;
   query: string;
   setQuery: (v: string) => void;
   tab: FilterTab;
@@ -628,6 +656,14 @@ function Header({
         ))}
       </div>
       <div className="header-right">
+        <button
+          className="icon-btn"
+          title={compact ? t("view.cards") : t("view.compact")}
+          aria-label={compact ? t("view.cards") : t("view.compact")}
+          onClick={() => setCompact(!compact)}
+        >
+          {compact ? <CardViewIcon /> : <RowViewIcon />}
+        </button>
         <button className="icon-btn" title="设置" onClick={() => invoke("open_settings")}>
           <GearIcon />
         </button>
@@ -819,6 +855,63 @@ function Card({
 }
 
 /** Short spoken-form text for a card (images: dimensions, not base64). */
+/** Compact single-line row (direction 52): badge + one-line text + meta,
+ *  same select/paste/context-menu semantics as the card. */
+function CardRow({
+  item,
+  idx,
+  selected,
+  query,
+  onClick,
+  onDoubleClick,
+  onContext,
+}: {
+  item: ClipItem;
+  idx: number;
+  selected: boolean;
+  query: string;
+  onClick: () => void;
+  onDoubleClick: () => void;
+  onContext: (x: number, y: number) => void;
+}) {
+  const text = item.kind === "image" ? `🖼 ${item.content}` : item.preview || item.content;
+  return (
+    <div
+      data-idx={idx}
+      role="option"
+      aria-selected={selected}
+      aria-label={`${kindLabel(item.kind)}：${cardAriaText(item)}`}
+      className={"row-item" + (selected ? " selected" : "")}
+      onClick={onClick}
+      onDoubleClick={onDoubleClick}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onContext(e.clientX, e.clientY);
+      }}
+    >
+      <span className={"badge " + item.kind}>{kindLabel(item.kind)}</span>
+      <span className="row-text">
+        <HighlightText text={text} query={query} />
+      </span>
+      <span className="row-meta">
+        {item.source_app || "—"} · {relTime(item.used_at)}
+      </span>
+      {item.pinned && (
+        <span className="pin">
+          <PinIcon />
+        </span>
+      )}
+      {idx < 10 && (
+        <span className="index-kbd">
+          {MOD}
+          {idx === 9 ? 0 : idx + 1}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function cardAriaText(item: ClipItem): string {
   const s = item.kind === "image" ? item.content : (item.preview || item.content);
   const one = s.replace(/\s+/g, " ").trim();
@@ -1104,6 +1197,22 @@ function SearchIcon() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="11" cy="11" r="7" />
       <path d="m21 21-4.3-4.3" />
+    </svg>
+  );
+}
+
+function RowViewIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M4 6h16M4 12h16M4 18h16" />
+    </svg>
+  );
+}
+
+function CardViewIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="4" y="4" width="16" height="16" rx="2" />
     </svg>
   );
 }

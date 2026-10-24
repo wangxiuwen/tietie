@@ -88,6 +88,7 @@ export const zh: Dict = {
   "lib.total": "共", "lib.items": "条", "lib.selected": "已选",
   "lib.export": "导出所选文本", "lib.exportMd": "导出 Markdown", "lib.delete": "删除所选",
   "lib.palette": "色板", "lib.paletteEmpty": "暂无颜色条目——复制一个 #RRGGBB 试试", "lib.copied": "已复制",
+  "view.compact": "紧凑列表", "view.cards": "卡片视图",
   "lib.noMatch": "没有匹配的条目", "lib.empty": "剪贴板历史还是空的",
   "lib.deleted": "已删除", "lib.collapse": "收起",
   // tray popover
@@ -182,6 +183,7 @@ export const en: Dict = {
   "lib.total": "Total", "lib.items": "items", "lib.selected": "Selected",
   "lib.export": "Export selected text", "lib.exportMd": "Export Markdown", "lib.delete": "Delete selected",
   "lib.palette": "Swatches", "lib.paletteEmpty": "No colors yet — copy a #RRGGBB to try", "lib.copied": "Copied",
+  "view.compact": "Compact list", "view.cards": "Card view",
   "lib.noMatch": "No matching items", "lib.empty": "Clipboard history is empty",
   "lib.deleted": "Deleted", "lib.collapse": "Collapse",
   "tray.pinned": "📌 Pinned", "tray.recent": "Recent", "tray.results": "Results",

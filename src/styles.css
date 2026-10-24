@@ -2064,3 +2064,41 @@ select:focus-visible,
   text-align: center;
   font-family: ui-monospace, monospace;
 }
+
+/* Drawer compact list mode (direction 52) */
+.row-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: calc(6px * var(--fs)) 14px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.12);
+  cursor: pointer;
+  min-height: calc(30px * var(--fs));
+}
+.row-item:hover {
+  background: var(--card-hover);
+}
+.row-item.selected {
+  background: var(--card-hover);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.row-item .row-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: calc(13px * var(--fs));
+}
+.row-item .row-meta {
+  color: rgba(136, 136, 136, 0.9);
+  font-size: calc(11px * var(--fs));
+  white-space: nowrap;
+}
+.row-item .badge {
+  flex-shrink: 0;
+}
+.row-item .pin svg {
+  width: 12px;
+  height: 12px;
+}
