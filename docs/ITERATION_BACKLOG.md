@@ -82,7 +82,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-24 | 45 | TBD | 无障碍审计：卡片列表 listbox/option 语义+aria-label（图片卡报尺寸不报 base64）、图标按钮可访问名、全局 :focus-visible 焦点环；CDP 实测 126 元素 0 缺名
+2026-10-24 | 45 | 4257a1b | 无障碍审计：卡片列表 listbox/option 语义+aria-label（图片卡报尺寸不报 base64）、图标按钮可访问名、全局 :focus-visible 焦点环；CDP 实测 126 元素 0 缺名
 2026-10-24 | 44 | 5f463aa | E2E 冒烟脚本沉淀 scripts/e2e_smoke.py：内嵌 stdlib WebSocket+CDP invoke+Win32 窗口真值+只读 sqlite，四链路（开抽屉/挂绳/摘下/净零库）实测 PASS
 2026-10-24 | 42+43 | ac89034 | vitest 前端测试上线：search 拼音三层/i18n key 双向 diff(92 key 全等)/hexToRgb 15 断言全绿，npm test 进 CI；hexToRgb 抽 color.ts 纯模块
 2026-10-24 | 41 | 975c083 | 冷启动计时打点：run 入口 Instant→setup 首尾两条 boot 日志，装机实测 pre-setup 630ms / complete 705ms
