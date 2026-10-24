@@ -70,6 +70,7 @@ const zh: Dict = {
   // clothesline
   "line.empty": "晾衣架空着 — 从下面的抽屉按住一张卡片往上拖，松手就挂上",
   "line.hang": "松手挂上 ↩", "line.takeoff": "拖出绳区摘下", "line.takeoffNow": "松手摘下 ✕", "line.reorder": "松手换位 ⇄", "line.insertHere": "↳ 挂到这里",
+  "line.cap": "晾衣架已挂", "line.capHint": "卡片较多，建议摘下不用的便签保持整洁",
   "line.toTop": "拖到顶部挂上", "line.collapse": "收起",
   "line.newNote": "＋ 便签", "line.composing": "新便签",
   "line.composePlaceholder": "写点什么挂上？Esc 取消",
@@ -162,6 +163,7 @@ const en: Dict = {
   "settings.accHint": "Paste needs Accessibility permission. Click Grant, open System Settings → Privacy & Security → Accessibility and enable Tietie; status refreshes automatically.",
   "line.empty": "The line is empty — drag a drawer card up here and release to hang it",
   "line.hang": "Release to hang ↩", "line.takeoff": "Drag past the rope to take off", "line.takeoffNow": "Release to take off ✕", "line.reorder": "Release to reorder ⇄", "line.insertHere": "↳ hangs here",
+  "line.cap": "on the line:", "line.capHint": "Quite crowded — take unused notes off to keep it tidy",
   "line.toTop": "Drag to the top to hang", "line.collapse": "Collapse",
   "line.newNote": "＋ Note", "line.composing": "New note",
   "line.composePlaceholder": "Write something to hang? Esc cancels",

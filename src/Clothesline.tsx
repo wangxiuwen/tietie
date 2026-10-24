@@ -326,6 +326,11 @@ export default function Clothesline() {
               />
             )}
           </div>
+          {memos.length > 15 && (
+            <span className="line-cap" title={t("line.capHint")}>
+              {t("line.cap")} {memos.length}
+            </span>
+          )}
           <button
             className="line-new"
             title={t("line.newNote")}

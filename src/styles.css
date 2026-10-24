@@ -2000,3 +2000,17 @@ mark.hl {
   animation: ov-pop 0.2s ease-out;
   margin-top: 26px;
 }
+
+/* ───────── capacity hint ───────── */
+
+.line-cap {
+  position: absolute;
+  right: 116px;
+  top: 6px;
+  font-size: calc(10.5px * var(--fs));
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.14);
+  border-radius: 6px;
+  padding: 3px 8px;
+  cursor: default;
+}
