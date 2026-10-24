@@ -1578,3 +1578,10 @@ body.dragging-hang * {
   outline-offset: 1px;
   background: var(--accent-dim);
 }
+
+mark.hl {
+  background: rgba(255, 214, 0, 0.45);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 1px;
+}

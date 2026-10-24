@@ -6,6 +6,7 @@ import type { ClipItem } from "./types";
 import { kindLabel } from "./types";
 import { MOD } from "./platform";
 import { matchQuery } from "./search";
+import { HighlightText } from "./highlight";
 import { t, useLang } from "./i18n";
 
 
@@ -105,6 +106,7 @@ export default function TrayPopover() {
                   data-idx={idx}
                   item={it}
                   active={idx === sel}
+                  query={query}
                   onClick={() => copyBack(it)}
                 />
               ))}
@@ -128,11 +130,13 @@ export default function TrayPopover() {
 function Row({
   item,
   active,
+  query,
   "data-idx": idx,
   onClick,
 }: {
   item: ClipItem;
   active: boolean;
+  query: string;
   "data-idx"?: number;
   onClick: () => void;
 }) {
@@ -143,7 +147,7 @@ function Row({
       onClick={onClick}
     >
       <span className={"po-kind kind-" + item.kind}>{kindLabel(item.kind)}</span>
-      <span className="po-text">{trimOne(item.preview || item.content)}</span>
+      <span className="po-text"><HighlightText text={trimOne(item.preview || item.content)} query={query} /></span>
     </button>
   );
 }

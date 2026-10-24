@@ -8,6 +8,7 @@ import type { ClipItem, Folder, ItemKind } from "./types";
 import { kindLabel } from "./types";
 import { MOD } from "./platform";
 import { matchQuery } from "./search";
+import { HighlightText } from "./highlight";
 import { t, useLang } from "./i18n";
 
 type FilterTab = "all" | ItemKind;
@@ -398,6 +399,7 @@ export default function App() {
                     selected={idx === selectedIdx}
                     beingDragged={draggingId === it.id}
                     multiSelected={multiSel.has(it.id)}
+                    query={query}
                     onClick={(e) => {
                       if (e.metaKey || e.ctrlKey) {
                         // multi-select toggle — no zoom, no single selection
@@ -613,6 +615,7 @@ function Card({
   selected,
   beingDragged,
   multiSelected,
+  query,
   onClick,
   onDoubleClick,
   onPin,
@@ -625,6 +628,7 @@ function Card({
   selected: boolean;
   beingDragged: boolean;
   multiSelected: boolean;
+  query: string;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: () => void;
   onPin: () => void;
@@ -665,7 +669,7 @@ function Card({
           <PinIcon />
         </span>
       )}
-      <CardBody item={item} />
+      <CardBody item={item} query={query} />
       <div className="meta">
         <span className="src">{item.source_app || "—"}</span>
         <span>{relTime(item.used_at)}</span>
@@ -690,7 +694,7 @@ function Card({
   );
 }
 
-function CardBody({ item }: { item: ClipItem }) {
+function CardBody({ item, query }: { item: ClipItem; query: string }) {
   if (item.kind === "image") {
     return (
       <div
@@ -713,17 +717,17 @@ function CardBody({ item }: { item: ClipItem }) {
     );
   }
   if (item.kind === "code") {
-    return <pre className="body mono">{truncate(item.content, 240)}</pre>;
+    return <pre className="body mono"><HighlightText text={truncate(item.content, 240)} query={query} /></pre>;
   }
   if (item.kind === "link") {
     return (
       <div className="body">
-        <div className="link-title">{item.preview || item.content}</div>
-        <div className="link-url">{item.content}</div>
+        <div className="link-title"><HighlightText text={item.preview || item.content} query={query} /></div>
+        <div className="link-url"><HighlightText text={item.content} query={query} /></div>
       </div>
     );
   }
-  return <div className="body">{truncate(item.content, 240)}</div>;
+  return <div className="body"><HighlightText text={truncate(item.content, 240)} query={query} /></div>;
 }
 
 function EditCard({
