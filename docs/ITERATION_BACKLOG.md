@@ -78,7 +78,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-24 | 16 | TBD | Wayland 检测：托盘禁用说明项+设置面板提示行（win 实证 false 不显示）
+2026-10-24 | 16 | 984c31b | Wayland 检测：托盘禁用说明项+设置面板提示行（win 实证 false 不显示）
 2026-10-24 | 15 | TBD | bump-version.py 三处同步+check 模式+tag 提示，往返验证
 2026-10-24 | 14 | 54efd02 | db/clipboard 单测 8 个全过（trim 语义钉死）+CI cargo test
 2026-10-24 | 13 | 95f4892 | 文件日志 512KB 轮转+启动 self-check 日志/tooltip 告警，真机验证
