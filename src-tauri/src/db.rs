@@ -407,8 +407,10 @@ pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
 /// Hang a clip item on the line as a memo (snapshot copy + source link).
 pub fn hang_memo(conn: &Connection, item_id: i64, color: &str) -> SqlResult<i64> {
     conn.execute(
-        "INSERT INTO memo (kind, content, preview, color, source_item_id, created_at)
-         SELECT kind, content, preview, ?2, id, ?3 FROM clip_item WHERE id = ?1",
+        "INSERT INTO memo (kind, content, preview, color, source_item_id, created_at, sort)
+         SELECT kind, content, preview, ?2, id, ?3,
+                (SELECT COALESCE(MAX(sort), -1) + 1 FROM memo)
+         FROM clip_item WHERE id = ?1",
         params![item_id, color, now_unix()],
     )?;
     Ok(conn.last_insert_rowid())

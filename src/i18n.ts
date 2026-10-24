@@ -69,7 +69,7 @@ const zh: Dict = {
   "settings.accHint": "粘贴功能需要「辅助功能」权限。点击「去授权」打开系统设置 → 隐私与安全 → 辅助功能，把 Tietie 打开即可，授权后状态自动刷新。",
   // clothesline
   "line.empty": "晾衣架空着 — 从下面的抽屉按住一张卡片往上拖，松手就挂上",
-  "line.hang": "松手挂上 ↩", "line.takeoff": "拖出绳区摘下", "line.takeoffNow": "松手摘下 ✕", "line.reorder": "松手换位 ⇄",
+  "line.hang": "松手挂上 ↩", "line.takeoff": "拖出绳区摘下", "line.takeoffNow": "松手摘下 ✕", "line.reorder": "松手换位 ⇄", "line.insertHere": "↳ 挂到这里",
   "line.toTop": "拖到顶部挂上", "line.collapse": "收起",
   "line.newNote": "＋ 便签", "line.composing": "新便签",
   "line.composePlaceholder": "写点什么挂上？Esc 取消",
@@ -161,7 +161,7 @@ const en: Dict = {
   "settings.wayland": "Wayland session", "settings.waylandHint": "Enter copies only — no auto-paste (Wayland security)",
   "settings.accHint": "Paste needs Accessibility permission. Click Grant, open System Settings → Privacy & Security → Accessibility and enable Tietie; status refreshes automatically.",
   "line.empty": "The line is empty — drag a drawer card up here and release to hang it",
-  "line.hang": "Release to hang ↩", "line.takeoff": "Drag past the rope to take off", "line.takeoffNow": "Release to take off ✕", "line.reorder": "Release to reorder ⇄",
+  "line.hang": "Release to hang ↩", "line.takeoff": "Drag past the rope to take off", "line.takeoffNow": "Release to take off ✕", "line.reorder": "Release to reorder ⇄", "line.insertHere": "↳ hangs here",
   "line.toTop": "Drag to the top to hang", "line.collapse": "Collapse",
   "line.newNote": "＋ Note", "line.composing": "New note",
   "line.composePlaceholder": "Write something to hang? Esc cancels",

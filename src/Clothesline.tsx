@@ -308,7 +308,12 @@ export default function Clothesline() {
                 />
               ))
             )}
-            {previewing && <div className="line-ghost">{t("line.hang")}</div>}
+            {previewing && (
+              <>
+                <div className="line-insert-slot">{t("line.insertHere")}</div>
+                <div className="line-ghost">{t("line.hang")}</div>
+              </>
+            )}
             {composing && (
               <NoteComposer
                 onCancel={() => setComposing(false)}

@@ -1982,3 +1982,21 @@ mark.hl {
   border-color: var(--text);
   outline: 1.5px solid var(--card-bg);
 }
+
+/* ───────── hang insertion slot ───────── */
+
+.line-insert-slot {
+  flex: 0 0 auto;
+  width: 130px;
+  min-height: 90px;
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: calc(12px * var(--fs));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: ov-pop 0.2s ease-out;
+  margin-top: 26px;
+}

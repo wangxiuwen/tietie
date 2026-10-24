@@ -1124,8 +1124,9 @@ fn add_memo_direct(
     let memo_id = {
         let conn = state.conn.lock();
         conn.execute(
-            "INSERT INTO memo (kind, content, preview, color, source_item_id, created_at)
-             VALUES ('text', ?1, ?2, '#007aff', NULL, ?3)",
+            "INSERT INTO memo (kind, content, preview, color, source_item_id, created_at, sort)
+             VALUES ('text', ?1, ?2, '#007aff', NULL, ?3,
+                     (SELECT COALESCE(MAX(sort), -1) + 1 FROM memo))",
             rusqlite::params![
                 trimmed,
                 trimmed.chars().take(120).collect::<String>(),
