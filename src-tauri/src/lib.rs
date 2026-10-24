@@ -220,6 +220,9 @@ fn register_drawer_with_fallback<R: Runtime>(app: &AppHandle<R>) -> (Shortcut, S
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // cold-start clock: run() entry ≈ process entry after CRT init; setup
+    // writes the checkpoints to the log (direction 41)
+    let boot = std::time::Instant::now();
     let mut builder = tauri::Builder::default()
         // single-instance must be first: secondary launches (e.g. jump-list
         // paste) exit immediately after forwarding their args to us
@@ -267,7 +270,7 @@ pub fn run() {
     }
 
     builder
-        .setup(|app| {
+        .setup(move |app| {
             // File logger with rotation — releases have no console, so keep a
             // small diagnostic trail in the app local data dir.
             match filelog::FileLogger::open(
@@ -294,6 +297,7 @@ pub fn run() {
             // panic=abort, so the hook is the only trace we ever get.
             filelog::install_panic_hook();
             log::info!("panic hook installed");
+            log::info!("boot: pre-setup {}ms", boot.elapsed().as_millis());
 
             // Hide from Dock + Cmd-Tab — clipboard utility lives in the tray,
             // not in the foreground app list. Tray icon + hotkey are the
@@ -406,6 +410,10 @@ pub fn run() {
                 log::info!("Accessibility trusted: {trusted}");
             }
 
+            log::info!(
+                "boot: setup complete {}ms (cold start)",
+                boot.elapsed().as_millis()
+            );
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
