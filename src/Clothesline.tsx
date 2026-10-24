@@ -5,6 +5,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Memo } from "./types";
 import { kindLabel } from "./types";
+import { ContextMenu, type MenuItem } from "./ContextMenu";
 import { t, useLang } from "./i18n";
 import { RopeSim } from "./ropePhysics";
 
@@ -37,6 +38,8 @@ export default function Clothesline() {
   const [dragUI, setDragUI] = useState<{ id: number; x: number; y: number; off: boolean } | null>(
     null,
   );
+  // right-click context menu on hanging cards
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; memoId: number } | null>(null);
   const memosRef = useRef<Memo[]>([]);
   memosRef.current = memos;
   // live drag pointer (viewport coords) for the rope physics loop
@@ -195,6 +198,13 @@ export default function Clothesline() {
   // the composer is an inline card under the rope instead
   const [composing, setComposing] = useState(false);
 
+  // open the detail view already in edit mode (context-menu 编辑)
+  const [editOnOpen, setEditOnOpen] = useState(false);
+  const openDetailEditing = useCallback((m: Memo) => {
+    setEditOnOpen(true);
+    setViewing(m);
+  }, []);
+
   const saveMemo = useCallback(async (id: number, content: string) => {
     await invoke("update_memo", { id, content }).catch((e) =>
       console.warn("update_memo failed:", e),
@@ -217,9 +227,10 @@ export default function Clothesline() {
       {viewing ? (
         <MemoDetail
           memo={viewing}
+          initialEditing={editOnOpen}
           copied={copiedId === viewing.id}
           onCopy={() => copy(viewing)}
-          onClose={() => setViewing(null)}
+          onClose={() => { setEditOnOpen(false); setViewing(null); }}
           onRemove={() => remove(viewing.id)}
           onSave={(content) => saveMemo(viewing.id, content)}
           onTogglePin={() => invoke("toggle_memo_pin", { id: viewing.id }).catch(() => {})}
@@ -239,6 +250,8 @@ export default function Clothesline() {
                   swing={i % 2 === 1}
                   draggedOff={dragUI?.id === m.id && dragUI.off}
                   lifted={dragUI?.id === m.id}
+                  onContext={(x, y) => setCtxMenu({ x, y, memoId: m.id })}
+                  onEdit={() => openDetailEditing(m)}
                 />
               ))
             )}
@@ -270,6 +283,20 @@ export default function Clothesline() {
             {t("line.collapse")}
           </button>
         </>
+      )}
+      {ctxMenu && (
+        <ContextMenu
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          items={buildMemoCtxItems({
+            memo: memosRef.current.find((m) => m.id === ctxMenu.memoId),
+            onCopy: copy,
+            onPin: (id) => invoke("toggle_memo_pin", { id }).catch(() => {}),
+            onEdit: openDetailEditing,
+            onRemove: remove,
+          })}
+          onClose={() => setCtxMenu(null)}
+        />
       )}
       {dragUI &&
         createPortal(
@@ -350,6 +377,29 @@ function Rope({
   );
 }
 
+/** Context-menu entries for a hanging memo: copy / pin / edit / take off. */
+function buildMemoCtxItems({
+  memo,
+  onCopy,
+  onPin,
+  onEdit,
+  onRemove,
+}: {
+  memo?: Memo;
+  onCopy: (m: Memo) => void;
+  onPin: (id: number) => void;
+  onEdit: (m: Memo) => void;
+  onRemove: (id: number) => void;
+}): MenuItem[] {
+  if (!memo) return [];
+  return [
+    { label: t("line.copy"), onClick: () => onCopy(memo) },
+    { label: memo.pinned ? t("line.unpin") : t("line.pin"), onClick: () => onPin(memo.id) },
+    { label: t("line.edit"), onClick: () => onEdit(memo) },
+    { label: t("line.takeOff"), onClick: () => onRemove(memo.id) },
+  ];
+}
+
 /**
  * A hanging memo card. Click opens the detail view; dragging down past the
  * rope zone takes the memo off the line. Tracking (window listeners + ghost)
@@ -360,11 +410,15 @@ function HangingCard({
   swing,
   draggedOff,
   lifted,
+  onContext,
+  onEdit,
 }: {
   memo: Memo;
   swing: boolean;
   draggedOff: boolean;
   lifted: boolean;
+  onContext: (x: number, y: number) => void;
+  onEdit: () => void;
 }) {
   return (
     <div
@@ -375,6 +429,15 @@ function HangingCard({
         (lifted ? " lifted" : "")
       }
       data-memo={memo.id}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onContext(e.clientX, e.clientY);
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onEdit();
+      }}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         lineDrag.current = { memoId: memo.id, startY: e.screenY, moved: false, off: false };
@@ -406,6 +469,7 @@ function HangingCard({
 
 function MemoDetail({
   memo,
+  initialEditing = false,
   copied,
   onCopy,
   onClose,
@@ -414,6 +478,7 @@ function MemoDetail({
   onTogglePin,
 }: {
   memo: Memo;
+  initialEditing?: boolean;
   copied: boolean;
   onCopy: () => void;
   onClose: () => void;
@@ -421,7 +486,7 @@ function MemoDetail({
   onSave: (content: string) => void;
   onTogglePin: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(initialEditing);
   const [draft, setDraft] = useState(memo.content);
 
   const canEdit = memo.kind !== "image"; // image memos carry no editable text
