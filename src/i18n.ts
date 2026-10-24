@@ -93,6 +93,12 @@ const zh: Dict = {
   // batch
   "batch.selected": "已选", "batch.hang": "批量挂绳",
   "batch.delete": "批量删除", "batch.clear": "取消选择",
+  // cheatsheet
+  "cs.title": "键盘速查", "cs.nav": "切换选中卡片", "cs.paste": "粘贴到原应用",
+  "cs.direct": "直接粘贴第 N 条", "cs.search": "聚焦搜索", "cs.edit": "编辑当前条",
+  "cs.pin": "置顶/取消", "cs.del": "删除", "cs.tab": "切换类型标签",
+  "cs.multi": "多选（批量删除/挂绳）", "cs.hang": "挂到晾衣架", "cs.file": "归类到文件夹",
+  "cs.menu": "上下文菜单", "cs.close": "关闭",
   // context menu
   "ctx.copy": "复制", "ctx.pasteBack": "粘贴到原应用", "ctx.pin": "置顶",
   "ctx.unpin": "取消置顶", "ctx.hang": "挂到晾衣架", "ctx.moveTo": "移入文件夹…",
@@ -172,6 +178,11 @@ const en: Dict = {
   "tray.full": "Open full panel", "tray.quit": "Quit",
   "batch.selected": "Selected", "batch.hang": "Hang all",
   "batch.delete": "Delete all", "batch.clear": "Clear selection",
+  "cs.title": "Keyboard cheatsheet", "cs.nav": "Move selection", "cs.paste": "Paste to previous app",
+  "cs.direct": "Paste Nth item", "cs.search": "Focus search", "cs.edit": "Edit item",
+  "cs.pin": "Toggle pin", "cs.del": "Delete", "cs.tab": "Switch type tab",
+  "cs.multi": "Multi-select (batch)", "cs.hang": "Hang on the line", "cs.file": "File into folder",
+  "cs.menu": "Context menu", "cs.close": "Close",
   "ctx.copy": "Copy", "ctx.pasteBack": "Paste to previous app", "ctx.pin": "Pin",
   "ctx.unpin": "Unpin", "ctx.hang": "Hang on the line", "ctx.moveTo": "Move to folder…",
   "ctx.clearFolder": "　Remove from folder", "ctx.delete": "Delete",

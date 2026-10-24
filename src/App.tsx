@@ -65,6 +65,8 @@ export default function App() {
   const [multiSel, setMultiSel] = useState<Set<number>>(new Set());
   // right-click context menu on cards
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
+  // ? cheatsheet overlay
+  const [cheatsheet, setCheatsheet] = useState(false);
   const cardsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -268,7 +270,20 @@ export default function App() {
 
       if (editing) return; // textarea handles the rest
 
+      if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
+        if (!editing) {
+          e.preventDefault();
+          setCheatsheet((c) => !c);
+        }
+        return;
+      }
+
       if (e.key === "Escape") {
+        if (cheatsheet) {
+          e.preventDefault();
+          setCheatsheet(false);
+          return;
+        }
         if (zoomId !== null) {
           e.preventDefault();
           e.stopPropagation();
@@ -333,7 +348,7 @@ export default function App() {
     // so preventDefault actually stops ⌘D / ⌘P / etc. from typing into search.
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, paste, togglePin, deleteItem, startEdit]);
+  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, cheatsheet, paste, togglePin, deleteItem, startEdit]);
 
   // scroll selected into view
   useEffect(() => {
@@ -470,6 +485,8 @@ export default function App() {
           </div>
         )}
         <Footer count={filtered.length} total={items.length} />
+        {cheatsheet && <Cheatsheet onClose={() => setCheatsheet(false)} />}
+
         {zoomId !== null && (
           <ZoomOverlay
             item={items.find((x) => x.id === zoomId) ?? filtered.find((x) => x.id === zoomId)}
@@ -937,6 +954,43 @@ function ZoomOverlay({ item, onClose }: { item?: ClipItem; onClose: () => void }
           <span>
             {full ? "原图" : "缩略图"} · {fmtBytes(item.byte_size)} · Esc 关闭
           </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** ? — quick keyboard cheatsheet overlay (Esc closes). */
+function Cheatsheet({ onClose }: { onClose: () => void }) {
+  const rows: [string, string][] = [
+    ["←/→/↑/↓", t("cs.nav")],
+    ["↵", t("cs.paste")],
+    [`${MOD}1…0`, t("cs.direct")],
+    [`${MOD}F`, t("cs.search")],
+    [`${MOD}E`, t("cs.edit")],
+    [`${MOD}P`, t("cs.pin")],
+    [`${MOD}D`, t("cs.del")],
+    ["Tab", t("cs.tab")],
+    [`${MOD}+点击`, t("cs.multi")],
+    ["拖卡片↑", t("cs.hang")],
+    ["拖卡片→文件夹", t("cs.file")],
+    ["右键卡片", t("cs.menu")],
+    ["Esc", t("cs.close")],
+  ];
+  return (
+    <div className="cheat-overlay" onClick={onClose}>
+      <div className="cheat-panel" onClick={(e) => e.stopPropagation()}>
+        <div className="settings-head">
+          <h3>{t("cs.title")}</h3>
+          <button className="settings-close" onClick={onClose} title={t("cs.close")}>✕</button>
+        </div>
+        <div className="cheat-grid">
+          {rows.map(([k, v]) => (
+            <div key={k} className="cheat-row">
+              <span className="kbd">{k}</span>
+              <span>{v}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

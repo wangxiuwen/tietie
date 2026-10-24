@@ -1667,3 +1667,46 @@ mark.hl {
   color: #fff;
   border-color: transparent;
 }
+
+/* ───────── keyboard cheatsheet ───────── */
+
+.cheat-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.cheat-panel {
+  width: 460px;
+  max-width: 92%;
+  background: var(--card-bg);
+  border: 1px solid var(--card-stroke);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+  padding: 4px 16px 14px;
+}
+
+.cheat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 18px;
+  margin-top: 6px;
+}
+
+.cheat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: calc(12px * var(--fs));
+  color: var(--text);
+  padding: 4px 0;
+}
+
+.cheat-row .kbd {
+  min-width: 72px;
+  text-align: center;
+}
