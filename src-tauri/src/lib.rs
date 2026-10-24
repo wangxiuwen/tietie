@@ -46,6 +46,8 @@ pub const HOTKEY_KINDS: [&str; 3] = ["drawer", "screenshot", "clothesline"];
 
 pub struct AppState {
     pub conn: Arc<Mutex<rusqlite::Connection>>,
+    /// merge-history preference (re-copy bumps instead of adding rows)
+    pub dedupe: Arc<std::sync::atomic::AtomicBool>,
 }
 
 /// All three shortcuts live here. screenshot / clothesline are Option — when
@@ -296,10 +298,16 @@ pub fn run() {
             let conn = db::open(&db_path).expect("open sqlite");
             let conn = Arc::new(Mutex::new(conn));
 
-            app.manage(AppState { conn: conn.clone() });
+            let dedupe = Arc::new(std::sync::atomic::AtomicBool::new(
+                load_setting(app.handle(), "dedupe_history", "true") == "true",
+            ));
+            app.manage(AppState {
+                conn: conn.clone(),
+                dedupe: dedupe.clone(),
+            });
 
             // start clipboard polling
-            clipboard::start_polling(app.handle().clone(), conn);
+            clipboard::start_polling(app.handle().clone(), conn, dedupe);
 
             // Register all hotkeys FIRST so the tray tooltip can show the
             // combos that actually took. Drawer walks a fallback chain (a
@@ -397,6 +405,8 @@ pub fn run() {
             toggle_clothesline_cmd,
             clothesline_visible,
             wayland_session,
+            dedupe_history,
+            set_dedupe_history,
             open_library,
             delete_items,
             export_selected_text,
@@ -1574,6 +1584,29 @@ fn time_fmt(unix: i64) -> String {
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
     format!("{y:04}{m:02}{d:02}-{h:02}{mi:02}{s:02}")
+}
+
+// ─────────────────────── dedupe preference ───────────────────────
+
+#[tauri::command]
+fn dedupe_history(state: tauri::State<'_, AppState>) -> bool {
+    state.dedupe.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+#[tauri::command]
+fn set_dedupe_history(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    enabled: bool,
+) -> Result<(), String> {
+    state
+        .dedupe
+        .store(enabled, std::sync::atomic::Ordering::Relaxed);
+    save_setting(
+        &app,
+        "dedupe_history",
+        if enabled { "true" } else { "false" },
+    )
 }
 
 // ─────────────────────── wayland session notice ───────────────────────

@@ -155,7 +155,10 @@ pub struct InsertItem<'a> {
 }
 
 /// Insert or bump used_at if hash already exists. Returns id.
-pub fn upsert_item(conn: &Connection, it: InsertItem) -> SqlResult<i64> {
+/// Insert or bump. With `dedupe` (default), re-copying the same content
+/// moves it to the front and counts a use. Without it, every copy becomes a
+/// fresh row — the unique hash index is sidestepped with a `#n` suffix.
+pub fn upsert_item(conn: &Connection, it: InsertItem, dedupe: bool) -> SqlResult<i64> {
     let now = now_unix();
     let existing: Option<i64> = conn
         .query_row(
@@ -165,11 +168,49 @@ pub fn upsert_item(conn: &Connection, it: InsertItem) -> SqlResult<i64> {
         )
         .ok();
     if let Some(id) = existing {
-        conn.execute(
-            "UPDATE clip_item SET used_at = ?1, use_count = use_count + 1 WHERE id = ?2",
-            params![now, id],
-        )?;
-        return Ok(id);
+        if dedupe {
+            conn.execute(
+                "UPDATE clip_item SET used_at = ?1, use_count = use_count + 1 WHERE id = ?2",
+                params![now, id],
+            )?;
+            return Ok(id);
+        }
+        // not merging: insert a fresh row with a suffixed hash
+        let mut n = 2;
+        loop {
+            let candidate = format!("{}#{n}", it.content_hash);
+            let taken: bool = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM clip_item WHERE content_hash = ?1",
+                    params![candidate],
+                    |r| r.get::<_, i64>(0),
+                )
+                .map(|c| c > 0)
+                .unwrap_or(false);
+            if !taken {
+                return conn.execute(
+                    "INSERT INTO clip_item (kind, content, preview, meta, content_hash, source_app,
+                                            created_at, used_at, use_count, byte_size, image_blob,
+                                            rich_html, rich_rtf)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7, 0, ?8, ?9, ?10, ?11)",
+                    params![
+                        it.kind,
+                        it.content,
+                        it.preview,
+                        it.meta,
+                        candidate,
+                        it.source_app,
+                        now,
+                        it.byte_size,
+                        it.image_blob,
+                        it.rich_html,
+                        it.rich_rtf,
+                    ],
+                )
+                .map(|_| conn.last_insert_rowid());
+            }
+            n += 1;
+        }
     }
     conn.execute(
         "INSERT INTO clip_item (kind, content, preview, meta, content_hash, source_app,
@@ -631,8 +672,8 @@ mod tests {
     #[test]
     fn upsert_dedupes_on_hash_and_bumps_count() {
         let conn = tmp_db("upsert");
-        let id1 = upsert_item(&conn, item_s("h1")).unwrap();
-        let id2 = upsert_item(&conn, item_s("h1")).unwrap();
+        let id1 = upsert_item(&conn, item_s("h1"), true).unwrap();
+        let id2 = upsert_item(&conn, item_s("h1"), true).unwrap();
         assert_eq!(id1, id2); // same hash → bump, not new row
         let n: i64 = conn
             .query_row("SELECT COUNT(*) FROM clip_item", [], |r| r.get(0))
@@ -652,7 +693,7 @@ mod tests {
     fn trim_respects_pinned_and_cap() {
         let conn = tmp_db("trim");
         for i in 0..10 {
-            let id = upsert_item(&conn, item_s(&format!("h{i}"))).unwrap();
+            let id = upsert_item(&conn, item_s(&format!("h{i}")), true).unwrap();
             if i == 0 {
                 conn.execute("UPDATE clip_item SET pinned = 1 WHERE id = ?1", params![id])
                     .unwrap();

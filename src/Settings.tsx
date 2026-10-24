@@ -128,6 +128,15 @@ export default function Settings() {
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
   const [lineOn, setLineOn] = useState(false);
   const [wayland, setWayland] = useState(false);
+  const [dedupe, setDedupe] = useState(true);
+  useEffect(() => {
+    invoke<boolean>("dedupe_history").then(setDedupe);
+  }, []);
+  const toggleDedupe = useCallback(async () => {
+    const next = !dedupe;
+    setDedupe(next);
+    await invoke("set_dedupe_history", { enabled: next }).catch(() => {});
+  }, [dedupe]);
   useEffect(() => {
     invoke<boolean>("wayland_session").then(setWayland);
   }, []);
@@ -297,6 +306,16 @@ export default function Settings() {
             </span>
           </div>
           {backupMsg && <pre className="settings-notes">{backupMsg}</pre>}
+
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.dedupe")}</span>
+            <span className="settings-value">
+              <button className={"btn " + (dedupe ? "primary" : "ghost")} onClick={toggleDedupe}>
+                {dedupe ? t("settings.on") : t("settings.off")}
+              </button>
+            </span>
+          </div>
+          <p className="settings-hint">{t("settings.dedupeHint")}</p>
 
           {wayland && (
             <div className="settings-row">

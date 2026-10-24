@@ -16,7 +16,11 @@ struct NoRich {
     rtf: Option<Vec<u8>>,
 }
 
-pub fn start_polling(app: AppHandle, conn: Arc<Mutex<rusqlite::Connection>>) {
+pub fn start_polling(
+    app: AppHandle,
+    conn: Arc<Mutex<rusqlite::Connection>>,
+    dedupe: Arc<std::sync::atomic::AtomicBool>,
+) {
     std::thread::spawn(move || {
         let mut clipboard = match Clipboard::new() {
             Ok(c) => c,
@@ -63,7 +67,11 @@ pub fn start_polling(app: AppHandle, conn: Arc<Mutex<rusqlite::Connection>>) {
                         rich_rtf: snap.rtf.as_deref(),
                     };
                     let conn_g = conn.lock();
-                    if let Err(e) = db::upsert_item(&conn_g, item) {
+                    if let Err(e) = db::upsert_item(
+                        &conn_g,
+                        item,
+                        dedupe.load(std::sync::atomic::Ordering::Relaxed),
+                    ) {
                         log::error!("insert text item: {e}");
                     } else {
                         let _ = db::trim_history(&conn_g, MAX_HISTORY);
@@ -108,7 +116,11 @@ pub fn start_polling(app: AppHandle, conn: Arc<Mutex<rusqlite::Connection>>) {
                         rich_rtf: None,
                     };
                     let conn_g = conn.lock();
-                    if let Err(e) = db::upsert_item(&conn_g, item) {
+                    if let Err(e) = db::upsert_item(
+                        &conn_g,
+                        item,
+                        dedupe.load(std::sync::atomic::Ordering::Relaxed),
+                    ) {
                         log::error!("insert image item: {e}");
                     } else {
                         let _ = db::trim_history(&conn_g, MAX_HISTORY);
