@@ -7,6 +7,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { IS_MAC } from "./platform";
 import { t, useLang, setPref, getPref, type LangPref } from "./i18n";
 import { getFontScale, setFontScale, onFontScaleChange, type FontScale } from "./fontScale";
+import { getAccent, setAccent, onAccentChange, type Accent } from "./accent";
 
 type UpdateStatus =
   | { kind: "idle" }
@@ -62,6 +63,8 @@ export default function Settings() {
   const [langPref, setLangPref] = useState<LangPref>(() => getPref());
   const [fs, setFs] = useState<FontScale>(() => getFontScale());
   useEffect(() => onFontScaleChange(() => setFs(getFontScale())), []);
+  const [accent, setAccentState] = useState<Accent>(() => getAccent());
+  useEffect(() => onAccentChange(() => setAccentState(getAccent())), []);
 
   const reloadHotkeys = useCallback(async () => {
     setHks(await invoke<HotkeysInfo>("get_hotkeys"));
@@ -298,6 +301,20 @@ export default function Settings() {
                 <option value="standard">{t("settings.fsStandard")}</option>
                 <option value="large">{t("settings.fsLarge")}</option>
               </select>
+            </span>
+          </div>
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.accent")}</span>
+            <span className="settings-value accent-row">
+              {(["blue", "green", "purple", "orange"] as const).map((a) => (
+                <button
+                  key={a}
+                  className={"accent-dot" + (accent === a ? " active" : "")}
+                  style={{ background: { blue: "#007aff", green: "#34c759", purple: "#af52de", orange: "#ff9500" }[a] }}
+                  title={t("settings.accent_" + a)}
+                  onClick={() => setAccent(a)}
+                />
+              ))}
             </span>
           </div>
           <div className="settings-row">
