@@ -68,6 +68,8 @@ export default function App() {
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   // ? cheatsheet overlay
   const [cheatsheet, setCheatsheet] = useState(false);
+  // rendered rich-HTML preview of a clip item
+  const [richView, setRichView] = useState<ClipItem | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -280,6 +282,11 @@ export default function App() {
       }
 
       if (e.key === "Escape") {
+        if (richView) {
+          e.preventDefault();
+          setRichView(null);
+          return;
+        }
         if (cheatsheet) {
           e.preventDefault();
           setCheatsheet(false);
@@ -349,7 +356,7 @@ export default function App() {
     // so preventDefault actually stops ⌘D / ⌘P / etc. from typing into search.
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, cheatsheet, paste, togglePin, deleteItem, startEdit]);
+  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, cheatsheet, richView, paste, togglePin, deleteItem, startEdit]);
 
   // scroll selected into view
   useEffect(() => {
@@ -427,6 +434,7 @@ export default function App() {
                     beingDragged={draggingId === it.id}
                     multiSelected={multiSel.has(it.id)}
                     query={query}
+                    onRichView={() => setRichView(it)}
                     onContext={(x, y) => setCtxMenu({ x, y, itemId: it.id })}
                     onClick={(e) => {
                       if (e.metaKey || e.ctrlKey) {
@@ -487,6 +495,8 @@ export default function App() {
         )}
         <Footer count={filtered.length} total={items.length} />
         {cheatsheet && <Cheatsheet onClose={() => setCheatsheet(false)} />}
+
+        {richView && <RichOverlay item={richView} onClose={() => setRichView(null)} />}
 
         {zoomId !== null && (
           <ZoomOverlay
@@ -715,6 +725,7 @@ function Card({
   beingDragged,
   multiSelected,
   query,
+  onRichView,
   onContext,
   onClick,
   onDoubleClick,
@@ -729,6 +740,7 @@ function Card({
   beingDragged: boolean;
   multiSelected: boolean;
   query: string;
+  onRichView: () => void;
   onContext: (x: number, y: number) => void;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: () => void;
@@ -775,7 +787,7 @@ function Card({
           <PinIcon />
         </span>
       )}
-      <CardBody item={item} query={query} />
+      <CardBody item={item} query={query} onRich={onRichView} />
       <div className="meta">
         <span className="src">{item.source_app || "—"}</span>
         <span>{relTime(item.used_at)}</span>
@@ -800,7 +812,7 @@ function Card({
   );
 }
 
-function CardBody({ item, query }: { item: ClipItem; query: string }) {
+function CardBody({ item, query, onRich }: { item: ClipItem; query: string; onRich: () => void }) {
   if (item.kind === "image") {
     return (
       <div
@@ -820,6 +832,17 @@ function CardBody({ item, query }: { item: ClipItem; query: string }) {
           <span className="color-alt">{hexToRgb(item.content)}</span>
         </div>
       </>
+    );
+  }
+  if (item.rich_html) {
+    // rendered rich text available — small badge opens the preview
+    return (
+      <div className="body rich-wrap">
+        <button className="rich-badge" title={t("rich.preview")} onClick={(e) => { e.stopPropagation(); onRich(); }}>
+          ✦ HTML
+        </button>
+        <span>{truncate(item.content, 200)}</span>
+      </div>
     );
   }
   if (item.kind === "code") {
@@ -1000,6 +1023,47 @@ function Cheatsheet({ onClose }: { onClose: () => void }) {
               <span>{v}</span>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Rendered rich-HTML preview in a sandboxed iframe (no scripts). */
+function RichOverlay({ item, onClose }: { item: ClipItem; onClose: () => void }) {
+  const [html, setHtml] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const h = await invoke<string | null>("get_item_rich", { id: item.id });
+        if (alive) setHtml(h);
+      } catch {
+        if (alive) setHtml(null);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [item.id]);
+
+  return (
+    <div className="zoom-overlay" onClick={onClose}>
+      <div className="zoom-stage" onClick={(e) => e.stopPropagation()}>
+        {html ? (
+          <iframe
+            className="rich-frame"
+            sandbox=""
+            srcDoc={`<meta charset="utf-8"><body style="margin:12px;font:13px/1.6 -apple-system,sans-serif">${html}</body>`}
+            title="rich"
+          />
+        ) : (
+          <div className="zoom-loading">…</div>
+        )}
+        <div className="zoom-meta">
+          <span>{truncate(item.content, 60)}</span>
+          <span>{t("rich.hint")} · Esc</span>
         </div>
       </div>
     </div>

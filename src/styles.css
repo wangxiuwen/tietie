@@ -1737,3 +1737,35 @@ mark.hl {
 .tok-str { color: #2e9e5b; }
 .tok-num { color: #b0640f; }
 .tok-kw { color: #8250df; font-weight: 600; }
+
+/* ───────── rich HTML preview ───────── */
+
+.rich-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.rich-badge {
+  all: unset;
+  font-size: calc(10px * var(--fs));
+  color: #8250df;
+  border: 1px solid #8250df66;
+  border-radius: 5px;
+  padding: 0 5px;
+  flex: none;
+  cursor: default;
+}
+
+.rich-badge:hover {
+  background: #8250df22;
+}
+
+.rich-frame {
+  width: 640px;
+  max-width: 86vw;
+  height: 280px;
+  border: 1px solid var(--card-stroke);
+  border-radius: 10px;
+  background: #fff;
+}

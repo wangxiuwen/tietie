@@ -13,6 +13,7 @@ export interface ClipItem {
   used_at: number;
   use_count: number;
   byte_size: number;
+  rich_html?: string | null;
 }
 
 export interface Folder {

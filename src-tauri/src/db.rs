@@ -16,6 +16,8 @@ pub struct ClipItem {
     pub used_at: i64,
     pub use_count: i64,
     pub byte_size: i64,
+    /// rich_html captured at copy time (macOS); drives the HTML preview
+    pub rich_html: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -118,7 +120,7 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
 pub fn list_items(conn: &Connection, limit: i64) -> SqlResult<Vec<ClipItem>> {
     let mut stmt = conn.prepare(
         "SELECT id, kind, content, preview, meta, pinned, folder_id, source_app,
-                created_at, used_at, use_count, byte_size
+                created_at, used_at, use_count, byte_size, rich_html
          FROM clip_item
          ORDER BY pinned DESC, used_at DESC
          LIMIT ?1",
@@ -143,6 +145,7 @@ fn row_to_item(row: &rusqlite::Row) -> SqlResult<ClipItem> {
         used_at: row.get(9)?,
         use_count: row.get(10)?,
         byte_size: row.get(11)?,
+        rich_html: row.get(12)?,
     })
 }
 

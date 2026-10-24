@@ -400,6 +400,7 @@ pub fn run() {
             update_item_content,
             set_item_folder,
             get_item_image,
+            get_item_rich,
             list_memos,
             hang_item,
             hang_items,
@@ -1292,6 +1293,18 @@ fn export_selected_text(
     let path = dir.join(format!("tietie-export-{}.txt", time_fmt(db::now_unix())));
     std::fs::write(&path, parts.join("\n")).map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().into_owned())
+}
+
+/// Rich HTML captured at copy time (for the rendered preview overlay).
+#[tauri::command]
+fn get_item_rich(state: tauri::State<'_, AppState>, id: i64) -> Result<Option<String>, String> {
+    let conn = state.conn.lock();
+    conn.query_row(
+        "SELECT rich_html FROM clip_item WHERE id = ?1",
+        rusqlite::params![id],
+        |r| r.get::<_, Option<String>>(0),
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
