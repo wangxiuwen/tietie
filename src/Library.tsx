@@ -114,6 +114,17 @@ export default function Library() {
     }
   }, [selected]);
 
+  // swatch-grid view over the color-kind items (direction 51)
+  const [view, setView] = useState<"table" | "palette">("table");
+  const colors = useMemo(
+    () => filtered.filter((x) => x.kind === "color"),
+    [filtered],
+  );
+  const copyColor = useCallback((hex: string) => {
+    navigator.clipboard.writeText(hex).catch(() => {});
+    setMsg(`${t("lib.copied")} ${hex}`);
+  }, []);
+
   return (
     <div className="lib">
       <div className="lib-head">
@@ -124,6 +135,12 @@ export default function Library() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <button
+          className={"btn ghost" + (view === "palette" ? " active" : "")}
+          onClick={() => setView(view === "palette" ? "table" : "palette")}
+        >
+          {t("lib.palette")}
+        </button>
         <button className="btn ghost" onClick={() => getCurrentWindow().hide()}>
           {t("lib.collapse")}
         </button>
@@ -165,6 +182,24 @@ export default function Library() {
         </div>
       )}
 
+      {view === "palette" ? (
+        <div className="palette-grid">
+          {colors.map((it) => (
+            <button
+              key={it.id}
+              className="palette-cell"
+              title={it.content}
+              onClick={() => copyColor(it.content)}
+            >
+              <span className="palette-chip" style={{ background: it.content }} />
+              <span className="palette-hex">{it.content}</span>
+            </button>
+          ))}
+          {colors.length === 0 && (
+            <div className="po-empty">{t("lib.paletteEmpty")}</div>
+          )}
+        </div>
+      ) : (
       <div className="lib-table-wrap">
         <table className="lib-table">
           <thead>
@@ -233,6 +268,7 @@ export default function Library() {
           </tbody>
         </table>
       </div>
+      )}
       <div className="lib-foot">
         <span>
           {t("lib.total")} {filtered.length} {t("lib.items")} · {t("lib.selected")} {selected.size} {t("lib.items")}

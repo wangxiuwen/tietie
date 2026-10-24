@@ -71,7 +71,7 @@
 - [x] 49. 拖卡入文件夹：抽屉内拖卡片到文件夹 chip 直接归类（复用 window 拖拽）
   - 2026-10-24 勘误：与已完成的方向18重复（扩池时误加）。功能自 R18（7325570）就在：window 级拖拽中 elementFromPoint 命中 chip 高亮、落点 set_item_folder、「全部」移出。本轮在当前构建上合成 PointerEvent 全序列复验：card pointerdown→40px 上移 moves→chip 坐标 move+up，条目 folder None→新文件夹→还原 None，临时文件夹删除，净零收口
 - [x] 50. 条目 markdown 导出：Library 选中导出为 .md（类型分组标题 + 代码块包裹）
-- [ ] 51. 颜色历史色板：颜色条目在 Library 的色板网格视图（正方形色块 + hex 角标）
+- [x] 51. 颜色历史色板：颜色条目在 Library 的色板网格视图（正方形色块 + hex 角标）
 - [ ] 52. 抽屉紧凑列表模式：卡片/列表双显示模式设置（列表=单行文本省空间）
 - [ ] 53. 便签到期闪烁：新建便签可选"N 分钟后提醒"（到时挂卡闪烁动画，无系统通知）
 - [ ] 54. 敏感条目手动加密：标记后 AES 加密存储（密钥派生自机器信息，无密码——防泄露不防本机）
@@ -85,6 +85,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 51 | TBD | Library 颜色色板视图：表头「色板」切换网格（auto-fill 方形色块+hex 角标+hover 缩放，点击复制 hex），CDP 实测抓色→渲染 rgb 正确→点击复制命中→净零清理
 2026-10-24 | 50 | 57a3748 | Library 条目 Markdown 导出：export_selected_markdown 按类型分组（文本列表/链接[c](c)/代码```围栏/颜色`hex`/图片占位），CDP 实测导出文件内容正确
 2026-10-24 | 49 | 复验 | 方向49 与已完成的18重复（扩池误加）：R18 实现在当前构建合成拖拽全序列复验通过（folder None→临时夹→还原，净零），无需新代码
 2026-10-24 | 48 | e9ec265 | DPI/scale 跳变重定位：on_window_event 接 ScaleFactorChanged 重摆抽屉/晾衣架，WM_DPICHANGED(144) 合成实测窗口 1.5×+repositioned 日志（tao 有 scale 去重缓存，测试要错开值）

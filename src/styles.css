@@ -2027,3 +2027,40 @@ select:focus-visible,
   outline-offset: 1px;
   border-radius: 6px;
 }
+
+/* Library color swatch grid (direction 51) */
+.palette-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(96px * var(--fs)), 1fr));
+  gap: 12px;
+  padding: 16px 20px;
+  align-content: start;
+}
+.palette-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.palette-chip {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 1px solid rgba(128, 128, 128, 0.35);
+  transition: transform 0.12s ease;
+}
+.palette-cell:hover .palette-chip {
+  transform: scale(1.06);
+}
+.palette-hex {
+  font-size: calc(11px * var(--fs));
+  color: var(--text-dim, #888);
+  text-align: center;
+  font-family: ui-monospace, monospace;
+}
