@@ -1,6 +1,10 @@
 :root {
   /* font scale: compact 0.9x / standard 1x / large 1.15x — set by JS */
   --fs: 1;
+  /* overlay language: one radius, one shadow pair, one animation */
+  --ov-radius: 16px;
+  --ov-shadow: 0 24px 70px rgba(0, 0, 0, 0.38), 0 4px 16px rgba(0, 0, 0, 0.22);
+  --ov-shadow-sm: 0 12px 36px rgba(0, 0, 0, 0.30), 0 2px 8px rgba(0, 0, 0, 0.16);
   --accent: #007aff;
   --accent-dim: rgba(0, 122, 255, 0.18);
   --text: rgba(20, 20, 22, 0.92);
@@ -1768,4 +1772,82 @@ mark.hl {
   border: 1px solid var(--card-stroke);
   border-radius: 10px;
   background: #fff;
+}
+
+/* ───────── overlay polish (shared) ───────── */
+
+@keyframes ov-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ov-pop {
+  from { opacity: 0; transform: scale(0.94) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.zoom-overlay,
+.cheat-overlay,
+.settings-win .settings-overlay {
+  animation: ov-fade 0.14s ease-out;
+}
+
+.zoom-stage,
+.cheat-panel,
+.rich-frame {
+  animation: ov-pop 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+/* soft blur veil behind every full-screen overlay */
+.zoom-overlay,
+.cheat-overlay {
+  background: rgba(8, 10, 14, 0.42);
+  -webkit-backdrop-filter: blur(10px) saturate(0.9);
+  backdrop-filter: blur(10px) saturate(0.9);
+}
+
+.zoom-stage .zoom-img,
+.cheat-panel,
+.rich-frame {
+  border-radius: var(--ov-radius);
+  box-shadow: var(--ov-shadow);
+}
+
+/* context menu: lighter, springier, hairline separators */
+.ctx-menu {
+  border-radius: 12px;
+  box-shadow: var(--ov-shadow-sm);
+  animation: ov-pop 0.13s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  overflow: hidden;
+}
+
+.ctx-item {
+  border-radius: 8px;
+  transition: background 0.09s ease;
+}
+
+.ctx-item.sep {
+  border-top: 1px solid var(--card-stroke);
+  margin-top: 5px;
+  padding-top: 9px;
+}
+
+.ctx-item.danger {
+  color: #ff453a;
+}
+
+.ctx-item.danger:hover {
+  background: rgba(255, 69, 58, 0.12);
+}
+
+/* batch bar slides in just above the footer */
+.batch-bar {
+  animation: ov-pop 0.15s ease-out;
+  border-radius: 12px;
+  box-shadow: var(--ov-shadow-sm);
+}
+
+/* tray popover gains the same veil + spring */
+.popover {
+  animation: ov-pop 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
