@@ -22,7 +22,7 @@ use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut,
 /// Name of the app that most likely produced new clipboard content: the
 /// frontmost app at the instant the poller spots it. Called from the polling
 /// thread — the macOS hop to the main thread makes this ~ms-fast, never block.
-fn frontmost_app_name<R: Runtime>(_app: &AppHandle<R>) -> Option<String> {
+pub(crate) fn frontmost_app_name<R: Runtime>(_app: &AppHandle<R>) -> Option<String> {
     #[cfg(target_os = "macos")]
     {
         paste::frontmost_app_name(_app)
@@ -419,6 +419,8 @@ pub fn run() {
             set_retention_days,
             max_history,
             set_max_history,
+            get_source_blacklist,
+            set_source_blacklist,
             open_library,
             delete_items,
             export_selected_text,
@@ -1682,6 +1684,43 @@ fn time_fmt(unix: i64) -> String {
 }
 
 // ─────────────────────── retention preference ───────────────────────
+
+// ─────────────────────── source-app blacklist ───────────────────────
+
+/// Apps whose clipboard writes are ignored (e.g. password managers).
+/// Stored as a comma-separated list in settings.json; case-insensitive.
+fn load_source_blacklist<R: Runtime>(app: &AppHandle<R>) -> Vec<String> {
+    load_setting(app, "source_blacklist", "")
+        .split(',')
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+pub(crate) fn source_blacked<R: Runtime>(app: &AppHandle<R>, name: &Option<String>) -> bool {
+    match name {
+        Some(n) => load_source_blacklist(app)
+            .iter()
+            .any(|b| n.to_lowercase() == *b),
+        None => false,
+    }
+}
+
+#[tauri::command]
+fn get_source_blacklist(app: AppHandle) -> Vec<String> {
+    load_source_blacklist(&app)
+}
+
+/// Full replace with the given list.
+#[tauri::command]
+fn set_source_blacklist(app: AppHandle, apps: Vec<String>) -> Result<(), String> {
+    let cleaned: Vec<String> = apps
+        .into_iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    save_setting(&app, "source_blacklist", &cleaned.join(","))
+}
 
 /// History row cap (200 / 500 / 1000 / 3000 unpinned items).
 #[tauri::command]

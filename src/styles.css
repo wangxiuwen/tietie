@@ -1645,3 +1645,25 @@ mark.hl {
   border-color: var(--text);
   outline: 2px solid var(--card-bg);
 }
+
+.bl-row { align-items: flex-start; }
+
+.bl-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 320px;
+}
+
+.chip.small {
+  font-size: calc(11px * var(--fs));
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--card-stroke);
+}
+
+.chip.small.active {
+  background: #ff3b30;
+  color: #fff;
+  border-color: transparent;
+}

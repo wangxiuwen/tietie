@@ -73,6 +73,36 @@ export default function Settings() {
   useEffect(() => {
     invoke<number>("max_history").then(setMaxHist);
   }, []);
+  // known source apps from history (for the blacklist picker) + current list
+  const [sources, setSources] = useState<string[]>([]);
+  const [blacklist, setBlacklist] = useState<string[]>([]);
+  useEffect(() => {
+    invoke<string[]>("get_source_blacklist").then(setBlacklist);
+    invoke<{ source_app: string | null }[]>("list_items", { limit: 500 }).then((is) => {
+      const set = new Set<string>();
+      for (const it of is) if (it.source_app) set.add(it.source_app);
+      setSources([...set].sort());
+    });
+  }, []);
+  const toggleBl = useCallback((app: string) => {
+    setBlacklist((cur) => {
+      const next = cur.includes(app) ? cur.filter((a) => a !== app) : [...cur, app];
+      invoke("set_source_blacklist", { apps: next }).catch(() => {});
+      return next;
+    });
+  }, []);
+  const addBl = useCallback(() => {
+    const name = window.prompt?.("应用进程名（如 1Password）");
+    if (name && name.trim()) {
+      const n = name.trim();
+      setBlacklist((cur) => {
+        if (cur.includes(n)) return cur;
+        const next = [...cur, n];
+        invoke("set_source_blacklist", { apps: next }).catch(() => {});
+        return next;
+      });
+    }
+  }, []);
 
   const reloadHotkeys = useCallback(async () => {
     setHks(await invoke<HotkeysInfo>("get_hotkeys"));
@@ -386,6 +416,26 @@ export default function Settings() {
               </select>
             </span>
           </div>
+
+          {sources.length > 0 && (
+            <div className="settings-row bl-row">
+              <span className="settings-label">{t("settings.blacklist")}</span>
+              <span className="settings-value bl-list">
+                {sources.map((s) => (
+                  <button
+                    key={s}
+                    className={"chip small" + (blacklist.includes(s) ? " active" : "")}
+                    onClick={() => toggleBl(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+                <button className="chip small ghost" onClick={addBl}>
+                  + 手动添加
+                </button>
+              </span>
+            </div>
+          )}
 
           <div className="settings-row">
             <span className="settings-label">{t("settings.dedupe")}</span>

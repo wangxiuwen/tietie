@@ -43,8 +43,13 @@ pub fn start_polling(
                     last_text_hash = Some(hash.clone());
                     last_image_hash = None;
                     let (kind, preview) = classify_text(&text);
-                    // record who copied it (frontmost app right now)
+                    // record who copied it (frontmost app right now);
+                    // blacklisted apps (password managers etc.) are ignored
                     let source = crate::frontmost_app_name(&app);
+                    if crate::source_blacked(&app, &source) {
+                        log::info!("source app blacklisted, skipping insert");
+                        continue;
+                    }
 
                     // Snapshot rich variants (HTML / RTF) from NSPasteboard if present.
                     #[cfg(target_os = "macos")]
@@ -96,6 +101,10 @@ pub fn start_polling(
                     last_image_hash = Some(hash.clone());
                     last_text_hash = None;
                     let source = crate::frontmost_app_name(&app);
+                    if crate::source_blacked(&app, &source) {
+                        log::info!("source app blacklisted, skipping image insert");
+                        continue;
+                    }
                     let png = match encode_png(&img) {
                         Ok(p) => p,
                         Err(e) => {
