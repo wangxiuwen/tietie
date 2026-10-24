@@ -13,14 +13,7 @@ export function pinyinInitials(s: string): string {
   return out;
 }
 
-/**
- * Unified search predicate: plain substring on content/preview (original
- * behavior), plus pinyin-initials substring when the query is pure ASCII
- * letters — "nz" finds 「内存」.
- */
-export function matchQuery(content: string, preview: string, query: string): boolean {
-  const q = query.trim().toLowerCase();
-  if (!q) return true;
+function matchOne(content: string, preview: string, q: string): boolean {
   if (content.toLowerCase().includes(q) || preview.toLowerCase().includes(q)) return true;
   if (/^[a-z]+$/.test(q)) {
     return (
@@ -29,4 +22,15 @@ export function matchQuery(content: string, preview: string, query: string): boo
     );
   }
   return false;
+}
+
+/**
+ * Unified search predicate. The query splits on whitespace and EVERY token
+ * must hit (substring or pinyin initials) — "turing glass" only matches
+ * entries containing both words, like Everything-style AND search.
+ */
+export function matchQuery(content: string, preview: string, query: string): boolean {
+  const qs = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (qs.length === 0) return true;
+  return qs.every((q) => matchOne(content, preview, q));
 }
