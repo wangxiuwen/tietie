@@ -600,21 +600,68 @@ fn create_tray<R: Runtime>(
     Ok(())
 }
 
+/// Windows taskbar stroke color: dark glyphs on the default light theme,
+/// white glyphs on dark theme. macOS uses template icons (system-adaptive),
+/// Linux taskbars are dark by convention — both keep the white original.
+#[cfg(windows)]
+fn tray_stroke() -> [u8; 4] {
+    use windows::core::PCWSTR;
+    use windows::Win32::System::Registry::{RegGetValueW, HKEY_CURRENT_USER, RRF_RT_REG_DWORD};
+    let subkey: Vec<u16> = r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+    let value: Vec<u16> = "SystemUsesLightTheme"
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+    let mut data: u32 = 0;
+    let mut size = 4u32;
+    let ok = unsafe {
+        RegGetValueW(
+            HKEY_CURRENT_USER,
+            PCWSTR(subkey.as_ptr()),
+            PCWSTR(value.as_ptr()),
+            RRF_RT_REG_DWORD,
+            None,
+            Some(&mut data as *mut u32 as _),
+            Some(&mut size as *mut u32),
+        )
+        .is_ok()
+    };
+    let light = ok && data == 1;
+    let c: u8 = if light { 26 } else { 255 };
+    [c, c, c, 255]
+}
+
+#[cfg(not(windows))]
+fn tray_stroke() -> [u8; 4] {
+    [255, 255, 255, 255]
+}
+
 fn tray_icon_image() -> Image<'static> {
-    // 32x32 white line-art clipboard on transparent — same simple template
-    // style as monctl's tray glyph: one outlined shape, and the shell adapts
-    // contrast (macOS template auto black/white; dark taskbars show white).
-    // The old 16x16 hairline glyph was near-invisible on hi-DPI taskbars.
+    // 32x32 line-art clipboard on transparent — one outlined shape in a
+    // stroke color that contrasts the taskbar (macOS: template auto-adapts;
+    // Windows: registry light/dark theme; the old 16x16 hairline glyph was
+    // near-invisible on hi-DPI taskbars).
     const W: i32 = 32;
     const H: i32 = 32;
     let mut buf = vec![0u8; (W * H * 4) as usize];
+    let on = tray_stroke();
+    log::info!(
+        "tray icon stroke rgba({},{},{},{})",
+        on[0],
+        on[1],
+        on[2],
+        on[3]
+    );
 
-    fn set(buf: &mut [u8], x: i32, y: i32) {
+    let set = |buf: &mut [u8], x: i32, y: i32| {
         if (0..32).contains(&x) && (0..32).contains(&y) {
             let i = ((y * 32 + x) * 4) as usize;
-            buf[i..i + 4].copy_from_slice(&[255, 255, 255, 255]);
+            buf[i..i + 4].copy_from_slice(&on);
         }
-    }
+    };
     fn clear(buf: &mut [u8], x: i32, y: i32) {
         if (0..32).contains(&x) && (0..32).contains(&y) {
             let i = ((y * 32 + x) * 4) as usize;
