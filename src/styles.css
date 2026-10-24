@@ -1567,3 +1567,8 @@ body.dragging-hang * {
   color: var(--text-3);
   margin-left: 6px;
 }
+
+.po-row.active {
+  background: var(--accent-dim);
+  outline: 1px solid var(--accent);
+}

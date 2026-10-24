@@ -8,12 +8,12 @@ import { MOD } from "./platform";
 import { matchQuery } from "./search";
 import { t, useLang } from "./i18n";
 
-const RECENT_COUNT = 12;
 
 export default function TrayPopover() {
   useLang();
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
+  const [sel, setSel] = useState(0); // arrow-key selection into `filtered`
 
   const refresh = useCallback(async () => {
     const is = await invoke<ClipItem[]>("list_items", { limit: 100 });
@@ -33,17 +33,22 @@ export default function TrayPopover() {
     return () => unlistens.forEach((u) => u());
   }, [refresh]);
 
+  // keep the arrow-selected row visible in the scroll list
+  useEffect(() => {
+    document
+      .querySelector<HTMLElement>(".po-row.active")
+      ?.scrollIntoView({ block: "nearest" });
+  }, [sel]);
+
   const copyBack = async (it: ClipItem) => {
     await getCurrentWindow().hide();
     await invoke("paste_item", { id: it.id });
   };
 
-  const filtered = (
-    query ? items.filter((x) => matchQuery(x.content, x.preview, query)) : items
-  ).slice(0, RECENT_COUNT);
+  const filtered = query
+    ? items.filter((x) => matchQuery(x.content, x.preview, query))
+    : items; // full scrollable list — no 12-row cap
 
-  const pinned = filtered.filter((x) => x.pinned);
-  const recent = filtered.filter((x) => !x.pinned);
 
   return (
     <div className="popover">
@@ -52,11 +57,21 @@ export default function TrayPopover() {
           autoFocus
           placeholder={t("search.tray")}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setSel(0);
+          }}
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              const first = filtered[0];
-              if (first) copyBack(first);
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              e.preventDefault();
+              setSel((i) =>
+                e.key === "ArrowDown"
+                  ? Math.min(i + 1, Math.max(0, filtered.length - 1))
+                  : Math.max(0, i - 1),
+              );
+            } else if (e.key === "Enter") {
+              const it = filtered[sel] ?? filtered[0];
+              if (it) copyBack(it);
             } else if (e.key === "Escape") {
               getCurrentWindow().hide();
             }
@@ -65,20 +80,11 @@ export default function TrayPopover() {
       </div>
 
       <div className="po-scroll">
-        {pinned.length > 0 && (
-          <div className="po-section">
-            <div className="po-title">{t("tray.pinned")}</div>
-            <div className="po-list">
-              {pinned.map((it) => (
-                <Row key={it.id} item={it} onClick={() => copyBack(it)} />
-              ))}
-            </div>
-          </div>
-        )}
-
         <div className="po-section">
           <div className="po-title">
-            <span>{query ? t("tray.results") : t("tray.recent")}</span>
+            <span>
+              {query ? t("tray.results") : t("tray.recent")} · {filtered.length}
+            </span>
             <button
               className="po-link"
               onClick={async () => {
@@ -89,12 +95,18 @@ export default function TrayPopover() {
               {t("tray.viewAll")}
             </button>
           </div>
-          {recent.length === 0 ? (
+          {filtered.length === 0 ? (
             <div className="po-empty">{query ? t("tray.noMatch") : t("tray.none")}</div>
           ) : (
             <div className="po-list">
-              {recent.map((it) => (
-                <Row key={it.id} item={it} onClick={() => copyBack(it)} />
+              {filtered.map((it, idx) => (
+                <Row
+                  key={it.id}
+                  data-idx={idx}
+                  item={it}
+                  active={idx === sel}
+                  onClick={() => copyBack(it)}
+                />
               ))}
             </div>
           )}
@@ -113,9 +125,23 @@ export default function TrayPopover() {
   );
 }
 
-function Row({ item, onClick }: { item: ClipItem; onClick: () => void }) {
+function Row({
+  item,
+  active,
+  "data-idx": idx,
+  onClick,
+}: {
+  item: ClipItem;
+  active: boolean;
+  "data-idx"?: number;
+  onClick: () => void;
+}) {
   return (
-    <button className="po-row" onClick={onClick}>
+    <button
+      className={"po-row" + (active ? " active" : "")}
+      data-idx={idx}
+      onClick={onClick}
+    >
       <span className={"po-kind kind-" + item.kind}>{kindLabel(item.kind)}</span>
       <span className="po-text">{trimOne(item.preview || item.content)}</span>
     </button>
