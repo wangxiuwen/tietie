@@ -58,8 +58,9 @@
 - [x] 39. 轮询自适应退避：连续无变化逐步放慢到 2s，检测到变化回到 600ms（省电）
 - [x] 40. panic hook 写日志：std::panic::set_hook 把 panic 栈写 tietie.log（配合方向13）
 - [x] 41. 冷启动计时：启动耗时写日志（毫秒级，setup 首尾打点）
-- [ ] 42. 前端纯函数测试：vitest 跑 search.ts（拼音匹配）/i18n.ts（key 完整性 zh=en）/hexToRgb
-- [ ] 43. i18n key 完整性校验：zh/en 字典 key 集合 diff 测试（防漏译）
+- [x] 42. 前端纯函数测试：vitest 跑 search.ts（拼音匹配）/i18n.ts（key 完整性 zh=en）/hexToRgb
+- [x] 43. i18n key 完整性校验：zh/en 字典 key 集合 diff 测试（防漏译）
+  - 2026-10-24 与方向42同批完成：i18n.test.ts 断言 zh/en key 集合双向 diff 为空 + 双语无空值（当前 92 key 全等）
 - [ ] 44. E2E 冒烟脚本沉淀：把 CDP 方法固化为 scripts/e2e_smoke.py（开抽屉/挂绳/摘下/查库四链路）
 - [ ] 45. 无障碍审计：卡片/按钮 aria-label、焦点环可见性（键盘 Tab 遍历主操作）
 - [ ] 46. macOS 菜单栏 template 深浅色验证：亮暗模式截图对比（代码侧确认 icon_as_template 生效）
@@ -81,6 +82,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 42+43 | TBD | vitest 前端测试上线：search 拼音三层/i18n key 双向 diff(92 key 全等)/hexToRgb 15 断言全绿，npm test 进 CI；hexToRgb 抽 color.ts 纯模块
 2026-10-24 | 41 | 975c083 | 冷启动计时打点：run 入口 Instant→setup 首尾两条 boot 日志，装机实测 pre-setup 630ms / complete 705ms
 2026-10-24 | 40 | c70d040 | panic hook 上线：PANIC+位置+强制 backtrace 写 tietie.log（panic=abort 下仍执行），端到端单测+装机日志实证
 2026-10-24 | 38 | 223f5c8 | Windows 跳转列表重试成功：AUMID 显式钉窗口+PKEY_TITLE 补显名双根因修复，customDestinations-ms 落盘+--paste 转发 0.6s 实测

@@ -8,6 +8,7 @@ import type { ClipItem, Folder, ItemKind } from "./types";
 import { kindLabel } from "./types";
 import { MOD } from "./platform";
 import { matchQuery } from "./search";
+import { hexToRgb } from "./color";
 import { HighlightText } from "./highlight";
 import { ContextMenu, type MenuItem } from "./ContextMenu";
 import { CodeView } from "./codeView";
@@ -1110,14 +1111,6 @@ function PinIcon({ size = 16 }: { size?: number }) {
       <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2z" />
     </svg>
   );
-}
-
-/** "#RRGGBB" → "rgb(34, 139, 230)"; passthrough when not a plain hex color. */
-function hexToRgb(hex: string): string {
-  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
-  if (!m) return hex;
-  const n = parseInt(m[1], 16);
-  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
 }
 
 function truncate(s: string, n: number): string {

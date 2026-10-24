@@ -15,7 +15,8 @@ const LS_KEY = "tietie-lang";
 
 type Dict = Record<string, string>;
 
-const zh: Dict = {
+// exported for the zh/en key-parity test (direction 42)
+export const zh: Dict = {
   // kinds & tabs
   "kind.text": "文本", "kind.link": "链接", "kind.image": "图片",
   "kind.code": "代码", "kind.color": "颜色",
@@ -112,7 +113,7 @@ const zh: Dict = {
   "rt.now": "刚刚", "rt.min": "分钟前", "rt.hour": "小时前", "rt.day": "天前",
 };
 
-const en: Dict = {
+export const en: Dict = {
   "kind.text": "Text", "kind.link": "Link", "kind.image": "Image",
   "kind.code": "Code", "kind.color": "Color",
   "tab.all": "All", "tab.pinned": "Pinned",
