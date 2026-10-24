@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -52,6 +52,32 @@ export default function Clothesline() {
   useLang(); // re-render on language switch
   useEffect(() => onFontScaleChange(() => setMemos((m) => [...m])), []);
   const [memos, setMemos] = useState<Memo[]>([]);
+  // reminder tick (direction 53): re-evaluate due-flash every few seconds
+  const [nowSec, setNowSec] = useState(() => Math.floor(Date.now() / 1000));
+  useEffect(() => {
+    const iv = setInterval(() => setNowSec(Math.floor(Date.now() / 1000)), 3000);
+    return () => clearInterval(iv);
+  }, []);
+  // due → flash for the first minute, then hold a steady reminder marker
+  const dueSet = useMemo(() => {
+    const s = new Set<number>();
+    for (const m of memos) {
+      if (m.remind_at != null && nowSec >= m.remind_at) s.add(m.id);
+    }
+    return s;
+  }, [memos, nowSec]);
+  const flashSet = useMemo(() => {
+    const s = new Set<number>();
+    for (const m of memos) {
+      if (
+        m.remind_at != null &&
+        nowSec >= m.remind_at &&
+        nowSec < m.remind_at + 60
+      )
+        s.add(m.id);
+    }
+    return s;
+  }, [memos, nowSec]);
   const [previewing, setPreviewing] = useState(false);
   const [viewing, setViewing] = useState<Memo | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -303,6 +329,8 @@ export default function Clothesline() {
                   swing={i % 2 === 1}
                   draggedOff={dragUI?.id === m.id && dragUI.off}
                   lifted={dragUI?.id === m.id}
+                  flash={flashSet.has(m.id)}
+                  due={dueSet.has(m.id)}
                   onContext={(x, y) => setCtxMenu({ x, y, memoId: m.id })}
                   onEdit={() => openDetailEditing(m)}
                 />
@@ -317,10 +345,14 @@ export default function Clothesline() {
             {composing && (
               <NoteComposer
                 onCancel={() => setComposing(false)}
-                onCommit={async (content) => {
+                onCommit={async (content, remindIn) => {
                   setComposing(false);
-                  await invoke("add_memo_direct", { content }).catch((e) =>
-                    console.warn("add_memo_direct failed:", e),
+                  const remindAt =
+                    remindIn != null
+                      ? Math.floor(Date.now() / 1000) + remindIn * 60
+                      : null;
+                  await invoke("add_memo_direct", { content, remindAt }).catch(
+                    (e) => console.warn("add_memo_direct failed:", e),
                   );
                 }}
               />
@@ -381,13 +413,16 @@ function NoteComposer({
   onCommit,
   onCancel,
 }: {
-  onCommit: (content: string) => void;
+  onCommit: (content: string, remindIn: number | null) => void;
   onCancel: () => void;
 }) {
   const [text, setText] = useState("");
+  const [remindMin, setRemindMin] = useState("0");
   const submit = () => {
-    if (text.trim()) onCommit(text);
-    else onCancel();
+    if (text.trim()) {
+      const m = Number(remindMin);
+      onCommit(text, m > 0 ? m : null);
+    } else onCancel();
   };
   return (
     <div className="line-card composer">
@@ -411,6 +446,20 @@ function NoteComposer({
         }}
       />
       <div className="line-compose-foot">
+        <select
+          className="line-remind"
+          value={remindMin}
+          aria-label={t("line.remind")}
+          title={t("line.remind")}
+          onChange={(e) => setRemindMin(e.target.value)}
+          onKeyDown={(e) => e.stopPropagation()}
+        >
+          <option value="0">⏰ {t("line.remindNone")}</option>
+          <option value="5">{t("line.remindIn")} 5m</option>
+          <option value="15">{t("line.remindIn")} 15m</option>
+          <option value="30">{t("line.remindIn")} 30m</option>
+          <option value="60">{t("line.remindIn")} 60m</option>
+        </select>
         <button className="btn ghost" onClick={onCancel}>
           {t("line.composeCancel")}
         </button>
@@ -477,6 +526,8 @@ function HangingCard({
   swing,
   draggedOff,
   lifted,
+  flash,
+  due,
   onContext,
   onEdit,
 }: {
@@ -484,6 +535,8 @@ function HangingCard({
   swing: boolean;
   draggedOff: boolean;
   lifted: boolean;
+  flash: boolean;
+  due: boolean;
   onContext: (x: number, y: number) => void;
   onEdit: () => void;
 }) {
@@ -493,7 +546,9 @@ function HangingCard({
         "line-card" +
         (swing ? " swing" : "") +
         (draggedOff ? " dropping" : "") +
-        (lifted ? " lifted" : "")
+        (lifted ? " lifted" : "") +
+        (flash ? " due-flash" : "") +
+        (due ? " due" : "")
       }
       data-memo={memo.id}
       onContextMenu={(e) => {
@@ -525,6 +580,7 @@ function HangingCard({
       />
       <span className="line-badge">
         {kindLabel(memo.kind)}
+        {due && <span className="line-due-mark" title={t("line.remind")}> ⏰</span>}
       </span>
       <CardBody memo={memo} />
       <button

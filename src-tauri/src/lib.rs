@@ -1165,6 +1165,7 @@ fn add_memo_direct(
     app: AppHandle,
     state: tauri::State<'_, AppState>,
     content: String,
+    remind_at: Option<i64>,
 ) -> Result<i64, String> {
     let trimmed = content.trim().to_string();
     if trimmed.is_empty() {
@@ -1173,13 +1174,14 @@ fn add_memo_direct(
     let memo_id = {
         let conn = state.conn.lock();
         conn.execute(
-            "INSERT INTO memo (kind, content, preview, color, source_item_id, created_at, sort)
+            "INSERT INTO memo (kind, content, preview, color, source_item_id, created_at, sort, remind_at)
              VALUES ('text', ?1, ?2, '#007aff', NULL, ?3,
-                     (SELECT COALESCE(MAX(sort), -1) + 1 FROM memo))",
+                     (SELECT COALESCE(MAX(sort), -1) + 1 FROM memo), ?4)",
             rusqlite::params![
                 trimmed,
                 trimmed.chars().take(120).collect::<String>(),
-                db::now_unix()
+                db::now_unix(),
+                remind_at
             ],
         )
         .map_err(|e| e.to_string())?;

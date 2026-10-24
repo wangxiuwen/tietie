@@ -2102,3 +2102,33 @@ select:focus-visible,
   width: 12px;
   height: 12px;
 }
+
+/* Memo reminder (direction 53): flash for the first minute after due,
+   then hold a steady due state */
+@keyframes due-flash {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(255, 149, 0, 0.15), 0 4px 14px rgba(0, 0, 0, 0.25);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.95), 0 4px 18px rgba(255, 149, 0, 0.35);
+    filter: brightness(1.25);
+  }
+}
+.line-card.due-flash {
+  animation: due-flash 0.9s ease-in-out infinite;
+}
+.line-card.due:not(.due-flash) {
+  box-shadow: 0 0 0 2px rgba(255, 149, 0, 0.55), 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+.line-due-mark {
+  color: #ff9500;
+}
+.line-remind {
+  font-size: calc(11px * var(--fs));
+  background: rgba(128, 128, 128, 0.12);
+  color: inherit;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 6px;
+  padding: 3px 6px;
+}

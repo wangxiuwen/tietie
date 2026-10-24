@@ -42,6 +42,7 @@ pub struct Memo {
     pub sort: i64,
     pub source_item_id: Option<i64>,
     pub created_at: i64,
+    pub remind_at: Option<i64>,
 }
 
 pub fn open(path: &Path) -> SqlResult<Connection> {
@@ -114,6 +115,8 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
         "ALTER TABLE memo ADD COLUMN sort INTEGER NOT NULL DEFAULT 0",
         [],
     );
+    // memo reminder (direction 53): unix ts the hanging card should flash at
+    let _ = conn.execute("ALTER TABLE memo ADD COLUMN remind_at INTEGER", []);
     Ok(conn)
 }
 
@@ -383,7 +386,7 @@ pub fn delete_folder(conn: &Connection, id: i64) -> SqlResult<()> {
 
 pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
     let mut stmt = conn.prepare(
-        "SELECT id, kind, content, preview, color, pinned, sort, source_item_id, created_at
+        "SELECT id, kind, content, preview, color, pinned, sort, source_item_id, created_at, remind_at
          FROM memo ORDER BY pinned DESC, sort ASC, id ASC",
     )?;
     let ms = stmt
@@ -398,6 +401,7 @@ pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
                 sort: row.get(6)?,
                 source_item_id: row.get(7)?,
                 created_at: row.get(8)?,
+                remind_at: row.get(9)?,
             })
         })?
         .collect::<SqlResult<Vec<_>>>()?;
