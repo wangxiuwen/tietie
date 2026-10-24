@@ -16,7 +16,14 @@ import { RopeSim } from "./ropePhysics";
 // single module record shared by every hanging card, with ONE listener set
 // in Clothesline instead of one per card.
 const lineDrag = {
-  current: null as null | { memoId: number; startY: number; moved: boolean; off: boolean },
+  current: null as null | {
+    memoId: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+    off: boolean;
+    horizontal: boolean;
+  },
 };
 
 /**
@@ -35,9 +42,13 @@ export default function Clothesline() {
   const [viewing, setViewing] = useState<Memo | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   // take-off drag UI (ghost + lifted/dropping card), null when idle
-  const [dragUI, setDragUI] = useState<{ id: number; x: number; y: number; off: boolean } | null>(
-    null,
-  );
+  const [dragUI, setDragUI] = useState<{
+    id: number;
+    x: number;
+    y: number;
+    off: boolean;
+    horizontal?: boolean;
+  } | null>(null);
   // right-click context menu on hanging cards
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; memoId: number } | null>(null);
   const memosRef = useRef<Memo[]>([]);
@@ -69,17 +80,20 @@ export default function Clothesline() {
       const st = lineDrag.current;
       if (!st || (e.buttons & 1) === 0) return;
       const dy = e.screenY - st.startY;
+      const dx = e.screenX - st.startX;
       if (!st.moved) {
-        if (Math.abs(dy) < 14) return;
+        if (Math.abs(dy) < 14 && Math.abs(dx) < 14) return;
         st.moved = true;
         // grab the OS cursor so events keep flowing outside the 230px window
         getCurrentWindow().setCursorGrab(true).catch(() => {});
       }
-      st.off = dy > 70;
+      // horizontal-dominant drag = reorder; vertical-down = take off
+      st.horizontal = Math.abs(dx) > Math.abs(dy);
+      st.off = !st.horizontal && dy > 70;
       const vx = e.screenX - window.screenX;
       const vy = e.screenY - window.screenY;
       dragPosRef.current = { id: st.memoId, x: vx, y: vy };
-      setDragUI({ id: st.memoId, x: vx, y: vy, off: st.off });
+      setDragUI({ id: st.memoId, x: vx, y: vy, off: st.off, horizontal: st.horizontal });
     };
     const onFinish = () => {
       const st = lineDrag.current;
@@ -89,7 +103,26 @@ export default function Clothesline() {
       setDragUI(null);
       getCurrentWindow().setCursorGrab(false).catch(() => {});
       if (st.moved) {
-        // dragged — take it off when pulled past the rope zone, never a click
+        // horizontal drag = move this card to the slot nearest the pointer
+        if (st.horizontal) {
+          const cards = [
+            ...document.querySelectorAll<HTMLElement>(".line-card[data-memo]"),
+          ];
+          const dropX = lastPointer.x;
+          let target = cards.length - 1;
+          for (let i = 0; i < cards.length; i++) {
+            const r = cards[i].getBoundingClientRect();
+            if (dropX < r.left + r.width / 2) {
+              target = i;
+              break;
+            }
+          }
+          invoke("reorder_memo", { id: st.memoId, toIndex: target }).catch((err) =>
+            console.warn("[tietie] reorder_memo failed:", err),
+          );
+          return;
+        }
+        // vertical drag — take it off when pulled past the rope zone
         if (st.off) {
           invoke("remove_memo", { id: st.memoId }).catch((err) =>
             console.warn("[tietie] remove_memo failed:", err),
@@ -100,11 +133,17 @@ export default function Clothesline() {
       const m = memosRef.current.find((x) => x.id === st.memoId);
       if (m) setViewing(m);
     };
-    window.addEventListener("pointermove", onMove, true);
+    const lastPointer = { x: 0, y: 0 };
+    const onMoveTracked = (e: PointerEvent) => {
+      lastPointer.x = e.clientX;
+      lastPointer.y = e.clientY;
+      onMove(e);
+    };
+    window.addEventListener("pointermove", onMoveTracked, true);
     window.addEventListener("pointerup", onFinish, true);
     window.addEventListener("pointercancel", onFinish, true);
     return () => {
-      window.removeEventListener("pointermove", onMove, true);
+      window.removeEventListener("pointermove", onMoveTracked, true);
       window.removeEventListener("pointerup", onFinish, true);
       window.removeEventListener("pointercancel", onFinish, true);
     };
@@ -301,7 +340,11 @@ export default function Clothesline() {
       {dragUI &&
         createPortal(
           <div className="drag-ghost" style={{ left: dragUI.x, top: dragUI.y }}>
-            {dragUI.off ? t("line.takeoffNow") : t("line.takeoff")}
+            {dragUI.horizontal
+              ? t("line.reorder")
+              : dragUI.off
+                ? t("line.takeoffNow")
+                : t("line.takeoff")}
           </div>,
           document.body,
         )}
@@ -440,7 +483,14 @@ function HangingCard({
       }}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
-        lineDrag.current = { memoId: memo.id, startY: e.screenY, moved: false, off: false };
+        lineDrag.current = {
+          memoId: memo.id,
+          startX: e.screenX,
+          startY: e.screenY,
+          moved: false,
+          off: false,
+          horizontal: false,
+        };
       }}
       title={t("line.view")}
     >

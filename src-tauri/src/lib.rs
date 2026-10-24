@@ -400,6 +400,7 @@ pub fn run() {
             add_memo_direct,
             update_memo,
             toggle_memo_pin,
+            reorder_memo,
             copy_memo,
             hang_preview,
             toggle_clothesline_cmd,
@@ -1070,6 +1071,22 @@ fn update_memo(
             rusqlite::params![trimmed, trimmed.chars().take(120).collect::<String>(), id],
         )
         .map_err(|e| e.to_string())?;
+    }
+    emit_memos_changed(&app);
+    Ok(())
+}
+
+/// Drag-to-reorder a hanging memo to a new index (0-based).
+#[tauri::command]
+fn reorder_memo(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: i64,
+    to_index: usize,
+) -> Result<(), String> {
+    {
+        let conn = state.conn.lock();
+        db::reorder_memo(&conn, id, to_index).map_err(|e| e.to_string())?;
     }
     emit_memos_changed(&app);
     Ok(())

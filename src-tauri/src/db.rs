@@ -37,6 +37,7 @@ pub struct Memo {
     pub preview: String,
     pub color: String,
     pub pinned: bool,
+    pub sort: i64,
     pub source_item_id: Option<i64>,
     pub created_at: i64,
 }
@@ -105,6 +106,10 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
     // memo pinned (clothesline sticky notes)
     let _ = conn.execute(
         "ALTER TABLE memo ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
+        [],
+    );
+    let _ = conn.execute(
+        "ALTER TABLE memo ADD COLUMN sort INTEGER NOT NULL DEFAULT 0",
         [],
     );
     Ok(conn)
@@ -361,8 +366,8 @@ pub fn delete_folder(conn: &Connection, id: i64) -> SqlResult<()> {
 
 pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
     let mut stmt = conn.prepare(
-        "SELECT id, kind, content, preview, color, pinned, source_item_id, created_at
-         FROM memo ORDER BY pinned DESC, id ASC",
+        "SELECT id, kind, content, preview, color, pinned, sort, source_item_id, created_at
+         FROM memo ORDER BY pinned DESC, sort ASC, id ASC",
     )?;
     let ms = stmt
         .query_map([], |row| {
@@ -373,8 +378,9 @@ pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
                 preview: row.get(3)?,
                 color: row.get(4)?,
                 pinned: row.get::<_, i64>(5)? != 0,
-                source_item_id: row.get(6)?,
-                created_at: row.get(7)?,
+                sort: row.get(6)?,
+                source_item_id: row.get(7)?,
+                created_at: row.get(8)?,
             })
         })?
         .collect::<SqlResult<Vec<_>>>()?;
@@ -393,6 +399,31 @@ pub fn hang_memo(conn: &Connection, item_id: i64, color: &str) -> SqlResult<i64>
 
 pub fn remove_memo(conn: &Connection, id: i64) -> SqlResult<()> {
     conn.execute("DELETE FROM memo WHERE id = ?1", params![id])?;
+    Ok(())
+}
+
+/// Move memo `id` to position `to_index` (0-based within current order) and
+/// renumber all sort values. Pinned-first ordering still wins on top of sort.
+pub fn reorder_memo(conn: &Connection, id: i64, to_index: usize) -> SqlResult<()> {
+    let mut ids: Vec<i64> = {
+        let mut stmt =
+            conn.prepare("SELECT id FROM memo ORDER BY pinned DESC, sort ASC, id ASC")?;
+        let rows = stmt.query_map([], |r| r.get::<_, i64>(0))?;
+        rows.collect::<SqlResult<Vec<_>>>()?
+    };
+    let from = match ids.iter().position(|&x| x == id) {
+        Some(i) => i,
+        None => return Ok(()),
+    };
+    let to = to_index.min(ids.len().saturating_sub(1));
+    let moved = ids.remove(from);
+    ids.insert(to, moved);
+    for (i, mid) in ids.iter().enumerate() {
+        conn.execute(
+            "UPDATE memo SET sort = ?1 WHERE id = ?2",
+            params![i as i64, mid],
+        )?;
+    }
     Ok(())
 }
 

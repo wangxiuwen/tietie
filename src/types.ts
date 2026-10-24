@@ -29,6 +29,7 @@ export interface Memo {
   preview: string;
   color: string;
   pinned: boolean;
+  sort: number;
   source_item_id: number | null;
   created_at: number;
 }
