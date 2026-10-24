@@ -63,6 +63,9 @@ npm run tauri:dev          # 开发热重载
 npm run tauri:build        # 出本平台安装包
 ```
 
+发版：`py -3 scripts/bump-version.py patch`（三处版本一次同步并给出
+tag 步骤），推 `v*` tag 触发 Release workflow 出三平台安装包。
+
 ## 架构
 
 ```

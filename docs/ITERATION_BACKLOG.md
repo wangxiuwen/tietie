@@ -23,7 +23,7 @@
 - [x] 12. 颜色条目复制变体：颜色卡片操作条加 HEX/RGB 格式切换复制
 - [x] 13. 启动自检与日志轮转：日志写文件（app local data）按大小轮转；启动时自检热键注册状态并在托盘 tooltip 反映
 - [x] 14. 单元测试补齐：db.rs（upsert/trim/迁移）与 clipboard.rs（分类启发式）的 cargo test，CI 跑测试
-- [ ] 15. 发布流程自动化：scripts/bump-version.py 一次同步 Cargo.toml/tauri.conf.json/package.json 三处版本 + 生成 tag 建议，README 写明
+- [x] 15. 发布流程自动化：scripts/bump-version.py 一次同步 Cargo.toml/tauri.conf.json/package.json 三处版本 + 生成 tag 建议，README 写明
 - [ ] 16. Wayland 检测与降级提示：Linux 启动检测 Wayland 会话时，托盘菜单/设置面板明示「自动粘贴不可用，仅复制」，避免用户困惑
 - [ ] 17. 托盘 mini 面板增强：显示更多条目（分页或滚动）、支持方向键选择
 - [ ] 18. 抽屉卡片拖进文件夹：抽屉内把卡片拖到文件夹 chip 上直接归类（复用晾衣架 window 级拖拽模式）
@@ -74,6 +74,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 15 | TBD | bump-version.py 三处同步+check 模式+tag 提示，往返验证
 2026-10-24 | 14 | 54efd02 | db/clipboard 单测 8 个全过（trim 语义钉死）+CI cargo test
 2026-10-24 | 13 | 95f4892 | 文件日志 512KB 轮转+启动 self-check 日志/tooltip 告警，真机验证
 2026-10-24 | 12 | 9e83703 | 颜色卡 rgb() 显示+一键复制（#3b82f6→rgb(59,130,246) 实测）
