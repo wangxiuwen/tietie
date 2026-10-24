@@ -81,7 +81,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-24 | 40 | TBD | panic hook 上线：PANIC+位置+强制 backtrace 写 tietie.log（panic=abort 下仍执行），端到端单测+装机日志实证
+2026-10-24 | 40 | c70d040 | panic hook 上线：PANIC+位置+强制 backtrace 写 tietie.log（panic=abort 下仍执行），端到端单测+装机日志实证
 2026-10-24 | 38 | 223f5c8 | Windows 跳转列表重试成功：AUMID 显式钉窗口+PKEY_TITLE 补显名双根因修复，customDestinations-ms 落盘+--paste 转发 0.6s 实测
 2026-10-24 | 39 | 68cc0c3 | 轮询自适应退避 600→1000→1500→2000ms（变化即回 600），日志阶梯实证+深退避复制 1.47s 命中
 2026-10-24 | 38 | — | 未完成：jumplist COM 写通但 CommitList 未落盘（AUMID 疑不匹配），按协议回退不合坏代码，原因已标注
