@@ -8,7 +8,6 @@ use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
 const POLL_MS: u64 = 600;
-const MAX_HISTORY: i64 = 500;
 
 #[cfg(not(target_os = "macos"))]
 struct NoRich {
@@ -21,6 +20,7 @@ pub fn start_polling(
     conn: Arc<Mutex<rusqlite::Connection>>,
     dedupe: Arc<std::sync::atomic::AtomicBool>,
     retention_days: i64,
+    max_history: i64,
 ) {
     std::thread::spawn(move || {
         let mut clipboard = match Clipboard::new() {
@@ -75,7 +75,7 @@ pub fn start_polling(
                     ) {
                         log::error!("insert text item: {e}");
                     } else {
-                        let _ = db::trim_history(&conn_g, MAX_HISTORY);
+                        let _ = db::trim_history(&conn_g, max_history);
                         let _ = db::trim_expired(&conn_g, retention_days);
                         drop(conn_g);
                         let _ = app.emit("clipboard-changed", ());
@@ -125,7 +125,7 @@ pub fn start_polling(
                     ) {
                         log::error!("insert image item: {e}");
                     } else {
-                        let _ = db::trim_history(&conn_g, MAX_HISTORY);
+                        let _ = db::trim_history(&conn_g, max_history);
                         let _ = db::trim_expired(&conn_g, retention_days);
                         drop(conn_g);
                         let _ = app.emit("clipboard-changed", ());

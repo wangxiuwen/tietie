@@ -306,11 +306,15 @@ pub fn run() {
                 dedupe: dedupe.clone(),
             });
 
-            // start clipboard polling (retention: 0=forever, else days)
+            // start clipboard polling (retention: 0=forever, else days;
+            // history cap: 200/500/1000/3000 rows before trimming)
             let retention = load_setting(app.handle(), "retention_days", "0")
                 .parse::<i64>()
                 .unwrap_or(0);
-            clipboard::start_polling(app.handle().clone(), conn, dedupe, retention);
+            let max_history = load_setting(app.handle(), "max_history", "500")
+                .parse::<i64>()
+                .unwrap_or(500);
+            clipboard::start_polling(app.handle().clone(), conn, dedupe, retention, max_history);
 
             // Register all hotkeys FIRST so the tray tooltip can show the
             // combos that actually took. Drawer walks a fallback chain (a
@@ -413,6 +417,8 @@ pub fn run() {
             set_dedupe_history,
             retention_days,
             set_retention_days,
+            max_history,
+            set_max_history,
             open_library,
             delete_items,
             export_selected_text,
@@ -1676,6 +1682,22 @@ fn time_fmt(unix: i64) -> String {
 }
 
 // ─────────────────────── retention preference ───────────────────────
+
+/// History row cap (200 / 500 / 1000 / 3000 unpinned items).
+#[tauri::command]
+fn max_history(app: AppHandle) -> i64 {
+    load_setting(&app, "max_history", "500")
+        .parse()
+        .unwrap_or(500)
+}
+
+#[tauri::command]
+fn set_max_history(app: AppHandle, value: i64) -> Result<(), String> {
+    if ![200, 500, 1000, 3000].contains(&value) {
+        return Err(format!("无效的条目上限: {value}"));
+    }
+    save_setting(&app, "max_history", &value.to_string())
+}
 
 /// Days an unpinned item survives (7 / 30 / 0 = forever).
 #[tauri::command]

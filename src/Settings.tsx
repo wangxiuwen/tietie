@@ -69,6 +69,10 @@ export default function Settings() {
   useEffect(() => {
     invoke<number>("retention_days").then(setRetention);
   }, []);
+  const [maxHist, setMaxHist] = useState(500);
+  useEffect(() => {
+    invoke<number>("max_history").then(setMaxHist);
+  }, []);
 
   const reloadHotkeys = useCallback(async () => {
     setHks(await invoke<HotkeysInfo>("get_hotkeys"));
@@ -364,6 +368,24 @@ export default function Settings() {
             </span>
           </div>
           <p className="settings-hint">{t("settings.retHint")}</p>
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.maxHistory")}</span>
+            <span className="settings-value">
+              <select
+                className="lang-select"
+                value={String(maxHist)}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  setMaxHist(v);
+                  invoke("set_max_history", { value: v }).catch(() => {});
+                }}
+              >
+                {[200, 500, 1000, 3000].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            </span>
+          </div>
 
           <div className="settings-row">
             <span className="settings-label">{t("settings.dedupe")}</span>
