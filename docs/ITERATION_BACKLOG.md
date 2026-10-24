@@ -63,7 +63,8 @@
   - 2026-10-24 与方向42同批完成：i18n.test.ts 断言 zh/en key 集合双向 diff 为空 + 双语无空值（当前 92 key 全等）
 - [x] 44. E2E 冒烟脚本沉淀：把 CDP 方法固化为 scripts/e2e_smoke.py（开抽屉/挂绳/摘下/查库四链路）
 - [x] 45. 无障碍审计：卡片/按钮 aria-label、焦点环可见性（键盘 Tab 遍历主操作）
-- [ ] 46. macOS 菜单栏 template 深浅色验证：亮暗模式截图对比（代码侧确认 icon_as_template 生效）
+- [x] 46. macOS 菜单栏 template 深浅色验证：亮暗模式截图对比（代码侧确认 icon_as_template 生效）
+  - 2026-10-24 代码侧确认三要素齐备：①icon_as_template 改为 cfg!(macos) 精确门控（原先无条件 true，Win 上是事实 no-op 但语义错——Windows 描边走注册表主题适配，模板语义不存在）；②图标本身是合法 template 形态=透明底(全零 alpha)+纯色不透明描边(32x32 线稿)，macOS 菜单栏只取 alpha 通道自动随亮暗重着色；③Linux 保持白色描边原样。真机（Win）回归：门控后 stroke 日志照常 rgba(255,255,255,255)、托盘正常。真机 mac 截图对比待有 mac 时补
 - [ ] 47. Linux .desktop 集成审计：图标主题/名称/注释/分类字段，deb 包验证
 - [ ] 48. 多显示器 DPI 变化重定位：监听 scale 变化事件重摆抽屉/晾衣架
 - [ ] 49. 拖卡入文件夹：抽屉内拖卡片到文件夹 chip 直接归类（复用 window 拖拽）
@@ -82,6 +83,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 46 | TBD | macOS template 图标代码侧收口：icon_as_template 精确 cfg(macos) 门控+确认透明底/不透明描边合法 template 形态，Win 真机回归描边照常
 2026-10-24 | 45 | 4257a1b | 无障碍审计：卡片列表 listbox/option 语义+aria-label（图片卡报尺寸不报 base64）、图标按钮可访问名、全局 :focus-visible 焦点环；CDP 实测 126 元素 0 缺名
 2026-10-24 | 44 | 5f463aa | E2E 冒烟脚本沉淀 scripts/e2e_smoke.py：内嵌 stdlib WebSocket+CDP invoke+Win32 窗口真值+只读 sqlite，四链路（开抽屉/挂绳/摘下/净零库）实测 PASS
 2026-10-24 | 42+43 | ac89034 | vitest 前端测试上线：search 拼音三层/i18n key 双向 diff(92 key 全等)/hexToRgb 15 断言全绿，npm test 进 CI；hexToRgb 抽 color.ts 纯模块

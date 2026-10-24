@@ -601,7 +601,12 @@ fn create_tray<R: Runtime>(
 
     let _tray = TrayIconBuilder::with_id("main")
         .icon(tray_icon_image())
-        .icon_as_template(true)
+        // macOS: template icon — the menu bar re-colors our glyph from its
+        // alpha channel in both light & dark mode (direction 46; the icon is
+        // a solid stroke on a transparent background, i.e. a valid template).
+        // Other platforms must NOT enable it: Windows picks its own stroke
+        // from the theme registry and template semantics don't exist there.
+        .icon_as_template(cfg!(target_os = "macos"))
         .tooltip(tooltip)
         .menu(&menu)
         .show_menu_on_left_click(false)
