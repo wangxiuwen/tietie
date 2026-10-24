@@ -598,3 +598,112 @@ pub fn restore_backup(conn: &Connection, bak: &BackupV1) -> SqlResult<RestoreSta
 
     Ok(stats)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn tmp_db(name: &str) -> Connection {
+        let dir = std::env::temp_dir().join(format!("tietie-db-test-{name}"));
+        let _ = std::fs::remove_dir_all(&dir);
+        open(&dir.join("test.sqlite")).expect("open test db")
+    }
+
+    fn item<'a>(hash: &'a str, content: &'a str, preview: &'a str) -> InsertItem<'a> {
+        InsertItem {
+            kind: "text",
+            content,
+            preview,
+            meta: "",
+            content_hash: hash,
+            source_app: None,
+            byte_size: 10,
+            image_blob: None,
+            rich_html: None,
+            rich_rtf: None,
+        }
+    }
+
+    fn item_s(hash: &str) -> InsertItem<'_> {
+        item(hash, hash, hash)
+    }
+
+    #[test]
+    fn upsert_dedupes_on_hash_and_bumps_count() {
+        let conn = tmp_db("upsert");
+        let id1 = upsert_item(&conn, item_s("h1")).unwrap();
+        let id2 = upsert_item(&conn, item_s("h1")).unwrap();
+        assert_eq!(id1, id2); // same hash → bump, not new row
+        let n: i64 = conn
+            .query_row("SELECT COUNT(*) FROM clip_item", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(n, 1);
+        let used: i64 = conn
+            .query_row(
+                "SELECT use_count FROM clip_item WHERE id = ?1",
+                params![id1],
+                |r| r.get(0),
+            )
+            .unwrap();
+        assert_eq!(used, 1);
+    }
+
+    #[test]
+    fn trim_respects_pinned_and_cap() {
+        let conn = tmp_db("trim");
+        for i in 0..10 {
+            let id = upsert_item(&conn, item_s(&format!("h{i}"))).unwrap();
+            if i == 0 {
+                conn.execute("UPDATE clip_item SET pinned = 1 WHERE id = ?1", params![id])
+                    .unwrap();
+            }
+        }
+        let removed = trim_history(&conn, 5).unwrap();
+        // cap counts only unpinned rows: 9 unpinned → keep 5, drop 4;
+        // the pinned oldest survives on top of the cap (by design)
+        assert_eq!(removed, 4);
+        let (n, pinned): (i64, i64) = conn
+            .query_row(
+                "SELECT COUNT(*), COALESCE(SUM(pinned),0) FROM clip_item",
+                [],
+                |r| Ok((r.get(0)?, r.get(1)?)),
+            )
+            .unwrap();
+        assert_eq!(n, 6);
+        assert_eq!(pinned, 1); // oldest row is pinned and still here
+    }
+
+    #[test]
+    fn migration_adds_rich_columns_to_old_schema() {
+        let dir = std::env::temp_dir().join("tietie-db-test-migrate");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("old.sqlite");
+        {
+            // simulate a pre-rich-text database
+            let conn = Connection::open(&path).unwrap();
+            conn.execute_batch(
+                "CREATE TABLE clip_item (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    kind TEXT NOT NULL, content TEXT NOT NULL,
+                    preview TEXT NOT NULL DEFAULT '', meta TEXT NOT NULL DEFAULT '',
+                    content_hash TEXT NOT NULL, pinned INTEGER NOT NULL DEFAULT 0,
+                    folder_id INTEGER, source_app TEXT,
+                    created_at INTEGER NOT NULL, used_at INTEGER NOT NULL,
+                    use_count INTEGER NOT NULL DEFAULT 0,
+                    byte_size INTEGER NOT NULL DEFAULT 0,
+                    image_blob BLOB
+                );",
+            )
+            .unwrap();
+        }
+        let conn = open(&path).unwrap(); // runs migrations
+        conn.execute(
+            "INSERT INTO clip_item (kind, content, preview, meta, content_hash,
+                created_at, used_at, rich_html, rich_rtf)
+             VALUES ('text','c','c','','x',1,1,'<b>hi</b>', X'7b7d')",
+            [],
+        )
+        .unwrap(); // rich columns now exist
+    }
+}

@@ -22,7 +22,7 @@
 - [x] 11. 便签图片详情显示原图：memo 加 image 引用时详情视图按 source_item_id 拉原图（copy_memo 已有同款逻辑，复用）
 - [x] 12. 颜色条目复制变体：颜色卡片操作条加 HEX/RGB 格式切换复制
 - [x] 13. 启动自检与日志轮转：日志写文件（app local data）按大小轮转；启动时自检热键注册状态并在托盘 tooltip 反映
-- [ ] 14. 单元测试补齐：db.rs（upsert/trim/迁移）与 clipboard.rs（分类启发式）的 cargo test，CI 跑测试
+- [x] 14. 单元测试补齐：db.rs（upsert/trim/迁移）与 clipboard.rs（分类启发式）的 cargo test，CI 跑测试
 - [ ] 15. 发布流程自动化：scripts/bump-version.py 一次同步 Cargo.toml/tauri.conf.json/package.json 三处版本 + 生成 tag 建议，README 写明
 - [ ] 16. Wayland 检测与降级提示：Linux 启动检测 Wayland 会话时，托盘菜单/设置面板明示「自动粘贴不可用，仅复制」，避免用户困惑
 - [ ] 17. 托盘 mini 面板增强：显示更多条目（分页或滚动）、支持方向键选择

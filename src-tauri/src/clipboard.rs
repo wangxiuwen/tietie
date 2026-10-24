@@ -250,3 +250,53 @@ fn nearest_rescale(src: &[u8], sw: u32, sh: u32, dw: u32, dh: u32) -> Vec<u8> {
     }
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn classify_colors() {
+        assert_eq!(classify_text("#fff").0, "color");
+        assert_eq!(classify_text("#ff0000").0, "color");
+        assert_eq!(classify_text("#1a2b3c4d").0, "color");
+        assert_ne!(classify_text("#ff00zz").0, "color"); // bad hex
+        assert_ne!(classify_text("fff").0, "color"); // no #
+    }
+
+    #[test]
+    fn classify_urls() {
+        assert_eq!(classify_text("https://example.com/a?b=1").0, "link");
+        assert_eq!(classify_text("http://example.com").0, "link");
+        assert_eq!(classify_text("ftp://host/x").0, "link");
+        assert_ne!(classify_text("https://exa mple.com").0, "link"); // space
+        assert_ne!(classify_text("example.com").0, "link"); // no scheme
+    }
+
+    #[test]
+    fn classify_code() {
+        assert_eq!(classify_text("fn main() { println!(\"x\"); }").0, "code");
+        assert_eq!(classify_text("kubectl get pods -n prod").0, "code");
+        assert_eq!(classify_text("SELECT * FROM t WHERE a = 1;").0, "code");
+        // plain sentence stays text
+        assert_eq!(classify_text("今天天气不错，出去走走吧。").0, "text");
+    }
+
+    #[test]
+    fn image_hash_depends_on_pixels_and_dims() {
+        let px = |w, h| ImageData {
+            width: w,
+            height: h,
+            bytes: std::borrow::Cow::Owned(vec![1u8; w * h * 4]),
+        };
+        assert_ne!(hash_image(&px(2, 2)), hash_image(&px(2, 3)));
+        assert_ne!(
+            hash_image(&px(2, 2)),
+            hash_image(&ImageData {
+                width: 2,
+                height: 2,
+                bytes: std::borrow::Cow::Owned(vec![9u8; 16]),
+            })
+        );
+    }
+}
