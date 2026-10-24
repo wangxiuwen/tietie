@@ -8,10 +8,12 @@ import { MOD } from "./platform";
 import { matchQuery } from "./search";
 import { HighlightText } from "./highlight";
 import { t, useLang } from "./i18n";
+import { onFontScaleChange } from "./fontScale";
 
 
 export default function TrayPopover() {
   useLang();
+  useEffect(() => onFontScaleChange(() => setItems((x) => [...x])), []);
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(0); // arrow-key selection into `filtered`

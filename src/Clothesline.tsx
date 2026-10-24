@@ -7,6 +7,7 @@ import type { Memo } from "./types";
 import { kindLabel } from "./types";
 import { ContextMenu, type MenuItem } from "./ContextMenu";
 import { t, useLang } from "./i18n";
+import { onFontScaleChange } from "./fontScale";
 import { RopeSim } from "./ropePhysics";
 
 // ─── take-off drag: one shared tracker, listeners live in Clothesline ───
@@ -37,6 +38,7 @@ const lineDrag = {
  */
 export default function Clothesline() {
   useLang(); // re-render on language switch
+  useEffect(() => onFontScaleChange(() => setMemos((m) => [...m])), []);
   const [memos, setMemos] = useState<Memo[]>([]);
   const [previewing, setPreviewing] = useState(false);
   const [viewing, setViewing] = useState<Memo | null>(null);

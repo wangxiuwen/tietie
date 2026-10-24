@@ -6,6 +6,7 @@ import type { ClipItem } from "./types";
 import { kindLabel } from "./types";
 import { matchQuery } from "./search";
 import { t, useLang } from "./i18n";
+import { onFontScaleChange } from "./fontScale";
 
 /**
  * 剪贴板库 — full-window management table over the whole history:
@@ -14,6 +15,7 @@ import { t, useLang } from "./i18n";
  */
 export default function Library() {
   useLang();
+  useEffect(() => onFontScaleChange(() => setItems((x) => [...x])), []);
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());

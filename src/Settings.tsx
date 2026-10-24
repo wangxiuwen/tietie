@@ -6,6 +6,7 @@ import { check as checkUpdate, type Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { IS_MAC } from "./platform";
 import { t, useLang, setPref, getPref, type LangPref } from "./i18n";
+import { getFontScale, setFontScale, onFontScaleChange, type FontScale } from "./fontScale";
 
 type UpdateStatus =
   | { kind: "idle" }
@@ -59,6 +60,8 @@ export default function Settings() {
   const [hks, setHks] = useState<HotkeysInfo | null>(null);
   const [autostart, setAutostart] = useState<boolean>(false);
   const [langPref, setLangPref] = useState<LangPref>(() => getPref());
+  const [fs, setFs] = useState<FontScale>(() => getFontScale());
+  useEffect(() => onFontScaleChange(() => setFs(getFontScale())), []);
 
   const reloadHotkeys = useCallback(async () => {
     setHks(await invoke<HotkeysInfo>("get_hotkeys"));
@@ -281,6 +284,20 @@ export default function Settings() {
               >
                 {lineOn ? t("settings.on") : t("settings.off")}
               </button>
+            </span>
+          </div>
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.fontScale")}</span>
+            <span className="settings-value">
+              <select
+                className="lang-select"
+                value={fs}
+                onChange={(e) => setFontScale(e.target.value as FontScale)}
+              >
+                <option value="compact">{t("settings.fsCompact")}</option>
+                <option value="standard">{t("settings.fsStandard")}</option>
+                <option value="large">{t("settings.fsLarge")}</option>
+              </select>
             </span>
           </div>
           <div className="settings-row">

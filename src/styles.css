@@ -1,4 +1,6 @@
 :root {
+  /* font scale: compact 0.9x / standard 1x / large 1.15x — set by JS */
+  --fs: 1;
   --accent: #007aff;
   --accent-dim: rgba(0, 122, 255, 0.18);
   --text: rgba(20, 20, 22, 0.92);
@@ -127,13 +129,13 @@ button {
   padding: 8px 12px;
   background: rgba(0, 0, 0, 0.05);
   border-radius: 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--text-2);
 }
 .search input {
   all: unset;
   flex: 1;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--text);
 }
 .search input::placeholder {
@@ -143,7 +145,7 @@ button {
   display: inline-block;
   min-width: 18px;
   padding: 1px 5px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   color: var(--text-2);
   background: rgba(0, 0, 0, 0.06);
@@ -162,12 +164,12 @@ button {
   gap: 6px;
   height: 30px;
   padding: 0 12px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--text-2);
   border-radius: 8px;
 }
 .tab .count {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
 }
 .tab.active {
@@ -216,7 +218,7 @@ button {
   align-items: center;
   gap: 6px;
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--text-2);
   background: rgba(0, 0, 0, 0.04);
   border-radius: 999px;
@@ -295,7 +297,7 @@ button {
   gap: 4px;
   align-self: flex-start;
   padding: 2px 8px;
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.02em;
   background: rgba(0, 0, 0, 0.05);
@@ -335,7 +337,7 @@ button {
 .body {
   margin-top: 10px;
   flex: 1;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   line-height: 1.45;
   color: var(--text);
   overflow: hidden;
@@ -347,18 +349,18 @@ button {
 }
 .body.mono {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--fs));
   line-height: 1.55;
   margin: 10px 0 0;
 }
 
 .link-title {
   font-weight: 600;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   margin-bottom: 4px;
 }
 .link-url {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
   word-break: break-all;
 }
@@ -383,7 +385,7 @@ button {
 }
 .color-row b {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 500;
   color: var(--text);
 }
@@ -393,7 +395,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
 }
 .src {
@@ -410,7 +412,7 @@ button {
   color: white;
   padding: 3px 7px;
   border-radius: 7px;
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
@@ -418,7 +420,7 @@ button {
   background: var(--accent);
   padding: 4px 8px;
   border-radius: 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   box-shadow: 0 4px 10px rgba(0, 122, 255, 0.35);
 }
 
@@ -443,7 +445,7 @@ button {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-weight: 500;
   color: var(--text);
   background: #ffffff;
@@ -505,14 +507,14 @@ button {
   justify-content: space-between;
 }
 .edit-hint {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
 }
 .edit-card textarea {
   flex: 1;
   margin-top: 10px;
   all: unset;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   line-height: 1.5;
   color: var(--text);
   background: rgba(0, 0, 0, 0.04);
@@ -526,7 +528,7 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
 }
 .edit-btns {
@@ -536,7 +538,7 @@ button {
 .btn {
   padding: 5px 12px;
   border-radius: 8px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   font-weight: 500;
 }
 .btn.primary {
@@ -554,7 +556,7 @@ button {
   justify-content: space-between;
   padding: 10px 18px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--text-2);
   background: rgba(0, 0, 0, 0.02);
 }
@@ -591,7 +593,7 @@ button {
 .po-search input {
   all: unset;
   width: 100%;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   padding: 6px 10px;
   background: rgba(0, 0, 0, 0.05);
   border-radius: 8px;
@@ -619,7 +621,7 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -627,12 +629,12 @@ button {
   margin-bottom: 6px;
 }
 .po-link {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 500;
   color: var(--accent);
 }
 .po-hint {
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   letter-spacing: 0;
   text-transform: none;
   color: var(--text-3);
@@ -649,7 +651,7 @@ button {
   gap: 8px;
   padding: 6px 8px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--text);
 }
 .po-row:hover {
@@ -657,7 +659,7 @@ button {
 }
 .po-kind {
   flex: 0 0 36px;
-  font-size: 9.5px;
+  font-size: calc(9.5px * var(--fs));
   font-weight: 600;
   text-transform: uppercase;
   text-align: center;
@@ -692,7 +694,7 @@ button {
 }
 .po-empty {
   padding: 12px 8px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--text-3);
   text-align: center;
 }
@@ -707,14 +709,14 @@ button {
   background: rgba(0, 0, 0, 0.02);
 }
 .po-foot-hint {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
 .po-foot-btn {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-2);
   padding: 4px 8px;
   border-radius: 6px;
@@ -752,7 +754,7 @@ button {
 }
 .settings-head h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs));
   font-weight: 700;
   color: var(--text);
 }
@@ -763,7 +765,7 @@ button {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: calc(16px * var(--fs));
   color: var(--text-2);
   cursor: default;
 }
@@ -781,7 +783,7 @@ button {
   align-items: center;
   justify-content: space-between;
   min-height: 32px;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   color: var(--text);
 }
 .settings-label {
@@ -792,12 +794,12 @@ button {
   align-items: center;
   gap: 8px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
 }
 .settings-tag {
   padding: 2px 8px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 600;
 }
 .settings-tag.ok {
@@ -819,7 +821,7 @@ button {
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.06);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.05em;
   color: var(--text);
@@ -833,7 +835,7 @@ button {
   background: rgba(0, 122, 255, 0.12);
   color: var(--accent);
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   font-weight: 600;
   letter-spacing: 0.05em;
   min-width: 100px;
@@ -845,7 +847,7 @@ button {
   color: var(--accent);
   opacity: 0.6;
   font-weight: 400;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   letter-spacing: 0;
 }
 .btn:disabled {
@@ -854,7 +856,7 @@ button {
 }
 .settings-err {
   margin: 0;
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--fs));
   line-height: 1.55;
   color: var(--cat-image);
   background: rgba(255, 45, 85, 0.08);
@@ -866,7 +868,7 @@ button {
 .settings-notes {
   margin: 0;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-2);
   background: rgba(0, 0, 0, 0.04);
   border-radius: 8px;
@@ -877,7 +879,7 @@ button {
 }
 .settings-hint {
   margin: 0;
-  font-size: 11.5px;
+  font-size: calc(11.5px * var(--fs));
   line-height: 1.55;
   color: var(--text-2);
   background: rgba(255, 149, 0, 0.1);
@@ -893,18 +895,18 @@ button {
   width: 100%;
 }
 .empty-icon {
-  font-size: 36px;
+  font-size: calc(36px * var(--fs));
   opacity: 0.4;
 }
 .empty h3 {
   margin: 10px 0 4px;
-  font-size: 15px;
+  font-size: calc(15px * var(--fs));
   color: var(--text);
   font-weight: 600;
 }
 .empty p {
   margin: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
 }
 
 /* ───────────────────────── 晾衣架 clothesline ───────────────────────── */
@@ -1023,12 +1025,12 @@ button {
   position: absolute;
   top: 5px;
   left: 10px;
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   color: var(--text-3);
 }
 
 .line-text {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   line-height: 1.45;
   color: var(--text);
   word-break: break-all;
@@ -1059,14 +1061,14 @@ button {
 }
 
 .line-color code {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
 }
 
 .line-x {
   position: absolute;
   top: 3px;
   right: 5px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
   padding: 2px 5px;
   border-radius: 5px;
@@ -1087,14 +1089,14 @@ button {
   position: absolute;
   bottom: 4px;
   right: 8px;
-  font-size: 10px;
+  font-size: calc(10px * var(--fs));
   color: var(--accent);
 }
 
 .line-empty {
   align-self: flex-start;
   margin-top: 10px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--text-3);
   background: var(--bar-bg);
   border: 1px dashed var(--card-stroke);
@@ -1106,7 +1108,7 @@ button {
   flex: 0 0 auto;
   align-self: flex-start;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--accent);
   background: var(--accent-dim);
   border: 1px dashed var(--accent);
@@ -1128,7 +1130,7 @@ button {
   position: absolute;
   right: 10px;
   top: 6px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
   padding: 3px 9px;
   border-radius: 6px;
@@ -1156,7 +1158,7 @@ body.dragging-hang * {
   pointer-events: none;
   padding: 7px 14px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   white-space: nowrap;
   color: var(--text);
   background: var(--card-bg);
@@ -1194,7 +1196,7 @@ body.dragging-hang * {
 }
 
 .line-detail-time {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
 }
 
@@ -1214,7 +1216,7 @@ body.dragging-hang * {
 .line-detail-text {
   margin: 0;
   font-family: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-all;
@@ -1235,7 +1237,7 @@ body.dragging-hang * {
 }
 
 .btn {
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   padding: 4px 12px;
   border-radius: 7px;
   cursor: default;
@@ -1254,7 +1256,7 @@ body.dragging-hang * {
 /* ───────── settings subhead + hotkey rows + autostart ───────── */
 
 .settings-subhead {
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   font-weight: 600;
   color: var(--text-3);
   margin: 14px 0 4px;
@@ -1267,7 +1269,7 @@ body.dragging-hang * {
   border: 1px solid rgba(255, 59, 48, 0.4);
   border-radius: 6px;
   padding: 1px 7px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
 }
 
 /* ───────── clothesline new-note button + memo editing ───────── */
@@ -1276,7 +1278,7 @@ body.dragging-hang * {
   position: absolute;
   right: 60px;
   top: 6px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: var(--text-3);
   padding: 3px 9px;
   border-radius: 6px;
@@ -1298,7 +1300,7 @@ body.dragging-hang * {
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   line-height: 1.55;
   padding: 0;
 }
@@ -1322,7 +1324,7 @@ body.dragging-hang * {
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   line-height: 1.45;
   padding: 6px 8px;
   outline: none;
@@ -1346,7 +1348,7 @@ body.dragging-hang * {
   border-radius: 999px;
   background: var(--card-bg);
   color: var(--text);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   padding: 0 10px;
   outline: none;
   width: 150px;
@@ -1387,14 +1389,14 @@ body.dragging-hang * {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 11px;
+  font-size: calc(11px * var(--fs));
   color: rgba(255, 255, 255, 0.75);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .zoom-loading {
   color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   padding: 40px 60px;
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
@@ -1418,7 +1420,7 @@ body.dragging-hang * {
 }
 
 .lib-head h2 {
-  font-size: 15px;
+  font-size: calc(15px * var(--fs));
   margin: 0;
 }
 
@@ -1429,7 +1431,7 @@ body.dragging-hang * {
   border-radius: 8px;
   background: var(--card-bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: calc(13px * var(--fs));
   padding: 0 12px;
   outline: none;
 }
@@ -1449,7 +1451,7 @@ body.dragging-hang * {
 .lib-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
 }
 
 .lib-table thead th {
@@ -1497,7 +1499,7 @@ body.dragging-hang * {
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--text-2);
 }
 
@@ -1520,7 +1522,7 @@ body.dragging-hang * {
   border-radius: 7px;
   background: var(--card-bg);
   color: var(--text);
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   padding: 0 6px;
   outline: none;
 }
@@ -1537,7 +1539,7 @@ body.dragging-hang * {
   align-items: center;
   gap: 10px;
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: calc(12px * var(--fs));
   color: var(--text-2);
   background: var(--accent-dim);
   border-radius: 8px;
@@ -1563,7 +1565,7 @@ body.dragging-hang * {
 }
 
 .color-alt {
-  font-size: 10.5px;
+  font-size: calc(10.5px * var(--fs));
   color: var(--text-3);
   margin-left: 6px;
 }
@@ -1603,7 +1605,7 @@ mark.hl {
 
 .ctx-item {
   all: unset;
-  font-size: 12.5px;
+  font-size: calc(12.5px * var(--fs));
   color: var(--text);
   padding: 6px 12px;
   border-radius: 6px;

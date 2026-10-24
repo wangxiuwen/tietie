@@ -11,6 +11,7 @@ import { matchQuery } from "./search";
 import { HighlightText } from "./highlight";
 import { ContextMenu, type MenuItem } from "./ContextMenu";
 import { t, useLang } from "./i18n";
+import { onFontScaleChange } from "./fontScale";
 
 type FilterTab = "all" | ItemKind;
 
@@ -43,6 +44,7 @@ const TYPE_TABS: { id: FilterTab; labelKey: string; dot: string }[] = [
 
 export default function App() {
   useLang(); // re-render the whole drawer on language switch
+  useEffect(() => onFontScaleChange(() => setDrawerVisible((v) => v)), []);
   const [items, setItems] = useState<ClipItem[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [tab, setTab] = useState<FilterTab>("all");
