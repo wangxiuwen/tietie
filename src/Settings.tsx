@@ -126,6 +126,14 @@ export default function Settings() {
   }, []);
 
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
+  const [lineOn, setLineOn] = useState(false);
+  useEffect(() => {
+    invoke<boolean>("clothesline_visible").then(setLineOn);
+  }, []);
+  const toggleLine = useCallback(async () => {
+    const next = await invoke<boolean>("toggle_clothesline_cmd");
+    setLineOn(next);
+  }, []);
   const doExportBackup = useCallback(async () => {
     setBackupMsg(t("settings.exporting"));
     try {
@@ -249,6 +257,17 @@ export default function Settings() {
                 <option value="zh">中文</option>
                 <option value="en">English</option>
               </select>
+            </span>
+          </div>
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.clothesline")}</span>
+            <span className="settings-value">
+              <button
+                className={"btn " + (lineOn ? "primary" : "ghost")}
+                onClick={toggleLine}
+              >
+                {lineOn ? t("settings.on") : t("settings.off")}
+              </button>
             </span>
           </div>
           <div className="settings-row">

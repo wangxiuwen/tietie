@@ -349,9 +349,14 @@ pub fn run() {
                 }
             }
 
-            // clothesline spans the top of the screen
+            // clothesline spans the top of the screen — shown only when the
+            // user hasn't turned it off (persisted; some users don't want it)
             if let Some(win) = app.get_webview_window("clothesline") {
-                position_clothesline(&win);
+                let want = load_setting(app.handle(), "clothesline_visible", "true") == "true";
+                if want {
+                    position_clothesline(&win);
+                    let _ = win.show();
+                }
                 #[cfg(target_os = "macos")]
                 {
                     let _ = win.set_visible_on_all_workspaces(true);
@@ -390,6 +395,7 @@ pub fn run() {
             copy_memo,
             hang_preview,
             toggle_clothesline_cmd,
+            clothesline_visible,
             open_library,
             delete_items,
             export_selected_text,
@@ -669,9 +675,10 @@ fn position_clothesline<R: Runtime>(win: &WebviewWindow<R>) {
 }
 
 /// Show/hide the clothesline window. Returns the new visibility.
+/// The choice is persisted — hidden stays hidden across restarts.
 fn toggle_clothesline<R: Runtime>(app: &AppHandle<R>) -> bool {
     if let Some(win) = app.get_webview_window("clothesline") {
-        match win.is_visible() {
+        let now = match win.is_visible() {
             Ok(true) => {
                 let _ = win.hide();
                 false
@@ -681,10 +688,24 @@ fn toggle_clothesline<R: Runtime>(app: &AppHandle<R>) -> bool {
                 let _ = win.show();
                 true
             }
-        }
+        };
+        let _ = save_setting(
+            app,
+            "clothesline_visible",
+            if now { "true" } else { "false" },
+        );
+        now
     } else {
         false
     }
+}
+
+/// Whether the clothesline is currently shown (settings panel toggle).
+#[tauri::command]
+fn clothesline_visible(app: AppHandle) -> bool {
+    app.get_webview_window("clothesline")
+        .and_then(|w| w.is_visible().ok())
+        .unwrap_or(false)
 }
 
 fn position_tray_popover<R: Runtime>(app: &AppHandle<R>, click: PhysicalPosition<f64>) {
