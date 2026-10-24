@@ -84,7 +84,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-24 | 47 | TBD | Linux .desktop 集成收口：category→Utility+deb desktopTemplate（Comment/Keywords 补齐），渲染后 spec 结构校验 PASS，config schema 构建实证
+2026-10-24 | 47 | 2f21101 | Linux .desktop 集成收口：category→Utility+deb desktopTemplate（Comment/Keywords 补齐），渲染后 spec 结构校验 PASS，config schema 构建实证
 2026-10-24 | 46 | f2dad8b | macOS template 图标代码侧收口：icon_as_template 精确 cfg(macos) 门控+确认透明底/不透明描边合法 template 形态，Win 真机回归描边照常
 2026-10-24 | 45 | 4257a1b | 无障碍审计：卡片列表 listbox/option 语义+aria-label（图片卡报尺寸不报 base64）、图标按钮可访问名、全局 :focus-visible 焦点环；CDP 实测 126 元素 0 缺名
 2026-10-24 | 44 | 5f463aa | E2E 冒烟脚本沉淀 scripts/e2e_smoke.py：内嵌 stdlib WebSocket+CDP invoke+Win32 窗口真值+只读 sqlite，四链路（开抽屉/挂绳/摘下/净零库）实测 PASS
