@@ -65,6 +65,10 @@ export default function Settings() {
   useEffect(() => onFontScaleChange(() => setFs(getFontScale())), []);
   const [accent, setAccentState] = useState<Accent>(() => getAccent());
   useEffect(() => onAccentChange(() => setAccentState(getAccent())), []);
+  const [retention, setRetention] = useState(0);
+  useEffect(() => {
+    invoke<number>("retention_days").then(setRetention);
+  }, []);
 
   const reloadHotkeys = useCallback(async () => {
     setHks(await invoke<HotkeysInfo>("get_hotkeys"));
@@ -340,6 +344,26 @@ export default function Settings() {
             </span>
           </div>
           {backupMsg && <pre className="settings-notes">{backupMsg}</pre>}
+
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.retention")}</span>
+            <span className="settings-value">
+              <select
+                className="lang-select"
+                value={String(retention)}
+                onChange={(e) => {
+                  const d = Number(e.target.value);
+                  setRetention(d);
+                  invoke("set_retention_days", { days: d }).catch(() => {});
+                }}
+              >
+                <option value="0">{t("settings.retForever")}</option>
+                <option value="7">{t("settings.ret7")}</option>
+                <option value="30">{t("settings.ret30")}</option>
+              </select>
+            </span>
+          </div>
+          <p className="settings-hint">{t("settings.retHint")}</p>
 
           <div className="settings-row">
             <span className="settings-label">{t("settings.dedupe")}</span>

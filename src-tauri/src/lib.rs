@@ -306,8 +306,11 @@ pub fn run() {
                 dedupe: dedupe.clone(),
             });
 
-            // start clipboard polling
-            clipboard::start_polling(app.handle().clone(), conn, dedupe);
+            // start clipboard polling (retention: 0=forever, else days)
+            let retention = load_setting(app.handle(), "retention_days", "0")
+                .parse::<i64>()
+                .unwrap_or(0);
+            clipboard::start_polling(app.handle().clone(), conn, dedupe, retention);
 
             // Register all hotkeys FIRST so the tray tooltip can show the
             // combos that actually took. Drawer walks a fallback chain (a
@@ -408,6 +411,8 @@ pub fn run() {
             wayland_session,
             dedupe_history,
             set_dedupe_history,
+            retention_days,
+            set_retention_days,
             open_library,
             delete_items,
             export_selected_text,
@@ -1668,6 +1673,24 @@ fn time_fmt(unix: i64) -> String {
     let m = if mp < 10 { mp + 3 } else { mp - 9 };
     let y = if m <= 2 { y + 1 } else { y };
     format!("{y:04}{m:02}{d:02}-{h:02}{mi:02}{s:02}")
+}
+
+// ─────────────────────── retention preference ───────────────────────
+
+/// Days an unpinned item survives (7 / 30 / 0 = forever).
+#[tauri::command]
+fn retention_days(app: AppHandle) -> i64 {
+    load_setting(&app, "retention_days", "0")
+        .parse()
+        .unwrap_or(0)
+}
+
+#[tauri::command]
+fn set_retention_days(app: AppHandle, days: i64) -> Result<(), String> {
+    if ![0, 7, 30].contains(&days) {
+        return Err(format!("无效的保留天数: {days}"));
+    }
+    save_setting(&app, "retention_days", &days.to_string())
 }
 
 // ─────────────────────── dedupe preference ───────────────────────

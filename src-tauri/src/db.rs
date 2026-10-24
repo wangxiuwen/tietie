@@ -325,6 +325,20 @@ pub fn trim_history(conn: &Connection, max: i64) -> SqlResult<usize> {
     Ok(removed)
 }
 
+/// Age-based retention: delete unpinned items older than `days` days.
+/// Called opportunistically from the poll loop; `days <= 0` keeps forever.
+pub fn trim_expired(conn: &Connection, days: i64) -> SqlResult<usize> {
+    if days <= 0 {
+        return Ok(0);
+    }
+    let cutoff = now_unix() - days * 86400;
+    let removed = conn.execute(
+        "DELETE FROM clip_item WHERE pinned = 0 AND used_at < ?1",
+        params![cutoff],
+    )?;
+    Ok(removed)
+}
+
 pub fn list_folders(conn: &Connection) -> SqlResult<Vec<Folder>> {
     let mut stmt = conn.prepare(
         "SELECT id, name, color, sort_order FROM folder ORDER BY sort_order ASC, id ASC",
@@ -743,6 +757,41 @@ mod tests {
             .unwrap();
         assert_eq!(n, 6);
         assert_eq!(pinned, 1); // oldest row is pinned and still here
+    }
+
+    #[test]
+    fn expired_trim_respects_age_and_pins() {
+        let conn = tmp_db("expire");
+        let now = now_unix();
+        // fresh row (recent), old row, old pinned row
+        let fresh = upsert_item(&conn, item_s("fresh"), true).unwrap();
+        let old_id = upsert_item(&conn, item_s("old"), true).unwrap();
+        conn.execute(
+            "UPDATE clip_item SET used_at = ?1 WHERE id = ?2",
+            params![now - 30 * 86400, old_id],
+        )
+        .unwrap();
+        let old_pin = upsert_item(&conn, item_s("oldpin"), true).unwrap();
+        conn.execute(
+            "UPDATE clip_item SET used_at = ?1, pinned = 1 WHERE id = ?2",
+            params![now - 30 * 86400, old_pin],
+        )
+        .unwrap();
+
+        let removed = trim_expired(&conn, 7).unwrap();
+        assert_eq!(removed, 1); // only the unpinned old row
+        let ids: Vec<i64> = {
+            let mut stmt = conn
+                .prepare("SELECT id FROM clip_item ORDER BY id")
+                .unwrap();
+            stmt.query_map([], |r| r.get(0))
+                .unwrap()
+                .collect::<SqlResult<Vec<_>>>()
+                .unwrap()
+        };
+        assert_eq!(ids, vec![fresh, old_pin]);
+        // forever mode: no-op
+        assert_eq!(trim_expired(&conn, 0).unwrap(), 0);
     }
 
     #[test]
