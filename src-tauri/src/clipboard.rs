@@ -7,7 +7,9 @@ use std::sync::Arc;
 use std::time::Duration;
 use tauri::{AppHandle, Emitter};
 
-const POLL_MS: u64 = 600;
+/// Poll backoff ladder: 600ms right after activity, easing to 2s while
+/// the clipboard stays unchanged (saves CPU/battery on idle machines).
+const POLL_BACKOFF_STEPS: [u64; 4] = [600, 1000, 1500, 2000];
 
 #[cfg(not(target_os = "macos"))]
 struct NoRich {
@@ -32,9 +34,19 @@ pub fn start_polling(
         };
         let mut last_text_hash: Option<String> = None;
         let mut last_image_hash: Option<String> = None;
+        let mut quiet_runs: u32 = 0;
 
         loop {
-            std::thread::sleep(Duration::from_millis(POLL_MS));
+            let poll = POLL_BACKOFF_STEPS[(quiet_runs as usize).min(POLL_BACKOFF_STEPS.len() - 1)];
+            std::thread::sleep(Duration::from_millis(poll));
+            quiet_runs = quiet_runs.saturating_add(1);
+            if (1..=POLL_BACKOFF_STEPS.len() as u32).contains(&quiet_runs) {
+                log::info!(
+                    "clipboard quiet {} rounds (last poll {}ms)",
+                    quiet_runs,
+                    poll
+                );
+            }
 
             // Try text first
             if let Ok(text) = clipboard.get_text() {
@@ -42,6 +54,7 @@ pub fn start_polling(
                 if Some(&hash) != last_text_hash.as_ref() && !text.is_empty() {
                     last_text_hash = Some(hash.clone());
                     last_image_hash = None;
+                    quiet_runs = 0; // new content -> fast poll next round
                     let (kind, preview) = classify_text(&text);
                     // record who copied it (frontmost app right now);
                     // blacklisted apps (password managers etc.) are ignored
@@ -100,6 +113,7 @@ pub fn start_polling(
                 if Some(&hash) != last_image_hash.as_ref() {
                     last_image_hash = Some(hash.clone());
                     last_text_hash = None;
+                    quiet_runs = 0; // new content -> fast poll next round
                     let source = crate::frontmost_app_name(&app);
                     if crate::source_blacked(&app, &source) {
                         log::info!("source app blacklisted, skipping image insert");
