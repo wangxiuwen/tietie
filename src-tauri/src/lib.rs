@@ -657,8 +657,28 @@ fn tray_icon_image() -> Image<'static> {
 /// bottom when the dock is hidden) — no gap.
 const DRAWER_BOTTOM_MARGIN: f64 = 0.0;
 
+/// The monitor the mouse cursor is on — multi-display layouts should keep
+/// the drawer / clothesline on the screen the user is actually looking at.
+/// Falls back to the window's current monitor when the cursor can't be read
+/// or sits outside every known monitor.
+fn monitor_with_cursor<R: Runtime>(win: &WebviewWindow<R>) -> Option<tauri::Monitor> {
+    let cursor = win.cursor_position().ok()?;
+    let monitors = win.available_monitors().ok()?;
+    monitors
+        .into_iter()
+        .find(|m| {
+            let p = m.position();
+            let s = m.size();
+            cursor.x >= p.x as f64
+                && cursor.x < (p.x + s.width as i32) as f64
+                && cursor.y >= p.y as f64
+                && cursor.y < (p.y + s.height as i32) as f64
+        })
+        .or_else(|| win.current_monitor().ok().flatten())
+}
+
 fn position_drawer<R: Runtime>(win: &WebviewWindow<R>) {
-    if let Ok(Some(m)) = win.current_monitor() {
+    if let Some(m) = monitor_with_cursor(win) {
         let size = m.size();
         let scale = m.scale_factor();
         let target_w = size.width;
@@ -703,7 +723,7 @@ fn mac_dock_inset_px(_scale: f64) -> i32 {
 
 /// Span the clothesline across the very top of the screen, full width.
 fn position_clothesline<R: Runtime>(win: &WebviewWindow<R>) {
-    if let Ok(Some(m)) = win.current_monitor() {
+    if let Some(m) = monitor_with_cursor(win) {
         let size = m.size();
         let scale = m.scale_factor();
         let target_w = size.width;
