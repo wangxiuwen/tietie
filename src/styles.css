@@ -1865,3 +1865,93 @@ mark.hl {
   background: var(--accent-dim);
   color: var(--accent);
 }
+
+/* ───────── clipboard stats strip (Library) ───────── */
+
+.stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 14px;
+  border: 1px solid var(--card-stroke);
+  border-radius: 12px;
+  background: var(--card-bg);
+  flex: none;
+}
+
+.stat-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 54px;
+}
+
+.stat-cell b {
+  font-size: calc(18px * var(--fs));
+  color: var(--accent);
+}
+
+.stat-cell span {
+  font-size: calc(10.5px * var(--fs));
+  color: var(--text-3);
+}
+
+.stat-kinds {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 160px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stat-row .po-kind {
+  min-width: 36px;
+  text-align: center;
+}
+
+.stat-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--card-stroke);
+  overflow: hidden;
+}
+
+.stat-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.stat-n {
+  min-width: 26px;
+  text-align: right;
+  font-size: calc(11px * var(--fs));
+  color: var(--text-2);
+}
+
+.stat-sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: 300px;
+  justify-content: flex-end;
+}
+
+.stat-src {
+  font-size: calc(11px * var(--fs));
+  color: var(--text-2);
+  background: var(--accent-dim);
+  border-radius: 6px;
+  padding: 2px 8px;
+}
+
+.stat-src b {
+  color: var(--accent);
+}

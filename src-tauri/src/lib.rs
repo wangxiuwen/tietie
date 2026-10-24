@@ -401,6 +401,7 @@ pub fn run() {
             set_item_folder,
             get_item_image,
             get_item_rich,
+            clip_stats,
             list_memos,
             hang_item,
             hang_items,
@@ -1317,6 +1318,64 @@ fn export_selected_text(
     let path = dir.join(format!("tietie-export-{}.txt", time_fmt(db::now_unix())));
     std::fs::write(&path, parts.join("\n")).map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().into_owned())
+}
+
+/// Clipboard usage stats for the Library stats panel.
+#[derive(serde::Serialize)]
+struct ClipStats {
+    total: i64,
+    today: i64,
+    pinned: i64,
+    by_kind: Vec<(String, i64)>,
+    top_sources: Vec<(String, i64)>,
+}
+
+#[tauri::command]
+fn clip_stats(state: tauri::State<'_, AppState>) -> Result<ClipStats, String> {
+    let conn = state.conn.lock();
+    let day_start = db::now_unix() - (db::now_unix() % 86400);
+    let total: i64 = conn
+        .query_row("SELECT COUNT(*) FROM clip_item", [], |r| r.get(0))
+        .map_err(|e| e.to_string())?;
+    let today: i64 = conn
+        .query_row(
+            "SELECT COUNT(*) FROM clip_item WHERE used_at >= ?1",
+            rusqlite::params![day_start],
+            |r| r.get(0),
+        )
+        .map_err(|e| e.to_string())?;
+    let pinned: i64 = conn
+        .query_row("SELECT COUNT(*) FROM clip_item WHERE pinned = 1", [], |r| {
+            r.get(0)
+        })
+        .map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT kind, COUNT(*) FROM clip_item GROUP BY kind ORDER BY COUNT(*) DESC")
+        .map_err(|e| e.to_string())?;
+    let by_kind = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT source_app, COUNT(*) FROM clip_item
+             WHERE source_app IS NOT NULL AND source_app != ''
+             GROUP BY source_app ORDER BY COUNT(*) DESC LIMIT 5",
+        )
+        .map_err(|e| e.to_string())?;
+    let top_sources = stmt
+        .query_map([], |r| Ok((r.get::<_, String>(0)?, r.get::<_, i64>(1)?)))
+        .map_err(|e| e.to_string())?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())?;
+    Ok(ClipStats {
+        total,
+        today,
+        pinned,
+        by_kind,
+        top_sources,
+    })
 }
 
 /// Rich HTML captured at copy time (for the rendered preview overlay).

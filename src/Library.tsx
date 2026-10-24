@@ -20,11 +20,21 @@ export default function Library() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [msg, setMsg] = useState<string | null>(null);
+  const [stats, setStats] = useState<ClipStats | null>(null);
   type SortKey = "time" | "kind" | "size" | "source";
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "time", dir: -1 });
 
+  interface ClipStats {
+    total: number;
+    today: number;
+    pinned: number;
+    by_kind: [string, number][];
+    top_sources: [string, number][];
+  }
+
   const refresh = useCallback(async () => {
     setItems(await invoke<ClipItem[]>("list_items", { limit: 500 }));
+    setStats(await invoke<ClipStats>("clip_stats"));
   }, []);
 
   useEffect(() => {
@@ -107,6 +117,43 @@ export default function Library() {
           {t("lib.collapse")}
         </button>
       </div>
+      {stats && (
+        <div className="stats-bar">
+          <div className="stat-cell">
+            <b>{stats.total}</b>
+            <span>{t("st.total")}</span>
+          </div>
+          <div className="stat-cell">
+            <b>{stats.today}</b>
+            <span>{t("st.today")}</span>
+          </div>
+          <div className="stat-cell">
+            <b>{stats.pinned}</b>
+            <span>{t("st.pinned")}</span>
+          </div>
+          <div className="stat-kinds">
+            {stats.by_kind.map(([k, n]) => (
+              <div key={k} className="stat-row">
+                <span className={"po-kind kind-" + k}>{kindLabel(k)}</span>
+                <div className="stat-track">
+                  <div className="stat-fill" style={{ width: `${(n / stats.total) * 100}%` }} />
+                </div>
+                <span className="stat-n">{n}</span>
+              </div>
+            ))}
+          </div>
+          {stats.top_sources.length > 0 && (
+            <div className="stat-sources">
+              {stats.top_sources.map(([s, n]) => (
+                <span key={s} className="stat-src">
+                  {s} <b>{n}</b>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="lib-table-wrap">
         <table className="lib-table">
           <thead>

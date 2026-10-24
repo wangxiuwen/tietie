@@ -93,6 +93,8 @@ const zh: Dict = {
   // batch
   "batch.selected": "已选", "batch.hang": "批量挂绳",
   "batch.delete": "批量删除", "batch.clear": "取消选择",
+  // stats
+  "st.total": "总条目", "st.today": "今日", "st.pinned": "置顶",
   // rich preview
   "rich.preview": "查看富文本渲染", "rich.hint": "富文本渲染预览",
   // cheatsheet
@@ -180,6 +182,7 @@ const en: Dict = {
   "tray.full": "Open full panel", "tray.quit": "Quit",
   "batch.selected": "Selected", "batch.hang": "Hang all",
   "batch.delete": "Delete all", "batch.clear": "Clear selection",
+  "st.total": "Total", "st.today": "Today", "st.pinned": "Pinned",
   "rich.preview": "View rendered rich text", "rich.hint": "Rendered rich-text preview",
   "cs.title": "Keyboard cheatsheet", "cs.nav": "Move selection", "cs.paste": "Paste to previous app",
   "cs.direct": "Paste Nth item", "cs.search": "Focus search", "cs.edit": "Edit item",
