@@ -413,7 +413,7 @@ export default function App() {
           {filtered.length === 0 ? (
             <Empty />
           ) : (
-            <div className="cards" ref={cardsRef}>
+            <div className="cards" ref={cardsRef} role="listbox" aria-label={t("a11y.cards")}>
               {filtered.map((it, idx) =>
                 editing && editing.id === it.id ? (
                   <EditCard
@@ -608,6 +608,7 @@ function Header({
         <input
           ref={searchRef}
           placeholder={t("search.placeholder")}
+          aria-label={t("search.placeholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -764,6 +765,9 @@ function Card({
         (beingDragged ? " lifting" : "") +
         (multiSelected ? " multi-sel" : "")
       }
+      role="option"
+      aria-selected={selected}
+      aria-label={`${kindLabel(item.kind)}：${cardAriaText(item)}`}
       onClick={(e) => {
         if (clickSuppressed()) return;
         onClick(e);
@@ -800,17 +804,25 @@ function Card({
           <button
             className="action"
             title={t("card.copyRgb")}
+            aria-label={t("card.copyRgb")}
             onClick={() => navigator.clipboard.writeText(hexToRgb(item.content)).catch(() => {})}
           >
             RGB
           </button>
         )}
-        <button className="action" onClick={onPin} title="置顶">📌</button>
-        <button className="action" onClick={onEdit} title="编辑">✎</button>
-        <button className="action" onClick={onDelete} title="删除">🗑</button>
+        <button className="action" onClick={onPin} title="置顶" aria-label={t("footer.pin")}>📌</button>
+        <button className="action" onClick={onEdit} title="编辑" aria-label={t("footer.edit")}>✎</button>
+        <button className="action" onClick={onDelete} title="删除" aria-label={t("footer.del")}>🗑</button>
       </div>
     </div>
   );
+}
+
+/** Short spoken-form text for a card (images: dimensions, not base64). */
+function cardAriaText(item: ClipItem): string {
+  const s = item.kind === "image" ? item.content : (item.preview || item.content);
+  const one = s.replace(/\s+/g, " ").trim();
+  return one.length > 60 ? one.slice(0, 60) + "…" : one;
 }
 
 function CardBody({ item, query, onRich }: { item: ClipItem; query: string; onRich: () => void }) {

@@ -2014,3 +2014,16 @@ mark.hl {
   padding: 3px 8px;
   cursor: default;
 }
+
+/* keyboard focus ring (a11y audit, direction 45): visible outline whenever
+   main controls are reached via Tab; mouse clicks stay clean */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="option"]:focus-visible,
+[role="tab"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 6px;
+}

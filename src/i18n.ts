@@ -33,6 +33,7 @@ export const zh: Dict = {
   "folder.new": "+ 新建", "folder.newPlaceholder": "文件夹名称，回车新建",
   "card.paste": "↵ 粘贴", "card.copyRgb": "复制为 rgb() 格式", "card.hint": "回车粘贴 · 按住往上拖可以挂到晾衣架",
   "edit.badge": "编辑中 · 不影响其它条",
+  "a11y.cards": "剪贴板列表（↑↓ 选择，回车粘贴）",
   "edit.cancel": "Esc 取消", "edit.savePaste": "⌘↵ 保存并粘贴",
   "edit.chars": "字符", "edit.lines": "行",
   // settings
@@ -128,6 +129,7 @@ export const en: Dict = {
   "folder.new": "+ New", "folder.newPlaceholder": "Folder name, Enter to create",
   "card.paste": "↵ Paste", "card.copyRgb": "Copy as rgb()", "card.hint": "Enter to paste · drag up to hang on the line",
   "edit.badge": "Editing · others untouched",
+  "a11y.cards": "Clipboard list (↑↓ select, Enter paste)",
   "edit.cancel": "Esc Cancel", "edit.savePaste": "⌘↵ Save & Paste",
   "edit.chars": "chars", "edit.lines": "lines",
   "settings.title": "Settings",
