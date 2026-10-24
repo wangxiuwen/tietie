@@ -1561,3 +1561,9 @@ body.dragging-hang * {
   flex-direction: column;
   gap: 2px;
 }
+
+.color-alt {
+  font-size: 10.5px;
+  color: var(--text-3);
+  margin-left: 6px;
+}

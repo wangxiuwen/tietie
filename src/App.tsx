@@ -637,6 +637,15 @@ function Card({
       {idx < 10 && <div className="index-kbd">{MOD}{idx === 9 ? 0 : idx + 1}</div>}
       <div className="actions" onClick={(e) => e.stopPropagation()}>
         <button className="action primary" onClick={onPaste}>{t("card.paste")}</button>
+        {item.kind === "color" && (
+          <button
+            className="action"
+            title={t("card.copyRgb")}
+            onClick={() => navigator.clipboard.writeText(hexToRgb(item.content)).catch(() => {})}
+          >
+            RGB
+          </button>
+        )}
         <button className="action" onClick={onPin} title="置顶">📌</button>
         <button className="action" onClick={onEdit} title="编辑">✎</button>
         <button className="action" onClick={onDelete} title="删除">🗑</button>
@@ -662,6 +671,7 @@ function CardBody({ item }: { item: ClipItem }) {
         <div className="swatch-big" style={{ background: item.content }} />
         <div className="color-row">
           <b>{item.content}</b>
+          <span className="color-alt">{hexToRgb(item.content)}</span>
         </div>
       </>
     );
@@ -845,6 +855,14 @@ function PinIcon({ size = 16 }: { size?: number }) {
       <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2z" />
     </svg>
   );
+}
+
+/** "#RRGGBB" → "rgb(34, 139, 230)"; passthrough when not a plain hex color. */
+function hexToRgb(hex: string): string {
+  const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
+  if (!m) return hex;
+  const n = parseInt(m[1], 16);
+  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
 }
 
 function truncate(s: string, n: number): string {
