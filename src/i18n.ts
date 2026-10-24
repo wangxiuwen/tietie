@@ -85,6 +85,10 @@ const zh: Dict = {
   // batch
   "batch.selected": "已选", "batch.hang": "批量挂绳",
   "batch.delete": "批量删除", "batch.clear": "取消选择",
+  // context menu
+  "ctx.copy": "复制", "ctx.pasteBack": "粘贴到原应用", "ctx.pin": "置顶",
+  "ctx.unpin": "取消置顶", "ctx.hang": "挂到晾衣架", "ctx.moveTo": "移入文件夹…",
+  "ctx.clearFolder": "　移出文件夹", "ctx.delete": "删除",
   // rel time
   "rt.now": "刚刚", "rt.min": "分钟前", "rt.hour": "小时前", "rt.day": "天前",
 };
@@ -152,6 +156,9 @@ const en: Dict = {
   "tray.full": "Open full panel", "tray.quit": "Quit",
   "batch.selected": "Selected", "batch.hang": "Hang all",
   "batch.delete": "Delete all", "batch.clear": "Clear selection",
+  "ctx.copy": "Copy", "ctx.pasteBack": "Paste to previous app", "ctx.pin": "Pin",
+  "ctx.unpin": "Unpin", "ctx.hang": "Hang on the line", "ctx.moveTo": "Move to folder…",
+  "ctx.clearFolder": "　Remove from folder", "ctx.delete": "Delete",
   "rt.now": "just now", "rt.min": " min ago", "rt.hour": " h ago", "rt.day": " d ago",
 };
 

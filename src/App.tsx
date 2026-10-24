@@ -9,6 +9,7 @@ import { kindLabel } from "./types";
 import { MOD } from "./platform";
 import { matchQuery } from "./search";
 import { HighlightText } from "./highlight";
+import { ContextMenu, type MenuItem } from "./ContextMenu";
 import { t, useLang } from "./i18n";
 
 type FilterTab = "all" | ItemKind;
@@ -60,6 +61,8 @@ export default function App() {
   const [zoomId, setZoomId] = useState<number | null>(null);
   // ⌘/Ctrl+click multi-select for batch delete / hang
   const [multiSel, setMultiSel] = useState<Set<number>>(new Set());
+  // right-click context menu on cards
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -85,6 +88,7 @@ export default function App() {
       requestAnimationFrame(() => searchRef.current?.focus());
     }).then((u) => unlistens.push(u));
     listen<null>("hide-drawer", () => {
+      setCtxMenu(null);
       setDrawerVisible(false);
       setEditing(null);
       // The drawer can hide mid-drag (Esc, focus loss) while the OS cursor
@@ -405,6 +409,7 @@ export default function App() {
                     beingDragged={draggingId === it.id}
                     multiSelected={multiSel.has(it.id)}
                     query={query}
+                    onContext={(x, y) => setCtxMenu({ x, y, itemId: it.id })}
                     onClick={(e) => {
                       if (e.metaKey || e.ctrlKey) {
                         // multi-select toggle — no zoom, no single selection
@@ -469,6 +474,26 @@ export default function App() {
             onClose={() => setZoomId(null)}
           />
         )}
+        {ctxMenu && (
+          <ContextMenu
+            x={ctxMenu.x}
+            y={ctxMenu.y}
+            items={buildCtxItems({
+              item: items.find((i) => i.id === ctxMenu.itemId),
+              folders,
+              paste,
+              togglePin,
+              deleteItem,
+              refresh,
+              onFile: async (id, folderId) => {
+                await invoke("set_item_folder", { id, folderId });
+                refresh();
+              },
+              onHang: (id) => invoke("hang_item", { id }).catch(() => {}),
+            })}
+            onClose={() => setCtxMenu(null)}
+          />
+        )}
         {dragGhost &&
           createPortal(
             <div className="drag-ghost" style={{ left: dragGhost.x, top: dragGhost.y }}>
@@ -479,6 +504,55 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+/** Context-menu entries for a clip card: copy / pin / hang / file / delete. */
+function buildCtxItems({
+  item,
+  folders,
+  paste,
+  togglePin,
+  deleteItem,
+  refresh,
+  onFile,
+  onHang,
+}: {
+  item?: ClipItem;
+  folders: Folder[];
+  paste: (it: ClipItem) => void;
+  togglePin: (id: number) => void;
+  deleteItem: (id: number) => void;
+  refresh: () => void;
+  onFile: (id: number, folderId: number | null) => void;
+  onHang: (id: number) => void;
+}): MenuItem[] {
+  if (!item) return [];
+  const items: MenuItem[] = [
+    { label: t("ctx.copy"), onClick: () => navigator.clipboard.writeText(item.content).catch(() => {}) },
+    { label: t("ctx.pasteBack"), onClick: () => paste(item) },
+    { label: item.pinned ? t("ctx.unpin") : t("ctx.pin"), onClick: () => { togglePin(item.id); } },
+    { label: t("ctx.hang"), onClick: () => onHang(item.id) },
+  ];
+  if (folders.length > 0) {
+    items.push({ separatorBefore: true, label: t("ctx.moveTo"), onClick: () => {} }); // header row
+    for (const f of folders) {
+      items.push({
+        label: "　" + f.name,
+        onClick: () => onFile(item.id, item.folder_id === f.id ? null : f.id),
+      });
+    }
+    items.push({ label: t("ctx.clearFolder"), onClick: () => onFile(item.id, null) });
+  }
+  items.push({
+    separatorBefore: true,
+    danger: true,
+    label: t("ctx.delete"),
+    onClick: () => {
+      deleteItem(item.id);
+      refresh();
+    },
+  });
+  return items;
 }
 
 function Header({
@@ -621,6 +695,7 @@ function Card({
   beingDragged,
   multiSelected,
   query,
+  onContext,
   onClick,
   onDoubleClick,
   onPin,
@@ -634,6 +709,7 @@ function Card({
   beingDragged: boolean;
   multiSelected: boolean;
   query: string;
+  onContext: (x: number, y: number) => void;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: () => void;
   onPin: () => void;
@@ -665,6 +741,11 @@ function Card({
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         cardDrag.current = { itemId: item.id, startY: e.screenY, moved: false, inZone: false };
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onContext(e.clientX, e.clientY);
       }}
       title={t("card.hint")}
     >
