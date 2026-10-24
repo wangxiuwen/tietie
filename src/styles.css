@@ -1710,3 +1710,23 @@ mark.hl {
   min-width: 72px;
   text-align: center;
 }
+
+/* ───────── library column sort ───────── */
+
+.th-sort {
+  all: unset;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-2);
+  cursor: default;
+  padding: 2px 6px;
+  border-radius: 5px;
+}
+
+.th-sort:hover {
+  background: var(--accent-dim);
+}
+
+.th-sort.on {
+  color: var(--accent);
+}

@@ -20,6 +20,8 @@ export default function Library() {
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [msg, setMsg] = useState<string | null>(null);
+  type SortKey = "time" | "kind" | "size" | "source";
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "time", dir: -1 });
 
   const refresh = useCallback(async () => {
     setItems(await invoke<ClipItem[]>("list_items", { limit: 500 }));
@@ -33,13 +35,29 @@ export default function Library() {
     return () => unlistens.forEach((u) => u());
   }, [refresh]);
 
-  const filtered = useMemo(
-    () =>
-      query.trim()
-        ? items.filter((x) => matchQuery(x.content, x.preview, query))
-        : items,
-    [items, query],
-  );
+  const filtered = useMemo(() => {
+    const base = query.trim()
+      ? items.filter((x) => matchQuery(x.content, x.preview, query))
+      : items;
+    const dir = sort.dir;
+    return base.slice().sort((a, b) => {
+      switch (sort.key) {
+        case "kind":
+          return a.kind.localeCompare(b.kind) * dir;
+        case "size":
+          return (a.byte_size - b.byte_size) * dir;
+        case "source":
+          return (a.source_app ?? "").localeCompare(b.source_app ?? "") * dir;
+        default:
+          return (a.used_at - b.used_at) * dir;
+      }
+    });
+  }, [items, query, sort]);
+
+  const sortBy = (key: SortKey) =>
+    setSort((s) =>
+      s.key === key ? { key, dir: (s.dir * -1) as 1 | -1 } : { key, dir: key === "time" ? -1 : 1 },
+    );
 
   const allSelected = filtered.length > 0 && filtered.every((x) => selected.has(x.id));
 
@@ -96,11 +114,27 @@ export default function Library() {
               <th className="w-check">
                 <input type="checkbox" checked={allSelected} onChange={toggleAll} />
               </th>
-              <th className="w-kind">{t("lib.kind")}</th>
+              <th className="w-kind">
+                <button className={"th-sort" + (sort.key === "kind" ? " on" : "")} onClick={() => sortBy("kind")}>
+                  {t("lib.kind")}{sort.key === "kind" ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
+                </button>
+              </th>
               <th>{t("lib.content")}</th>
-              <th className="w-src">{t("lib.source")}</th>
-              <th className="w-size">{t("lib.size")}</th>
-              <th className="w-time">{t("lib.time")}</th>
+              <th className="w-src">
+                <button className={"th-sort" + (sort.key === "source" ? " on" : "")} onClick={() => sortBy("source")}>
+                  {t("lib.source")}{sort.key === "source" ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
+                </button>
+              </th>
+              <th className="w-size">
+                <button className={"th-sort" + (sort.key === "size" ? " on" : "")} onClick={() => sortBy("size")}>
+                  {t("lib.size")}{sort.key === "size" ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
+                </button>
+              </th>
+              <th className="w-time">
+                <button className={"th-sort" + (sort.key === "time" ? " on" : "")} onClick={() => sortBy("time")}>
+                  {t("lib.time")}{sort.key === "time" ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody>
