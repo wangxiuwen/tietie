@@ -6,6 +6,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { Memo } from "./types";
 import { kindLabel } from "./types";
 import { t, useLang } from "./i18n";
+import { RopeSim } from "./ropePhysics";
 
 // ─── take-off drag: one shared tracker, listeners live in Clothesline ───
 // This window is never focused (focus:false) and Chromium does not honor
@@ -38,6 +39,8 @@ export default function Clothesline() {
   );
   const memosRef = useRef<Memo[]>([]);
   memosRef.current = memos;
+  // live drag pointer (viewport coords) for the rope physics loop
+  const dragPosRef = useRef<{ id: number; x: number; y: number } | null>(null);
 
   const refresh = useCallback(async () => {
     const ms = await invoke<Memo[]>("list_memos");
@@ -70,17 +73,16 @@ export default function Clothesline() {
         getCurrentWindow().setCursorGrab(true).catch(() => {});
       }
       st.off = dy > 70;
-      setDragUI({
-        id: st.memoId,
-        x: e.screenX - window.screenX,
-        y: e.screenY - window.screenY,
-        off: st.off,
-      });
+      const vx = e.screenX - window.screenX;
+      const vy = e.screenY - window.screenY;
+      dragPosRef.current = { id: st.memoId, x: vx, y: vy };
+      setDragUI({ id: st.memoId, x: vx, y: vy, off: st.off });
     };
     const onFinish = () => {
       const st = lineDrag.current;
       if (!st) return;
       lineDrag.current = null;
+      dragPosRef.current = null;
       setDragUI(null);
       getCurrentWindow().setCursorGrab(false).catch(() => {});
       if (st.moved) {
@@ -119,6 +121,72 @@ export default function Clothesline() {
     await invoke("remove_memo", { id });
   }, []);
 
+  // ─── rope physics: verlet sim rendered via direct DOM writes ───
+  const ropeSimRef = useRef<RopeSim | null>(null);
+  const ropePathRef = useRef<SVGPathElement | null>(null);
+  const lineWrapRef = useRef<HTMLDivElement | null>(null);
+  const prevMemoCount = useRef(0);
+
+  useEffect(() => {
+    const wrap = lineWrapRef.current;
+    if (!wrap) return;
+    const W = wrap.clientWidth || 1920;
+    const sim = new RopeSim(W, 30, 20);
+    ropeSimRef.current = sim;
+
+    let raf = 0;
+    const loop = () => {
+      const width = wrap.clientWidth || W;
+      if (Math.abs(width - (sim.points[sim.n - 1].x)) > 2) sim.resize(width);
+
+      // hanging weights: each card pulls the rope down at its pin position
+      const cards = wrap.querySelectorAll<HTMLElement>(".line-card");
+      const weights = new Map<number, number>();
+      const cardY: { el: HTMLElement; dy: number }[] = [];
+      cards.forEach((el) => {
+        const cx = el.offsetLeft + el.offsetWidth / 2;
+        const idx = sim.indexAt(cx, width);
+        const isDragged = dragPosRef.current && el.dataset.memo === String(dragPosRef.current.id);
+        if (isDragged) return; // its weight is replaced by the drag force
+        weights.set(idx, (weights.get(idx) ?? 0) + 0.55);
+        cardY.push({ el, dy: sim.yAt(idx) - 20 }); // rope sag under this card
+      });
+
+      // dragging a card stretches the rope toward the pointer
+      let drag: { index: number; x: number; y: number } | undefined;
+      if (dragPosRef.current) {
+        const d = dragPosRef.current;
+        drag = { index: sim.indexAt(d.x, width), x: d.x, y: Math.max(20, d.y - 40) };
+      }
+
+      sim.step(0.35, weights, drag);
+
+      // paint rope + hang cards at their physical sag
+      ropePathRef.current?.setAttribute("d", sim.path());
+      for (const { el, dy } of cardY) {
+        el.style.transform = `translateY(${dy.toFixed(1)}px)`;
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // a freshly hung card kicks the rope
+  useEffect(() => {
+    const sim = ropeSimRef.current;
+    if (!sim || !lineWrapRef.current) return;
+    if (memos.length > prevMemoCount.current && prevMemoCount.current >= 0) {
+      const cards = lineWrapRef.current.querySelectorAll<HTMLElement>(".line-card");
+      const last = cards[cards.length - 1];
+      if (last) {
+        const cx = last.offsetLeft + last.offsetWidth / 2;
+        sim.impulse(sim.indexAt(cx, lineWrapRef.current.clientWidth), 16);
+      }
+    }
+    prevMemoCount.current = memos.length;
+  }, [memos.length]);
+
   const collapse = useCallback(async () => {
     await invoke("toggle_clothesline_cmd");
   }, []);
@@ -144,8 +212,8 @@ export default function Clothesline() {
   }, [viewing]);
 
   return (
-    <div className={"line" + (previewing ? " line-hot" : "")}>
-      <Rope hot={previewing || !!viewing || composing} />
+    <div className={"line" + (previewing ? " line-hot" : "")} ref={lineWrapRef}>
+      <Rope hot={previewing || !!viewing || composing} pathRef={ropePathRef} />
       {viewing ? (
         <MemoDetail
           memo={viewing}
@@ -260,16 +328,24 @@ function NoteComposer({
   );
 }
 
-function Rope({ hot }: { hot: boolean }) {
+function Rope({
+  hot,
+  pathRef,
+}: {
+  hot: boolean;
+  pathRef: React.RefObject<SVGPathElement | null>;
+}) {
+  // the path d is rewritten every frame by the physics loop in Clothesline
   return (
-    <svg className="line-rope" preserveAspectRatio="none" viewBox="0 0 1000 26">
+    <svg className="line-rope">
       <path
-        d="M0,2 C 250,26 750,26 1000,2"
+        ref={(el) => { (pathRef as React.MutableRefObject<SVGPathElement | null>).current = el; }}
+        d="M0,20 L1920,20"
         fill="none"
         className={"line-rope-path" + (hot ? " hot" : "")}
       />
-      <circle cx="0" cy="2" r="5" className="line-rope-anchor" />
-      <circle cx="1000" cy="2" r="5" className="line-rope-anchor" />
+      <circle cx="4" cy="20" r="4" className="line-rope-anchor" />
+      <circle cx="1916" cy="20" r="4" className="line-rope-anchor" />
     </svg>
   );
 }
@@ -298,6 +374,7 @@ function HangingCard({
         (draggedOff ? " dropping" : "") +
         (lifted ? " lifted" : "")
       }
+      data-memo={memo.id}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         lineDrag.current = { memoId: memo.id, startY: e.screenY, moved: false, off: false };
