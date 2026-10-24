@@ -187,6 +187,11 @@ export default function App() {
     }
     return xs.slice().sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+      // while searching, frequently-used items rank first (Everything-style
+      // "gets better as you use it"); recency drives the unfiltered list
+      if (query.trim() && a.use_count !== b.use_count) {
+        return b.use_count - a.use_count;
+      }
       return b.used_at - a.used_at;
     });
   }, [items, folderId, tab, query]);
