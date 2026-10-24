@@ -68,7 +68,8 @@
 - [x] 47. Linux .desktop 集成审计：图标主题/名称/注释/分类字段，deb 包验证
   - 2026-10-24 完成配置侧+结构校验：bundle.category Productivity→Utility（freedesktop 注册主分类，macOS 同样合法）；新增 deb.desktopTemplate=assets/tietie.desktop（官方变量 name/comment/exec/icon/categories，补 Comment+Keywords）；tauri 构建过 config schema 实证键合法；scripts/check_desktop.py 渲染模板按 spec 验必填键/图标名=identifier/分类/列表分隔符全过。deb 实机打包/安装验证留待 Linux 环境（本机仅 WSL 无工具，按约束不装包）
 - [x] 48. 多显示器 DPI 变化重定位：监听 scale 变化事件重摆抽屉/晾衣架
-- [ ] 49. 拖卡入文件夹：抽屉内拖卡片到文件夹 chip 直接归类（复用 window 拖拽）
+- [x] 49. 拖卡入文件夹：抽屉内拖卡片到文件夹 chip 直接归类（复用 window 拖拽）
+  - 2026-10-24 勘误：与已完成的方向18重复（扩池时误加）。功能自 R18（7325570）就在：window 级拖拽中 elementFromPoint 命中 chip 高亮、落点 set_item_folder、「全部」移出。本轮在当前构建上合成 PointerEvent 全序列复验：card pointerdown→40px 上移 moves→chip 坐标 move+up，条目 folder None→新文件夹→还原 None，临时文件夹删除，净零收口
 - [ ] 50. 条目 markdown 导出：Library 选中导出为 .md（类型分组标题 + 代码块包裹）
 - [ ] 51. 颜色历史色板：颜色条目在 Library 的色板网格视图（正方形色块 + hex 角标）
 - [ ] 52. 抽屉紧凑列表模式：卡片/列表双显示模式设置（列表=单行文本省空间）
@@ -84,6 +85,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-24 | 49 | 复验 | 方向49 与已完成的18重复（扩池误加）：R18 实现在当前构建合成拖拽全序列复验通过（folder None→临时夹→还原，净零），无需新代码
 2026-10-24 | 48 | e9ec265 | DPI/scale 跳变重定位：on_window_event 接 ScaleFactorChanged 重摆抽屉/晾衣架，WM_DPICHANGED(144) 合成实测窗口 1.5×+repositioned 日志（tao 有 scale 去重缓存，测试要错开值）
 2026-10-24 | 47 | 2f21101 | Linux .desktop 集成收口：category→Utility+deb desktopTemplate（Comment/Keywords 补齐），渲染后 spec 结构校验 PASS，config schema 构建实证
 2026-10-24 | 46 | f2dad8b | macOS template 图标代码侧收口：icon_as_template 精确 cfg(macos) 门控+确认透明底/不透明描边合法 template 形态，Win 真机回归描边照常
