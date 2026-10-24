@@ -118,9 +118,16 @@ export default function TrayPopover() {
       </div>
 
       <div className="po-foot">
-        <span className="po-foot-hint">
+        <button
+          className="po-foot-hint po-foot-open"
+          title={t("tray.full")}
+          onClick={async () => {
+            await getCurrentWindow().hide();
+            await invoke("show_drawer");
+          }}
+        >
           <span className="kbd">{MOD}</span><span className="kbd">⇧</span><span className="kbd">V</span> {t("tray.full")}
-        </span>
+        </button>
         <button className="po-foot-btn" onClick={() => invoke("quit_app")}>
           {t("tray.quit")}
         </button>

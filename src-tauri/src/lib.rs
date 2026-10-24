@@ -836,23 +836,47 @@ fn position_tray_popover<R: Runtime>(app: &AppHandle<R>, click: PhysicalPosition
         let h = (TRAY_POPOVER_H as f64 * scale) as u32;
 
         // Anchor at the click, then clamp into the monitor. On Windows/KDE the
-        // tray sits in a bottom taskbar — pop upward instead of off-screen.
+        // tray sits in a bottom taskbar — pop upward, and keep the popover's
+        // bottom edge above the taskbar (the click point is INSIDE it, so
+        // anchoring at click.y would overlap the bar).
         let mut x = (click.x as i32) - (w as i32 / 2);
         let mut y = (click.y as i32) + 8;
+        // conservative taskbar guard (mac menu bar is at the top; no guard)
+        let bottom_guard = if cfg!(target_os = "macos") { 8 } else { 52 };
         if let Ok(Some(m)) = win.current_monitor() {
             let (mx, my) = (m.position().x, m.position().y);
             let (mw, mh) = (m.size().width as i32, m.size().height as i32);
             if click.y as i32 > my + mh * 2 / 3 {
-                y = (click.y as i32) - h as i32 - 8;
+                // upward: bottom edge stays clear of the taskbar
+                y = (my + mh - bottom_guard - h as i32).min(click.y as i32 - h as i32 - 8);
             }
             x = x.clamp(mx + 8, mx + mw - w as i32 - 8);
-            y = y.clamp(my + 8, my + mh - h as i32 - 8);
+            y = y.clamp(my + 8, my + mh - h as i32 - bottom_guard);
         } else {
             x = x.max(0);
             y = y.max(0);
         }
         let _ = win.set_size(PhysicalSize::new(w, h));
         let _ = win.set_position(PhysicalPosition::new(x, y));
+    }
+}
+
+/// Unconditionally show + focus the drawer (the tray popover's 查看全部).
+/// toggle_drawer is wrong here: if the drawer is already visible the toggle
+/// would HIDE it, and focus contention with the closing popover can flash.
+fn open_drawer<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(win) = app.get_webview_window("drawer") {
+        #[cfg(target_os = "macos")]
+        {
+            let mtm = unsafe { objc2::MainThreadMarker::new_unchecked() };
+            paste::snapshot_frontmost(mtm);
+        }
+        #[cfg(not(target_os = "macos"))]
+        paste_native::snapshot_frontmost();
+        position_drawer(&win);
+        let _ = win.show();
+        let _ = win.set_focus();
+        let _ = app.emit("show-drawer", ());
     }
 }
 
@@ -1309,7 +1333,7 @@ fn get_item_rich(state: tauri::State<'_, AppState>, id: i64) -> Result<Option<St
 
 #[tauri::command]
 fn show_drawer(app: AppHandle) {
-    toggle_drawer(&app);
+    open_drawer(&app);
 }
 
 #[tauri::command]

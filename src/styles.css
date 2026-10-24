@@ -1851,3 +1851,17 @@ mark.hl {
 .popover {
   animation: ov-pop 0.15s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
+
+.po-foot-open {
+  all: unset;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.po-foot-open:hover {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
