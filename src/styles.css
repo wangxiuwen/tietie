@@ -1955,3 +1955,30 @@ mark.hl {
 .stat-src b {
   color: var(--accent);
 }
+
+/* ───────── memo color palette ───────── */
+
+.line-palette {
+  position: absolute;
+  top: 8px;
+  left: 10px;
+  display: flex;
+  gap: 5px;
+}
+
+.pal-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.2);
+  cursor: default;
+}
+
+.pal-dot:hover {
+  transform: scale(1.25);
+}
+
+.pal-dot.active {
+  border-color: var(--text);
+  outline: 1.5px solid var(--card-bg);
+}

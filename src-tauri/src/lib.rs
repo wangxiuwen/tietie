@@ -410,6 +410,7 @@ pub fn run() {
             update_memo,
             toggle_memo_pin,
             reorder_memo,
+            set_memo_color,
             copy_memo,
             hang_preview,
             toggle_clothesline_cmd,
@@ -1155,6 +1156,26 @@ fn update_memo(
         conn.execute(
             "UPDATE memo SET content = ?1, preview = ?2 WHERE id = ?3",
             rusqlite::params![trimmed, trimmed.chars().take(120).collect::<String>(), id],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    emit_memos_changed(&app);
+    Ok(())
+}
+
+/// Recolor a memo's clothespin from the detail-view palette.
+#[tauri::command]
+fn set_memo_color(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: i64,
+    color: String,
+) -> Result<(), String> {
+    {
+        let conn = state.conn.lock();
+        conn.execute(
+            "UPDATE memo SET color = ?1 WHERE id = ?2",
+            rusqlite::params![color, id],
         )
         .map_err(|e| e.to_string())?;
     }

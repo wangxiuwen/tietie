@@ -27,6 +27,18 @@ const lineDrag = {
   },
 };
 
+/** Preset clothespin colors for the detail-view palette. */
+const MEMO_COLORS = [
+  "#007aff",
+  "#34c759",
+  "#ff9500",
+  "#ff2d55",
+  "#af52de",
+  "#5856d6",
+  "#8e8e93",
+  "#ffcc00",
+];
+
 /**
  * 晾衣架 — a rope across the top of the screen with memo cards hanging
  * from clothespins.
@@ -545,6 +557,20 @@ function MemoDetail({
 
   return (
     <div className="line-detail" onClick={(e) => e.stopPropagation()}>
+      {!editing && (
+        <div className="line-palette" title={t("line.color")}>
+          {MEMO_COLORS.map((c) => (
+            <button
+              key={c}
+              className={"pal-dot" + (memo.color === c ? " active" : "")}
+              style={{ background: c }}
+              onClick={() =>
+                invoke("set_memo_color", { id: memo.id, color: c }).catch(() => {})
+              }
+            />
+          ))}
+        </div>
+      )}
       <div className="line-detail-head">
         <span className="line-badge" style={{ position: "static" }}>
           {kindLabel(memo.kind)}
