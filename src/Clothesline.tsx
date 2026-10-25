@@ -707,6 +707,20 @@ function MemoDetail({
 
   const canEdit = memo.kind !== "image"; // image memos carry no editable text
 
+  // character/line counter for the detail head (direction 91); while editing
+  // it reads the draft so it updates on every keystroke. Image/color memos
+  // carry no meaningful text, so they show no counter. Character count is in
+  // code points (surrogate pairs count once) and excludes line breaks —
+  // lines are reported separately.
+  const countSource = editing ? draft : memo.content;
+  const counted = memo.kind !== "image" && memo.kind !== "color";
+  const counter = counted
+    ? {
+        chars: [...countSource.replace(/\n/g, "")].length,
+        lines: countSource === "" ? 0 : countSource.split("\n").length,
+      }
+    : null;
+
   return (
     <div
       className="line-detail"
@@ -733,6 +747,11 @@ function MemoDetail({
           {kindLabel(memo.kind)}
         </span>
         <span className="line-detail-time">{relTime(memo.created_at)}</span>
+        {counter && (
+          <span className="line-detail-count" title={t("line.countTitle")}>
+            {counter.chars} {t("line.chars")} · {counter.lines} {t("line.lines")}
+          </span>
+        )}
         <div className="line-detail-actions">
           {canEdit && !editing && (
             <button className="btn ghost" onClick={() => setEditing(true)}>
