@@ -380,6 +380,20 @@ export default function App() {
       }
 
       if (e.key === "Escape") {
+        // Esc ladder (direction 80): every overlay peels off one layer per
+        // press, from innermost outward — note editor → context menu →
+        // rich preview → cheatsheet → image zoom → multi-select → drawer.
+        // Editing bails above: the textarea closes itself.
+        if (noteEdit) {
+          e.preventDefault();
+          setNoteEdit(null);
+          return;
+        }
+        if (ctxMenu) {
+          e.preventDefault();
+          setCtxMenu(null);
+          return;
+        }
         if (richView) {
           e.preventDefault();
           setRichView(null);
@@ -466,7 +480,7 @@ export default function App() {
     // so preventDefault actually stops ⌘D / ⌘P / etc. from typing into search.
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, cheatsheet, richView, paste, togglePin, deleteItem, startEdit]);
+  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, cheatsheet, richView, noteEdit, ctxMenu, paste, togglePin, deleteItem, startEdit]);
 
   // scroll selected into view
   useEffect(() => {
