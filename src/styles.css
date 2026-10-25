@@ -1764,13 +1764,18 @@ mark.hl {
 
 .rich-badge {
   all: unset;
-  font-size: calc(10px * var(--fs));
+  position: absolute; /* pinned to the card corner (direction 79) */
+  top: calc(6px * var(--fs));
+  right: calc(6px * var(--fs));
+  z-index: 2;
+  font-size: calc(11px * var(--fs));
+  line-height: 1;
   color: #8250df;
+  background: rgba(130, 80, 223, 0.08);
   border: 1px solid #8250df66;
   border-radius: var(--r-sm);
-  padding: 0 5px;
-  flex: none;
-  cursor: default;
+  padding: calc(2px * var(--fs)) calc(5px * var(--fs));
+  cursor: pointer;
 }
 
 .rich-badge:hover {

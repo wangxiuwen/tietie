@@ -1092,11 +1092,13 @@ function CardBody({ item, query, onRich }: { item: ClipItem; query: string; onRi
     );
   }
   if (item.rich_html) {
-    // rendered rich text available — small badge opens the preview
+    // rendered rich text available — pinned corner badge opens the preview
+    // (direction 79: corner placement survives any body truncation and is
+    // identical on platforms where rich text rarely exists, e.g. Windows)
     return (
       <div className="body rich-wrap">
-        <button className="rich-badge" title={t("rich.preview")} onClick={(e) => { e.stopPropagation(); onRich(); }}>
-          ✦ HTML
+        <button className="rich-badge" title={t("rich.preview")} aria-label={t("rich.preview")} onClick={(e) => { e.stopPropagation(); onRich(); }}>
+          ✦
         </button>
         <span>{truncate(item.content, 200)}</span>
       </div>
