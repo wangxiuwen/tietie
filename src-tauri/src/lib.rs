@@ -458,6 +458,7 @@ pub fn run() {
             delete_items,
             export_selected_text,
             export_selected_markdown,
+            reveal_path,
             autostart_enabled,
             set_autostart,
             export_backup,
@@ -1463,6 +1464,44 @@ fn export_selected_markdown(
     let path = dir.join(format!("tietie-export-{}.md", time_fmt(db::now_unix())));
     std::fs::write(&path, md).map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().into_owned())
+}
+
+/// Reveal an exported file in the platform file manager (direction 66):
+/// Explorer with the file selected on Windows, Finder reveal on macOS,
+/// the parent folder on Linux desktops.
+#[tauri::command]
+fn reveal_path(path: String) -> Result<(), String> {
+    if !std::path::Path::new(&path).exists() {
+        return Err("file not found".into());
+    }
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(format!("/select,{path}"))
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(&path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let parent = std::path::Path::new(&path)
+            .parent()
+            .map(|p| p.to_path_buf())
+            .unwrap_or_default();
+        std::process::Command::new("xdg-open")
+            .arg(parent)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    log::info!("revealed export: {path}");
+    Ok(())
 }
 
 /// Dump the selected items' text content to Documents/tietie-export-<ts>.txt.

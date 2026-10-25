@@ -98,6 +98,7 @@ export default function Library() {
     try {
       const path = await invoke<string>("export_selected_text", { ids });
       setMsg(`已导出: ${path}`);
+      invoke("reveal_path", { path }).catch(() => {}); // open at the file
     } catch (e) {
       setMsg(`导出失败: ${e}`);
     }
@@ -109,6 +110,7 @@ export default function Library() {
     try {
       const path = await invoke<string>("export_selected_markdown", { ids });
       setMsg(`已导出: ${path}`);
+      invoke("reveal_path", { path }).catch(() => {}); // open at the file
     } catch (e) {
       setMsg(`导出失败: ${e}`);
     }
