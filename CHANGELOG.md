@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **80** [`29217ba`](https://github.com/wangxiuwen/tietie/commit/29217ba) Esc 梯度审计修复：补右键菜单与备注浮层两层（此前开菜单按 Esc 会连抽屉一起关），梯度七层逐级剥，真机实测菜单/备注各开 Esc 仅关自身抽屉保持
+
 - **79** [`8418bf6`](https://github.com/wangxiuwen/tietie/commit/8418bf6) 富文本徽标卡角化：✦ 徽标改绝对定位钉卡片右上角（正文截断不遮），点击仍开沙箱预览，加 aria-label 与 hover 底色；CDP 实测 corner 定位+点击 overlay 弹出净零
 
 - **78** [`222a602`](https://github.com/wangxiuwen/tietie/commit/222a602) 便签字号快捷调节：详情内 ⌘+/⌘− 步进 0.15（0.7~2.0 钳制）、⌘0 复位，--memo-zoom 会话级（跨详情共享、不落盘），CDP 实测 1→1.3→1.15→1.0→字号 14.95px 全链
