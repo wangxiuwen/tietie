@@ -1010,6 +1010,16 @@ function Card({
             RGB
           </button>
         )}
+        {item.kind === "image" && (
+          <button
+            className="action"
+            title={t("card.copyImage")}
+            aria-label={t("card.copyImage")}
+            onClick={() => invoke("copy_item_image", { id: item.id }).catch(() => {})}
+          >
+            🖼
+          </button>
+        )}
         <button className="action" onClick={onPin} title="置顶" aria-label={t("footer.pin")}>📌</button>
         <button className="action" onClick={onEdit} title="编辑" aria-label={t("footer.edit")}>✎</button>
         <button className="action" onClick={onDelete} title="删除" aria-label={t("footer.del")}>🗑</button>

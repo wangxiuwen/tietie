@@ -522,6 +522,7 @@ pub fn run() {
             hide_window,
             paste_back,
             paste_item,
+            copy_item_image,
             screenshot,
             open_settings,
             check_accessibility,
@@ -1841,6 +1842,35 @@ fn paste_back(app: AppHandle) -> Result<bool, String> {
     {
         Ok(paste_native::paste_back())
     }
+}
+
+/// Copy an image item's bitmap back to the clipboard WITHOUT the synthetic
+/// ⌘V (direction 83) — the hover action-row "复制图片" button.
+#[tauri::command]
+fn copy_item_image(state: tauri::State<'_, AppState>, id: i64) -> Result<(), String> {
+    let full = {
+        let conn = state.conn.lock();
+        db::get_full(&conn, id).map_err(|e| e.to_string())?
+    };
+    if full.kind != "image" {
+        return Err("不是图片条目".into());
+    }
+    #[cfg(target_os = "macos")]
+    {
+        if let Some(png) = full.image_blob.as_deref() {
+            write_image_pasteboard(png);
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        write_clipboard_native(&full)?;
+    }
+    {
+        let conn = state.conn.lock();
+        let _ = db::touch_item(&conn, id);
+    }
+    log::info!("image copied to clipboard (item {id})");
+    Ok(())
 }
 
 /// One-call paste: read item from DB, write the right pasteboard types
