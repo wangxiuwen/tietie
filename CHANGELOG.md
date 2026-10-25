@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **71** [`b14bc30`](https://github.com/wangxiuwen/tietie/commit/b14bc30) 热键占用实时检测：recheck_hotkeys 命令对被拒组合重探测（成功即接管热键并写回状态），设置页热键区加「重新检测被拒组合」按钮，真机实测三组合全注册+命令往返+按钮在位。同批扩池 73-78
+
 - **70** [`96249b4`](https://github.com/wangxiuwen/tietie/commit/96249b4) 启动完整性自检：setup 跑 PRAGMA integrity_check（ok 记 info/异常记 error 全行），db_ok 原子贯穿 db_integrity_ok 命令，设置页异常时红条+一键导出备份，真机实测日志 ok+命令 true+无红条误报
 
 - **69** [`2c3763a`](https://github.com/wangxiuwen/tietie/commit/2c3763a) 便签批量导出：export_memos 命令（置顶📌前缀/⏰提醒标注/图片占位）写 Documents/notes-*.md，晾衣架工具栏「导出便签」按钮+导出即 reveal，CDP 实测文件内容含便签+按钮在位+净零
