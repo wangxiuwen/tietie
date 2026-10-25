@@ -440,6 +440,7 @@ pub fn run() {
             toggle_memo_pin,
             reorder_memo,
             set_memo_color,
+            set_memo_reminder,
             copy_memo,
             hang_preview,
             toggle_clothesline_cmd,
@@ -1249,6 +1250,26 @@ fn set_memo_color(
         conn.execute(
             "UPDATE memo SET color = ?1 WHERE id = ?2",
             rusqlite::params![color, id],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    emit_memos_changed(&app);
+    Ok(())
+}
+
+/// Change or clear a memo's reminder timestamp (direction 65); null clears.
+#[tauri::command]
+fn set_memo_reminder(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: i64,
+    remind_at: Option<i64>,
+) -> Result<(), String> {
+    {
+        let conn = state.conn.lock();
+        conn.execute(
+            "UPDATE memo SET remind_at = ?1 WHERE id = ?2",
+            rusqlite::params![remind_at, id],
         )
         .map_err(|e| e.to_string())?;
     }

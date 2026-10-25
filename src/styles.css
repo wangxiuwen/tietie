@@ -2204,3 +2204,19 @@ select:focus-visible,
 .lib-row-copy:hover {
   background: var(--accent-dim);
 }
+
+/* memo detail reminder row (direction 65) */
+.line-remind-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: calc(4px * var(--fs)) 0;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.18);
+  margin-bottom: calc(6px * var(--fs));
+  font-size: calc(12px * var(--fs));
+  color: rgba(136, 136, 136, 0.95);
+}
+.line-remind-state {
+  white-space: nowrap;
+}

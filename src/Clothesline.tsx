@@ -597,6 +597,14 @@ function HangingCard({
   );
 }
 
+/** Spoken form of a pending reminder for the detail row (direction 65). */
+function reminderLabel(at: number): string {
+  const now = Math.floor(Date.now() / 1000);
+  if (now >= at) return "⏰ " + t("line.remindDue");
+  const mins = Math.max(1, Math.ceil((at - now) / 60));
+  return `⏰ ${t("line.remindLeft")} ${mins}m`;
+}
+
 function MemoDetail({
   memo,
   initialEditing = false,
@@ -675,6 +683,39 @@ function MemoDetail({
           </button>
         </div>
       </div>
+      {!editing && (
+        <div className="line-remind-row">
+          <span className="line-remind-state">
+            {memo.remind_at == null
+              ? "⏰ " + t("line.remindNone")
+              : reminderLabel(memo.remind_at)}
+          </span>
+          <select
+            className="line-remind"
+            aria-label={t("line.remind")}
+            defaultValue=""
+            onChange={(e) => {
+              const v = e.target.value;
+              if (!v) return;
+              const at =
+                v === "off"
+                  ? null
+                  : Math.floor(Date.now() / 1000) + Number(v) * 60;
+              invoke("set_memo_reminder", { id: memo.id, remindAt: at }).catch(
+                () => {},
+              );
+              e.target.value = "";
+            }}
+          >
+            <option value="">{t("line.remindChange")}</option>
+            <option value="5">{t("line.remindIn")} 5m</option>
+            <option value="15">{t("line.remindIn")} 15m</option>
+            <option value="30">{t("line.remindIn")} 30m</option>
+            <option value="60">{t("line.remindIn")} 60m</option>
+            <option value="off">{t("line.remindCancel")}</option>
+          </select>
+        </div>
+      )}
       {editing ? (
         <div className="line-detail-body">
           <textarea
