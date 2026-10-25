@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **96** [`a994948`](https://github.com/wangxiuwen/tietie/commit/a994948) 设置页版本号变可点击按钮，一键复制版本串并显 ✓ 反馈 |
+
 - **95** [`0bdd41b`](https://github.com/wangxiuwen/tietie/commit/0bdd41b) 图片挂卡无 preview 时显示 🖼️ 占位块而非尺寸文字，有 preview 缩略图不受影响 |
 
 - **94** [`b13783b`](https://github.com/wangxiuwen/tietie/commit/b13783b) Library 表格偶数行加 0.03 微底色斑马纹，声明在 hover/sel 之前不遮高亮 |
