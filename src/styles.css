@@ -2291,3 +2291,15 @@ select:focus-visible,
   justify-content: center;
   font-size: calc(11px * var(--fs));
 }
+
+/* composer quick-pin recents (direction 81) */
+.composer-recents {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  margin-right: auto;
+}
+.composer-recents .pal-dot {
+  width: 14px;
+  height: 14px;
+}

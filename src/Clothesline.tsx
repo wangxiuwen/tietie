@@ -345,13 +345,14 @@ export default function Clothesline() {
             {composing && (
               <NoteComposer
                 onCancel={() => setComposing(false)}
-                onCommit={async (content, remindIn) => {
+                recentColors={recentPinColors(memos)}
+                onCommit={async (content, remindIn, color) => {
                   setComposing(false);
                   const remindAt =
                     remindIn != null
                       ? Math.floor(Date.now() / 1000) + remindIn * 60
                       : null;
-                  await invoke("add_memo_direct", { content, remindAt }).catch(
+                  await invoke("add_memo_direct", { content, remindAt, color }).catch(
                     (e) => console.warn("add_memo_direct failed:", e),
                   );
                 }}
@@ -422,20 +423,35 @@ export default function Clothesline() {
   );
 }
 
+/** The 3 most recently used distinct clothespin colors (direction 81). */
+function recentPinColors(memos: Memo[]): string[] {
+  const seen: string[] = [];
+  for (const m of memos) {
+    // memos are newest-first from list_memos ordering
+    if (m.color && !seen.includes(m.color)) seen.push(m.color);
+    if (seen.length === 3) break;
+  }
+  return seen;
+}
+
 /** Inline sticky-note composer pinned under the rope. */
 function NoteComposer({
   onCommit,
   onCancel,
+  recentColors,
 }: {
-  onCommit: (content: string, remindIn: number | null) => void;
+  onCommit: (content: string, remindIn: number | null, color: string | null) => void;
   onCancel: () => void;
+  recentColors: string[];
 }) {
   const [text, setText] = useState("");
   const [remindMin, setRemindMin] = useState("0");
+  // quick-pick clothespin color (direction 81): null = default blue
+  const [pin, setPin] = useState<string | null>(null);
   const submit = () => {
     if (text.trim()) {
       const m = Number(remindMin);
-      onCommit(text, m > 0 ? m : null);
+      onCommit(text, m > 0 ? m : null, pin);
     } else onCancel();
   };
   return (
@@ -460,6 +476,19 @@ function NoteComposer({
         }}
       />
       <div className="line-compose-foot">
+        {recentColors.length > 0 && (
+          <span className="composer-recents" title={t("line.recentPins")}>
+            {recentColors.map((c) => (
+              <button
+                key={c}
+                className={"pal-dot" + (pin === c ? " active" : "")}
+                style={{ background: c }}
+                aria-label={c}
+                onClick={() => setPin(pin === c ? null : c)}
+              />
+            ))}
+          </span>
+        )}
         <select
           className="line-remind"
           value={remindMin}

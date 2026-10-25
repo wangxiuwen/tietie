@@ -1336,22 +1336,26 @@ fn add_memo_direct(
     state: tauri::State<'_, AppState>,
     content: String,
     remind_at: Option<i64>,
+    color: Option<String>,
 ) -> Result<i64, String> {
     let trimmed = content.trim().to_string();
     if trimmed.is_empty() {
         return Err("内容为空".into());
     }
+    // caller-chosen clothespin color (direction 81); default keeps blue
+    let pin = color.unwrap_or_else(|| "#007aff".into());
     let memo_id = {
         let conn = state.conn.lock();
         conn.execute(
             "INSERT INTO memo (kind, content, preview, color, source_item_id, created_at, sort, remind_at)
-             VALUES ('text', ?1, ?2, '#007aff', NULL, ?3,
+             VALUES ('text', ?1, ?2, ?5, NULL, ?3,
                      (SELECT COALESCE(MAX(sort), -1) + 1 FROM memo), ?4)",
             rusqlite::params![
                 trimmed,
                 trimmed.chars().take(120).collect::<String>(),
                 db::now_unix(),
-                remind_at
+                remind_at,
+                pin
             ],
         )
         .map_err(|e| e.to_string())?;
