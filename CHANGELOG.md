@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **86** [`3dcf35e`](https://github.com/wangxiuwen/tietie/commit/3dcf35e) 视图随文件夹：在文件夹内切换只写该文件夹键（tietie-compact-<id>）、在「全部」切换写全局键，切文件夹时恢复各自记忆（未访问文件夹保持当前视图），CDP 实测 all cards→folder compact→回 all cards→再进 folder compact 全对
+
 - **85** [`f121b3b`](https://github.com/wangxiuwen/tietie/commit/f121b3b) 便签备注：memo 表加 note 列+set_memo_note 命令，详情提醒行下新增备注行（📝 状态显示+内联输入 Enter 存/Esc 退出/空即清除），CDP 实测设/清往返净零；晾衣架暂无搜索框，搜索参与随未来便签搜索落地
 
 - **84** [`4a7e285`](https://github.com/wangxiuwen/tietie/commit/4a7e285) 抽屉滚动位置记忆：hide-drawer 时快照 .cards scrollLeft（模块级变量会话共享不落盘），重开 rAF 后 scrollTo 恢复，CDP 实测 636→关→开 636 精确还原。同批扩池 85-90
