@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **90** [`9b71061`](https://github.com/wangxiuwen/tietie/commit/9b71061) 搜索历史会话级：重开抽屉提交搜索词，↑↓翻最近5条，输入即重置游标 |
+
 - **89** [`62291b9`](https://github.com/wangxiuwen/tietie/commit/62291b9) 便签置底：sink_memo 命令（sort=MAX+1 追加到绳尾），右键菜单新增「沉到绳尾」，真机实测首张便签沉底后成为全表最后一张+sort=最大值+菜单项在位净零。同批扩池 91-96
 
 - **88** [`6402f28`](https://github.com/wangxiuwen/tietie/commit/6402f28) Library 导出仅置顶：底栏「仅置顶 (N)」勾选切换导出目标=置顶条目（忽略行勾选，空勾选也启用按钮），文本/Markdown 双导出共用，真机实测按钮启停/导出仅含置顶条目/非置顶零泄漏净零
