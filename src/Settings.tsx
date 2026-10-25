@@ -155,6 +155,9 @@ export default function Settings() {
     const t = setInterval(recheck, 1500);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // while a hotkey capture is active, Esc belongs to the capture
+        // input (cancel recording) — don't close the window over it
+        if ((e.target as HTMLElement)?.closest?.(".hotkey-capture")) return;
         e.stopPropagation();
         close();
       }
@@ -348,12 +351,14 @@ export default function Settings() {
             kind="drawer"
             label={t("settings.hk.drawer")}
             value={hks?.drawer ?? ""}
+            others={[hks?.screenshot ?? "", hks?.clothesline ?? ""]}
             onSaved={reloadHotkeys}
           />
           <HotkeyRow
             kind="screenshot"
             label={t("settings.hk.screenshot")}
             value={hks?.screenshot ?? ""}
+            others={[hks?.drawer ?? "", hks?.clothesline ?? ""]}
             registered={hks?.screenshot_registered ?? true}
             onSaved={reloadHotkeys}
           />
@@ -361,6 +366,7 @@ export default function Settings() {
             kind="clothesline"
             label={t("settings.hk.clothesline")}
             value={hks?.clothesline ?? ""}
+            others={[hks?.drawer ?? "", hks?.screenshot ?? ""]}
             registered={hks?.clothesline_registered ?? true}
             onSaved={reloadHotkeys}
           />
@@ -597,16 +603,39 @@ export default function Settings() {
 }
 
 /** One rebindable hotkey row: current combo, 修改 → capture → 确定/取消. */
+/**
+ * Combos the OS tends to claim itself — capturable by our recorder but
+ * shadowed system-wide, so we warn before saving (direction 101).
+ * Meta = Super/⌘. Keys use the KeyboardEvent.code form the recorder emits.
+ */
+const SYS_HOTKEY_CONFLICTS: Record<string, string> = {
+  "Alt+F4": "close window",
+  "Meta+KeyL": "lock screen",
+  "Meta+KeyD": "show desktop",
+  "Meta+KeyE": "file explorer",
+  "Meta+KeyV": "clipboard history",
+  "Meta+KeyQ": "quit app (macOS)",
+  "Meta+Space": "input method switch",
+};
+
+function hotkeyWarning(pending: string, others: string[]): string | null {
+  if (others.filter(Boolean).includes(pending)) return t("settings.hkDup");
+  if (SYS_HOTKEY_CONFLICTS[pending]) return t("settings.hkSys");
+  return null;
+}
+
 function HotkeyRow({
   kind,
   label,
   value,
+  others = [],
   registered = true,
   onSaved,
 }: {
   kind: string;
   label: string;
   value: string;
+  others?: string[];
   registered?: boolean;
   onSaved: () => void;
 }) {
@@ -703,6 +732,11 @@ function HotkeyRow({
               value={pending ? formatHotkey(pending) : ""}
               onKeyDown={captureHotkey}
             />
+            {pending && hotkeyWarning(pending, others) && (
+              <span className="settings-tag warn" title={hotkeyWarning(pending, others) ?? undefined}>
+                ⚠ {hotkeyWarning(pending, others)}
+              </span>
+            )}
             <button className="btn primary" onClick={confirmRecording} disabled={!pending}>
               {t("settings.ok")}
             </button>

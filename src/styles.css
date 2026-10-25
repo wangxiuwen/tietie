@@ -879,6 +879,11 @@ button {
   background: rgba(255, 45, 85, 0.15);
   color: var(--cat-image);
 }
+/* non-blocking hotkey-conflict hint (direction 101) */
+.settings-tag.warn {
+  background: rgba(255, 149, 0, 0.16);
+  color: var(--cat-code);
+}
 .hotkey-badge {
   display: inline-flex;
   align-items: center;
