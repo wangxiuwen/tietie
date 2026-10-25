@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **98** [`33c71b6`](https://github.com/wangxiuwen/tietie/commit/33c71b6) 链接卡片标题行内嵌 🔗，点击直达复制完整 URL（悬停强调色） |
+
 - **97** [`824c7bf`](https://github.com/wangxiuwen/tietie/commit/824c7bf) 搜索 token 前缀 - 变排除语义（三处搜索面共用 matchQuery 一次生效），含拼音/子序列同口径 |
 
 - **96** [`a994948`](https://github.com/wangxiuwen/tietie/commit/a994948) 设置页版本号变可点击按钮，一键复制版本串并显 ✓ 反馈 |
