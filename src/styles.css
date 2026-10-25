@@ -2143,3 +2143,13 @@ select:focus-visible,
   border-radius: var(--r-sm);
   padding: 3px 6px;
 }
+
+/* tray image thumbnails (direction 61) */
+.po-thumb {
+  width: calc(18px * var(--fs));
+  height: calc(18px * var(--fs));
+  object-fit: cover;
+  border-radius: var(--r-xs);
+  flex-shrink: 0;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+}

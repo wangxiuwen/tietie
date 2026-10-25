@@ -156,9 +156,24 @@ function Row({
       onClick={onClick}
     >
       <span className={"po-kind kind-" + item.kind}>{kindLabel(item.kind)}</span>
-      <span className="po-text"><HighlightText text={trimOne(item.preview || item.content)} query={query} /></span>
+      {item.kind === "image" && item.preview && (
+        // the stored preview IS the b64 thumbnail — show it instead of
+        // leaking base64 text into the row (direction 61)
+        <img
+          className="po-thumb"
+          alt=""
+          decoding="async"
+          src={"data:image/png;base64," + item.preview}
+        />
+      )}
+      <span className="po-text"><HighlightText text={trimOne(rowText(item))} query={query} /></span>
     </button>
   );
+}
+
+/** Image rows read the dimensions (content) — never base64 text. */
+function rowText(item: ClipItem): string {
+  return item.kind === "image" ? item.content : (item.preview || item.content);
 }
 
 function trimOne(s: string): string {
