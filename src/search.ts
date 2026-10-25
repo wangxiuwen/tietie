@@ -53,9 +53,20 @@ function matchOne(content: string, preview: string, q: string): boolean {
  * Unified search predicate. The query splits on whitespace and EVERY token
  * must hit (substring or pinyin initials) — "turing glass" only matches
  * entries containing both words, like Everything-style AND search.
+ * A token prefixed with "-" (direction 97) is a negation: entries matching
+ * that term are excluded — "glass -next" keeps glass entries without next.
  */
 export function matchQuery(content: string, preview: string, query: string): boolean {
   const qs = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (qs.length === 0) return true;
-  return qs.every((q) => matchOne(content, preview, q));
+  for (const q of qs) {
+    if (q.startsWith("-")) {
+      // bare "-" is ignored; "-term" excludes anything matching term
+      const term = q.slice(1);
+      if (term && matchOne(content, preview, term)) return false;
+    } else if (!matchOne(content, preview, q)) {
+      return false;
+    }
+  }
+  return true;
 }

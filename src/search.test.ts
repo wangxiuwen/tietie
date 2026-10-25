@@ -37,4 +37,15 @@ describe("matchQuery", () => {
   it("empty query matches everything", () => {
     expect(matchQuery("anything", "", "   ")).toBe(true);
   });
+  it("-token excludes entries matching the term (direction 97)", () => {
+    expect(matchQuery("turing llm next", "", "llm -next")).toBe(false);
+    expect(matchQuery("turing llm glass", "", "llm -next")).toBe(true);
+  });
+  it("exclusion-only query keeps everything else", () => {
+    expect(matchQuery("hello", "", "-zzzz")).toBe(true);
+    expect(matchQuery("hello", "", "-hello")).toBe(false);
+  });
+  it("bare minus is ignored", () => {
+    expect(matchQuery("hello world", "", "- hello")).toBe(true);
+  });
 });
