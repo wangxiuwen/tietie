@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **88** [`6402f28`](https://github.com/wangxiuwen/tietie/commit/6402f28) Library 导出仅置顶：底栏「仅置顶 (N)」勾选切换导出目标=置顶条目（忽略行勾选，空勾选也启用按钮），文本/Markdown 双导出共用，真机实测按钮启停/导出仅含置顶条目/非置顶零泄漏净零
+
 - **87** [`cbf32ee`](https://github.com/wangxiuwen/tietie/commit/cbf32ee) 抽屉宽度档位：drawer_width 设置（full/80/60）进 position_drawer 按显示器宽取比例并水平居中，设置页三档下拉即时生效，Win32 实测 1920→1536→1152 精确+居中，还原 full
 
 - **86** [`3dcf35e`](https://github.com/wangxiuwen/tietie/commit/3dcf35e) 视图随文件夹：在文件夹内切换只写该文件夹键（tietie-compact-<id>）、在「全部」切换写全局键，切文件夹时恢复各自记忆（未访问文件夹保持当前视图），CDP 实测 all cards→folder compact→回 all cards→再进 folder compact 全对
