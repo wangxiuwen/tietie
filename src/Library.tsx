@@ -251,7 +251,23 @@ export default function Library() {
                   </span>
                 </td>
                 <td className="w-content" title={it.content}>
-                  {oneLine(it.kind === "image" ? it.content : it.content).slice(0, 80)}
+                  <span className="lib-row-text">
+                    {oneLine(it.kind === "image" ? it.content : it.content).slice(0, 80)}
+                  </span>
+                  {it.kind !== "image" && (
+                    <button
+                      className="lib-row-copy"
+                      title={t("lib.copyRow")}
+                      aria-label={t("lib.copyRow")}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(it.content).catch(() => {});
+                        setMsg(`${t("lib.copied")} ${oneLine(it.content).slice(0, 24)}`);
+                      }}
+                    >
+                      ⧉
+                    </button>
+                  )}
                 </td>
                 <td className="w-src">{it.source_app || "—"}</td>
                 <td className="w-size">{fmtBytes(it.byte_size)}</td>

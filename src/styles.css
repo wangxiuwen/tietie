@@ -2173,3 +2173,34 @@ select:focus-visible,
   border-radius: var(--r-md);
   font-size: calc(13px * var(--fs));
 }
+
+/* Library inline row copy (direction 64) */
+.w-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lib-row-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-row-copy {
+  visibility: hidden;
+  flex-shrink: 0;
+  border: none;
+  background: rgba(128, 128, 128, 0.14);
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  font-size: calc(12px * var(--fs));
+  padding: calc(2px * var(--fs)) calc(6px * var(--fs));
+  line-height: 1.4;
+}
+.lib-table tr:hover .lib-row-copy {
+  visibility: visible;
+}
+.lib-row-copy:hover {
+  background: var(--accent-dim);
+}
