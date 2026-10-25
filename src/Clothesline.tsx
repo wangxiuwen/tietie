@@ -935,12 +935,22 @@ function ImageDetail({ memo }: { memo: Memo }) {
 }
 
 function CardBody({ memo }: { memo: Memo }) {
-  if (memo.kind === "image" && memo.preview) {
+  if (memo.kind === "image") {
+    // thumbnail comes from the b64 preview captured at hang time; when it is
+    // missing (legacy rows) show a neutral image placeholder instead of the
+    // raw dimension string the content column carries (direction 95)
+    if (memo.preview) {
+      return (
+        <div
+          className="line-img"
+          style={{ backgroundImage: `url(data:image/png;base64,${memo.preview})` }}
+        />
+      );
+    }
     return (
-      <div
-        className="line-img"
-        style={{ backgroundImage: `url(data:image/png;base64,${memo.preview})` }}
-      />
+      <div className="line-img empty" title={memo.content}>
+        🖼️
+      </div>
     );
   }
   if (memo.kind === "color") {

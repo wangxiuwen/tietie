@@ -1091,6 +1091,17 @@ button {
   border-radius: var(--r-sm);
 }
 
+/* image memo without a stored preview: neutral placeholder block, never the
+   raw dimension string (direction 95) */
+.line-img.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.04);
+  font-size: calc(20px * var(--fs));
+  line-height: 1;
+}
+
 .line-color {
   display: flex;
   align-items: center;
