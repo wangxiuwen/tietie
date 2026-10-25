@@ -1401,6 +1401,21 @@ function Empty() {
       <div className="empty-icon">📋</div>
       <h3>{t("empty.title")}</h3>
       <p>{t("empty.desc")}</p>
+      {/* first-run 3-step onboarding (direction 76) */}
+      <div className="onboard">
+        <div className="onboard-step">
+          <span className="onboard-n">1</span>
+          <span>{t("onboard.step1")}</span>
+        </div>
+        <div className="onboard-step">
+          <span className="onboard-n">2</span>
+          <span>{t("onboard.step2")}</span>
+        </div>
+        <div className="onboard-step">
+          <span className="onboard-n">3</span>
+          <span>{t("onboard.step3")}</span>
+        </div>
+      </div>
     </div>
   );
 }
