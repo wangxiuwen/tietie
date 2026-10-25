@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **85** [`f121b3b`](https://github.com/wangxiuwen/tietie/commit/f121b3b) 便签备注：memo 表加 note 列+set_memo_note 命令，详情提醒行下新增备注行（📝 状态显示+内联输入 Enter 存/Esc 退出/空即清除），CDP 实测设/清往返净零；晾衣架暂无搜索框，搜索参与随未来便签搜索落地
+
 - **84** [`4a7e285`](https://github.com/wangxiuwen/tietie/commit/4a7e285) 抽屉滚动位置记忆：hide-drawer 时快照 .cards scrollLeft（模块级变量会话共享不落盘），重开 rAF 后 scrollTo 恢复，CDP 实测 636→关→开 636 精确还原。同批扩池 85-90
 
 - **83** [`a421cc2`](https://github.com/wangxiuwen/tietie/commit/a421cc2) 图片卡复制：copy_item_image 命令走后端写图像剪贴板（复用 arboard/NSPasteboard 路径+touch 计数，无合成⌘V），图片卡 actions 行 🖼 按钮，真机实测剪贴板 IMG 3840x1080+日志留痕
