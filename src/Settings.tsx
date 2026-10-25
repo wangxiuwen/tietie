@@ -173,6 +173,21 @@ export default function Settings() {
   const [lineOn, setLineOn] = useState(false);
   const [wayland, setWayland] = useState(false);
   const [dedupe, setDedupe] = useState(true);
+  // stale-backup banner (direction 63): >7 days since the last export
+  const [lastBackup, setLastBackup] = useState(0);
+  useEffect(() => {
+    invoke<number>("last_backup_at").then(setLastBackup);
+  }, []);
+  const backupStale = Date.now() / 1000 - lastBackup > 7 * 86400;
+  const exportNow = useCallback(async () => {
+    try {
+      const path = await invoke<string>("export_backup");
+      setLastBackup(Math.floor(Date.now() / 1000));
+      setBackupMsg(`已导出: ${path}`);
+    } catch (e) {
+      setBackupMsg(`导出失败: ${e}`);
+    }
+  }, []);
   useEffect(() => {
     invoke<boolean>("dedupe_history").then(setDedupe);
   }, []);
@@ -242,6 +257,14 @@ export default function Settings() {
 
   return (
     <div className="settings-win">
+      {backupStale && (
+        <div className="backup-banner" role="status">
+          <span>⚠️ {t("backup.banner")}</span>
+          <button className="btn ghost" onClick={exportNow}>
+            {t("backup.exportNow")}
+          </button>
+        </div>
+      )}
       <div className="settings-section">
         <div className="settings-row">
           <span className="settings-label">{t("settings.version")}</span>

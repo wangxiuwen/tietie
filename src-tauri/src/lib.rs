@@ -460,6 +460,7 @@ pub fn run() {
             autostart_enabled,
             set_autostart,
             export_backup,
+            last_backup_at,
             import_backup,
             show_drawer,
             hide_window,
@@ -1866,7 +1867,18 @@ fn export_backup(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<St
     let path = dir.join(name);
     let body = serde_json::to_string(&bak).map_err(|e| e.to_string())?;
     std::fs::write(&path, body).map_err(|e| e.to_string())?;
+    // remember when the last backup left this machine (direction 63)
+    let _ = save_setting(&app, "last_backup_at", &db::now_unix().to_string());
     Ok(path.to_string_lossy().into_owned())
+}
+
+/// Unix ts of the last successful backup export (0 = never) — the settings
+/// page turns this into a stale-backup banner after 7 days.
+#[tauri::command]
+fn last_backup_at(app: AppHandle) -> i64 {
+    load_setting(&app, "last_backup_at", "0")
+        .parse::<i64>()
+        .unwrap_or(0)
 }
 
 /// Merge the most recent backup file in Documents back into the database.

@@ -39,6 +39,7 @@ export const zh: Dict = {
   "edit.chars": "字符", "edit.lines": "行",
   // settings
   "settings.title": "设置",
+  "backup.banner": "已超过 7 天未导出备份，建议保存一份", "backup.exportNow": "立即导出",
   "settings.version": "版本", "settings.checking": "检查中…", "settings.uptodate": "已是最新",
   "settings.recheck": "重新检查", "settings.upgrade": "升级到", "settings.download": "下载",
   "settings.restarting": "即将重启…", "settings.checkUpdate": "检查更新",
@@ -141,6 +142,7 @@ export const en: Dict = {
   "edit.cancel": "Esc Cancel", "edit.savePaste": "⌘↵ Save & Paste",
   "edit.chars": "chars", "edit.lines": "lines",
   "settings.title": "Settings",
+  "backup.banner": "No backup exported in over 7 days — save one now", "backup.exportNow": "Export now",
   "settings.version": "Version", "settings.checking": "Checking…", "settings.uptodate": "Up to date",
   "settings.recheck": "Recheck", "settings.upgrade": "Upgrade to", "settings.download": "Download",
   "settings.restarting": "Restarting…", "settings.checkUpdate": "Check for updates",

@@ -2159,3 +2159,17 @@ select:focus-visible,
   color: var(--accent);
   font-weight: 600;
 }
+
+/* stale-backup banner (direction 63) */
+.backup-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 16px 0;
+  padding: calc(10px * var(--fs)) calc(14px * var(--fs));
+  background: rgba(255, 204, 0, 0.14);
+  border: 1px solid rgba(255, 149, 0, 0.45);
+  border-radius: var(--r-md);
+  font-size: calc(13px * var(--fs));
+}
