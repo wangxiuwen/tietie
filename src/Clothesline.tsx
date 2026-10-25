@@ -404,6 +404,7 @@ export default function Clothesline() {
             onPin: (id) => invoke("toggle_memo_pin", { id }).catch(() => {}),
             onEdit: openDetailEditing,
             onRemove: remove,
+            onSink: (id) => invoke("sink_memo", { id }).catch(() => {}),
           })}
           onClose={() => setCtxMenu(null)}
         />
@@ -543,18 +544,21 @@ function buildMemoCtxItems({
   onPin,
   onEdit,
   onRemove,
+  onSink,
 }: {
   memo?: Memo;
   onCopy: (m: Memo) => void;
   onPin: (id: number) => void;
   onEdit: (m: Memo) => void;
   onRemove: (id: number) => void;
+  onSink: (id: number) => void;
 }): MenuItem[] {
   if (!memo) return [];
   return [
     { label: t("line.copy"), onClick: () => onCopy(memo) },
     { label: memo.pinned ? t("line.unpin") : t("line.pin"), onClick: () => onPin(memo.id) },
     { label: t("line.edit"), onClick: () => onEdit(memo) },
+    { label: t("line.sink"), onClick: () => onSink(memo.id) },
     { label: t("line.takeOff"), onClick: () => onRemove(memo.id) },
   ];
 }

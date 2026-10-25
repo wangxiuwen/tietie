@@ -493,6 +493,7 @@ pub fn run() {
             set_memo_color,
             set_memo_reminder,
             set_memo_note,
+            sink_memo,
             export_memos,
             copy_memo,
             hang_preview,
@@ -1490,6 +1491,17 @@ fn set_memo_note(
             ],
         )
         .map_err(|e| e.to_string())?;
+    }
+    emit_memos_changed(&app);
+    Ok(())
+}
+
+/// Sink a memo to the end of the line (direction 89).
+#[tauri::command]
+fn sink_memo(app: AppHandle, state: tauri::State<'_, AppState>, id: i64) -> Result<(), String> {
+    {
+        let conn = state.conn.lock();
+        db::sink_memo(&conn, id).map_err(|e| e.to_string())?;
     }
     emit_memos_changed(&app);
     Ok(())

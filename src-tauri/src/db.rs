@@ -532,6 +532,16 @@ pub fn remove_memo(conn: &Connection, id: i64) -> SqlResult<()> {
     Ok(())
 }
 
+/// Sink a memo to the very end of the line (direction 89) — the opposite
+/// of pin: give it the largest sort value so it trails the rope.
+pub fn sink_memo(conn: &Connection, id: i64) -> SqlResult<()> {
+    conn.execute(
+        "UPDATE memo SET sort = (SELECT COALESCE(MAX(sort), -1) + 1 FROM memo) WHERE id = ?1",
+        params![id],
+    )?;
+    Ok(())
+}
+
 /// Move memo `id` to position `to_index` (0-based within current order) and
 /// renumber all sort values. Pinned-first ordering still wins on top of sort.
 pub fn reorder_memo(conn: &Connection, id: i64, to_index: usize) -> SqlResult<()> {

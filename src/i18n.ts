@@ -95,7 +95,7 @@ export const zh: Dict = {
   "line.view": "单击查看 · 按住往下拖摘下来", "line.takeOff": "摘下来",
   "line.copy": "复制", "line.copied": "已复制 ✓", "line.edit": "编辑",
   "line.save": "保存 (⌘↵)", "line.cancelEdit": "取消编辑", "line.close": "关闭 (Esc)",
-  "line.pin": "置顶", "line.unpin": "取消置顶", "line.pinned": "已置顶",
+  "line.pin": "置顶", "line.unpin": "取消置顶", "line.pinned": "已置顶", "line.sink": "沉到绳尾",
   "line.justNow": "刚刚挂上", "line.loading": "原图加载中…", "line.color": "衣夹颜色", "line.minAgo": " 分钟前挂上", "line.hourAgo": " 小时前挂上",
   // library
   "lib.title": "剪贴板库", "lib.kind": "类型", "lib.content": "内容",
@@ -211,7 +211,7 @@ export const en: Dict = {
   "line.view": "Click to view · drag down to take off", "line.takeOff": "Take off",
   "line.copy": "Copy", "line.copied": "Copied ✓", "line.edit": "Edit",
   "line.save": "Save (⌘↵)", "line.cancelEdit": "Cancel edit", "line.close": "Close (Esc)",
-  "line.pin": "Pin", "line.unpin": "Unpin", "line.pinned": "Pinned",
+  "line.pin": "Pin", "line.unpin": "Unpin", "line.pinned": "Pinned", "line.sink": "Sink to end",
   "line.justNow": "just hung", "line.loading": "Loading full image…", "line.color": "Pin color", "line.minAgo": " min ago", "line.hourAgo": " h ago",
   "lib.title": "Clipboard Library", "lib.kind": "Kind", "lib.content": "Content",
   "lib.source": "Source", "lib.size": "Size", "lib.time": "Time",
