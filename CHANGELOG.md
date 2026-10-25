@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **72** [`22f8bf5`](https://github.com/wangxiuwen/tietie/commit/22f8bf5) Library 表格快捷键：↑↓ 键盘光标（accent 描边+scrollIntoView，输入框/色板视图豁免），↵ 复制行（应用内提示），Del/Backspace 删行，CDP 实测光标步进/回车提示/净零删除
+
 - **71** [`b14bc30`](https://github.com/wangxiuwen/tietie/commit/b14bc30) 热键占用实时检测：recheck_hotkeys 命令对被拒组合重探测（成功即接管热键并写回状态），设置页热键区加「重新检测被拒组合」按钮，真机实测三组合全注册+命令往返+按钮在位。同批扩池 73-78
 
 - **70** [`96249b4`](https://github.com/wangxiuwen/tietie/commit/96249b4) 启动完整性自检：setup 跑 PRAGMA integrity_check（ok 记 info/异常记 error 全行），db_ok 原子贯穿 db_integrity_ok 命令，设置页异常时红条+一键导出备份，真机实测日志 ok+命令 true+无红条误报
