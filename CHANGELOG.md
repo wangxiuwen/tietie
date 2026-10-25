@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **63** [`6fae34f`](https://github.com/wangxiuwen/tietie/commit/6fae34f) 备份健康提醒：export_backup 成功即记 last_backup_at，设置页超 7 天（含从未）顶部黄条+一键导出即消，CDP 实测出现→导出→消失→时间戳落盘，测试文件与时间戳均还原
+
 - **62** [`5c9addc`](https://github.com/wangxiuwen/tietie/commit/5c9addc) 抽屉搜索命中计数：底栏计数搜索时标签化「命中 N/M」+accent 高亮（空闲保持裸 N/M），CDP 实测 turing→命中 8/24、清空还原
 
 - **61** [`ecb6471`](https://github.com/wangxiuwen/tietie/commit/ecb6471) 托盘面板图片缩略图：图片行内嵌 18px 缩略图（preview 即 b64 缩略图直用 data URL），行文本改显尺寸杜绝 base64 露出，CDP 实测 5 行缩略图解码 320x90+零泄漏
