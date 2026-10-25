@@ -85,6 +85,9 @@ export default function App() {
   }, []);
   // rendered rich-HTML preview of a clip item
   const [richView, setRichView] = useState<ClipItem | null>(null);
+  // per-item note editor (direction 74): the card being annotated
+  const [noteEdit, setNoteEdit] = useState<ClipItem | null>(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const cardsRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const editRef = useRef<HTMLTextAreaElement>(null);
@@ -216,7 +219,7 @@ export default function App() {
     else if (typeof folderId === "number") xs = xs.filter((x) => x.folder_id === folderId);
     if (tab !== "all") xs = xs.filter((x) => x.kind === tab);
     if (query.trim()) {
-      xs = xs.filter((x) => matchQuery(x.content, x.preview, query));
+      xs = xs.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query));
     }
     return xs.slice().sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
@@ -622,6 +625,23 @@ export default function App() {
 
         {richView && <RichOverlay item={richView} onClose={() => setRichView(null)} />}
 
+        {noteEdit && (
+          <NoteOverlay
+            item={noteEdit}
+            draft={noteDraft}
+            setDraft={setNoteDraft}
+            onClose={() => setNoteEdit(null)}
+            onSave={async () => {
+              try {
+                await invoke("set_item_note", { id: noteEdit.id, note: noteDraft });
+              } finally {
+                setNoteEdit(null);
+                refresh();
+              }
+            }}
+          />
+        )}
+
         {zoomId !== null && (
           <ZoomOverlay
             item={items.find((x) => x.id === zoomId) ?? filtered.find((x) => x.id === zoomId)}
@@ -644,6 +664,11 @@ export default function App() {
                 refresh();
               },
               onHang: (id) => invoke("hang_item", { id }).catch(() => {}),
+              onNote: (it) => {
+                setCtxMenu(null);
+                setNoteEdit(it);
+                setNoteDraft(it.note ?? "");
+              },
             })}
             onClose={() => setCtxMenu(null)}
           />
@@ -670,6 +695,7 @@ function buildCtxItems({
   refresh,
   onFile,
   onHang,
+  onNote,
 }: {
   item?: ClipItem;
   folders: Folder[];
@@ -679,6 +705,7 @@ function buildCtxItems({
   refresh: () => void;
   onFile: (id: number, folderId: number | null) => void;
   onHang: (id: number) => void;
+  onNote: (it: ClipItem) => void;
 }): MenuItem[] {
   if (!item) return [];
   const items: MenuItem[] = [
@@ -693,6 +720,10 @@ function buildCtxItems({
           .catch((e) => console.warn("set_item_sensitive:", e))
           .finally(() => refresh());
       },
+    },
+    {
+      label: item.note ? t("ctx.editNote") : t("ctx.addNote"),
+      onClick: () => onNote(item),
     },
   ];
   if (folders.length > 0) {
@@ -939,6 +970,9 @@ function Card({
       <CardBody item={item} query={query} onRich={onRichView} />
       <div className="meta">
         <span className="src">{item.source_app || "—"}</span>
+        {item.note && (
+          <span className="note" title={item.note}>📝 {truncate(item.note, 24)}</span>
+        )}
         <span>{relTime(item.used_at)}</span>
       </div>
       {idx < 10 && <div className="index-kbd">{MOD}{idx === 9 ? 0 : idx + 1}</div>}
@@ -1260,6 +1294,54 @@ function Cheatsheet({ onClose }: { onClose: () => void }) {
               <span>{v}</span>
             </div>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Per-item note editor (direction 74): small centered overlay, ⌘↵ saves. */
+function NoteOverlay({
+  item,
+  draft,
+  setDraft,
+  onClose,
+  onSave,
+}: {
+  item: ClipItem;
+  draft: string;
+  setDraft: (v: string) => void;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="zoom-overlay" onClick={onClose}>
+      <div className="zoom-stage" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 460 }}>
+        <div className="zoom-meta" style={{ marginBottom: 8 }}>
+          <span>{truncate(item.content, 48)}</span>
+        </div>
+        <textarea
+          autoFocus
+          className="note-edit"
+          value={draft}
+          placeholder={t("ctx.notePlaceholder")}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            e.stopPropagation();
+            if (e.key === "Escape") {
+              e.preventDefault();
+              onClose();
+            } else if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+              e.preventDefault();
+              onSave();
+            }
+          }}
+          rows={3}
+        />
+        <div className="line-compose-foot" style={{ marginTop: 8 }}>
+          <span style={{ flex: 1 }} />
+          <button className="btn ghost" onClick={onClose}>{t("line.composeCancel")}</button>
+          <button className="btn primary" onClick={onSave}>{t("line.save")}</button>
         </div>
       </div>
     </div>

@@ -20,6 +20,8 @@ pub struct ClipItem {
     pub rich_html: Option<String>,
     /// manually marked sensitive → stored AES-sealed, decrypted on read
     pub sensitive: bool,
+    /// per-item note (direction 74): searchable, shown in meta row
+    pub note: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -113,6 +115,8 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
         "ALTER TABLE clip_item ADD COLUMN sensitive INTEGER NOT NULL DEFAULT 0",
         [],
     );
+    // per-item note (direction 74): searchable, shown in the card meta row
+    let _ = conn.execute("ALTER TABLE clip_item ADD COLUMN note TEXT", []);
     // memo pinned (clothesline sticky notes)
     let _ = conn.execute(
         "ALTER TABLE memo ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
@@ -130,7 +134,7 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
 pub fn list_items(conn: &Connection, limit: i64) -> SqlResult<Vec<ClipItem>> {
     let mut stmt = conn.prepare(
         "SELECT id, kind, content, preview, meta, pinned, folder_id, source_app,
-                created_at, used_at, use_count, byte_size, rich_html, sensitive
+                created_at, used_at, use_count, byte_size, rich_html, sensitive, note
          FROM clip_item
          ORDER BY pinned DESC, used_at DESC
          LIMIT ?1",
@@ -157,6 +161,7 @@ fn row_to_item(row: &rusqlite::Row) -> SqlResult<ClipItem> {
         byte_size: row.get(11)?,
         rich_html: row.get(12)?,
         sensitive: row.get::<_, i64>(13)? != 0,
+        note: row.get(14)?,
     };
     if it.sensitive {
         // transparent decrypt for display/search/copy inside this machine

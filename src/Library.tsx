@@ -47,7 +47,7 @@ export default function Library() {
 
   const filtered = useMemo(() => {
     const base = query.trim()
-      ? items.filter((x) => matchQuery(x.content, x.preview, query))
+      ? items.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query))
       : items;
     const dir = sort.dir;
     return base.slice().sort((a, b) => {

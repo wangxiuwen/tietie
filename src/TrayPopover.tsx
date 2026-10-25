@@ -49,7 +49,7 @@ export default function TrayPopover() {
   };
 
   const filtered = query
-    ? items.filter((x) => matchQuery(x.content, x.preview, query))
+    ? items.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query))
     : items; // full scrollable list — no 12-row cap
 
 

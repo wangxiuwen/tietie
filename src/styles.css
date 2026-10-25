@@ -2232,3 +2232,27 @@ select:focus-visible,
   outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
+
+/* per-item note (direction 74) */
+.meta .note {
+  color: rgba(136, 136, 136, 0.95);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 40%;
+}
+.note-edit {
+  width: 100%;
+  resize: none;
+  background: rgba(128, 128, 128, 0.1);
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: var(--r-sm);
+  color: inherit;
+  padding: calc(8px * var(--fs));
+  font-size: calc(13px * var(--fs));
+  font-family: inherit;
+}
+.note-edit:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}

@@ -15,6 +15,7 @@ export interface ClipItem {
   byte_size: number;
   rich_html?: string | null;
   sensitive: boolean;
+  note?: string | null;
 }
 
 export interface Folder {

@@ -475,6 +475,7 @@ pub fn run() {
             update_item_content,
             set_item_folder,
             set_item_sensitive,
+            set_item_note,
             pause_capture,
             capture_paused_remaining,
             db_integrity_ok,
@@ -1156,6 +1157,35 @@ fn set_item_sensitive(
     {
         let conn = state.conn.lock();
         db::set_sensitive(&conn, id, on).map_err(|e| e.to_string())?;
+    }
+    let _ = app.emit("clipboard-changed", ());
+    Ok(())
+}
+
+/// Set/clear a per-item note (direction 74): searchable + meta row badge.
+/// Empty or whitespace-only text clears the note.
+#[tauri::command]
+fn set_item_note(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: i64,
+    note: Option<String>,
+) -> Result<(), String> {
+    let trimmed = note.unwrap_or_default().trim().to_string();
+    {
+        let conn = state.conn.lock();
+        conn.execute(
+            "UPDATE clip_item SET note = ?1 WHERE id = ?2",
+            rusqlite::params![
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed)
+                },
+                id
+            ],
+        )
+        .map_err(|e| e.to_string())?;
     }
     let _ = app.emit("clipboard-changed", ());
     Ok(())
