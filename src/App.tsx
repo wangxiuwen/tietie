@@ -1237,7 +1237,21 @@ function CardBody({ item, query, onRich }: { item: ClipItem; query: string; onRi
   if (item.kind === "link") {
     return (
       <div className="body">
-        <div className="link-title"><HighlightText text={item.preview || item.content} query={query} /></div>
+        <div className="link-title">
+          {/* inline link glyph: click copies the URL directly (direction 98) */}
+          <button
+            className="link-copy"
+            title={t("ctx.copy")}
+            aria-label={t("ctx.copy")}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(item.content).catch(() => {});
+            }}
+          >
+            🔗
+          </button>
+          <HighlightText text={item.preview || item.content} query={query} />
+        </div>
         <div className="link-url"><HighlightText text={item.content} query={query} /></div>
       </div>
     );

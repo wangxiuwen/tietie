@@ -375,6 +375,17 @@ button {
   font-size: calc(13px * var(--fs));
   margin-bottom: 4px;
 }
+/* inline 🔗 on link cards: click copies the URL (direction 98) */
+.link-copy {
+  all: unset;
+  cursor: pointer;
+  margin-right: 5px;
+  font-size: calc(12px * var(--fs));
+  color: var(--text-3);
+}
+.link-copy:hover {
+  color: var(--accent);
+}
 .link-url {
   font-size: calc(11px * var(--fs));
   color: var(--text-3);
