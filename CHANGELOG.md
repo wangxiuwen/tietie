@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **101** [`e0566e0`](https://github.com/wangxiuwen/tietie/commit/e0566e0) 热键录制显示冲突警告（系统常见组合/与其他热键重复，不阻断）；顺手修录制中 Esc 被窗口级拦截关窗的 bug |
+
 - **100** [`98a69bc`](https://github.com/wangxiuwen/tietie/commit/98a69bc) Markdown 导出链接行改为 [去scheme可读标签](完整URL)，标签60字截断 |
 
 - **99** [`2e7dc67`](https://github.com/wangxiuwen/tietie/commit/2e7dc67) 便签调色板悬停时数字键 1-8 直选衣夹色（dot 带 1-8 提示），移开即失效 |
