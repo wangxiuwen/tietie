@@ -1287,6 +1287,15 @@ body.dragging-hang * {
   color: var(--text-3);
 }
 
+/* live reminder countdown in the detail head (direction 102) */
+.line-due-countdown {
+  font-size: calc(11px * var(--fs));
+  color: var(--text-3);
+}
+.line-due-countdown.due {
+  color: #ff9500;
+}
+
 .line-detail-actions {
   margin-left: auto;
   display: flex;
@@ -2201,7 +2210,7 @@ select:focus-visible,
 }
 
 /* Memo reminder (direction 53): flash for the first minute after due,
-   then hold a steady due state */
+   then keep a breathing glow instead of a steady ring (direction 102) */
 @keyframes due-flash {
   0%, 100% {
     box-shadow: 0 0 0 2px rgba(255, 149, 0, 0.15), 0 4px 14px rgba(0, 0, 0, 0.25);
@@ -2215,8 +2224,16 @@ select:focus-visible,
 .line-card.due-flash {
   animation: due-flash 0.9s ease-in-out infinite;
 }
+@keyframes due-breathe {
+  0%, 100% {
+    box-shadow: 0 0 0 2px rgba(255, 149, 0, 0.25), 0 4px 14px rgba(0, 0, 0, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.7), 0 4px 16px rgba(255, 149, 0, 0.3);
+  }
+}
 .line-card.due:not(.due-flash) {
-  box-shadow: 0 0 0 2px rgba(255, 149, 0, 0.55), 0 4px 14px rgba(0, 0, 0, 0.25);
+  animation: due-breathe 2.4s ease-in-out infinite;
 }
 .line-due-mark {
   color: #ff9500;

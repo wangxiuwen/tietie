@@ -652,6 +652,14 @@ function reminderLabel(at: number): string {
   return `⏰ ${t("line.remindLeft")} ${mins}m`;
 }
 
+/** Per-second remaining countdown for the detail head (direction 102). */
+function countdownLabel(at: number): string {
+  const left = at - Math.floor(Date.now() / 1000);
+  if (left <= 0) return "⏰ " + t("line.remindDue");
+  const m = Math.floor(left / 60);
+  return `⏰ ${t("line.remindLeft")} ${m}m ${String(left % 60).padStart(2, "0")}s`;
+}
+
 // session-level memo body zoom (direction 78): ⌘+/-/0 inside the detail
 const detailZoom = { v: 1.0, subs: new Set<() => void>() };
 function useDetailZoom() {
@@ -706,6 +714,15 @@ function MemoDetail({
   const { zoom, onZoomKey } = useDetailZoom();
   // palette hovered: number keys 1..N pick the matching pin color (direction 99)
   const [paletteHot, setPaletteHot] = useState(false);
+  // per-second re-render while a reminder is pending so the head countdown
+  // ticks live (direction 102); the label reads the clock at render time
+  const [, setRemindTick] = useState(0);
+  const hasRemind = memo.remind_at != null;
+  useEffect(() => {
+    if (!hasRemind) return;
+    const iv = setInterval(() => setRemindTick((n) => n + 1), 1000);
+    return () => clearInterval(iv);
+  }, [hasRemind]);
   useEffect(() => {
     if (!paletteHot) return;
     const onKey = (e: KeyboardEvent) => {
@@ -766,6 +783,16 @@ function MemoDetail({
           {kindLabel(memo.kind)}
         </span>
         <span className="line-detail-time">{relTime(memo.created_at)}</span>
+        {memo.remind_at != null && (
+          <span
+            className={
+              "line-due-countdown" +
+              (memo.remind_at <= Math.floor(Date.now() / 1000) ? " due" : "")
+            }
+          >
+            {countdownLabel(memo.remind_at)}
+          </span>
+        )}
         {counter && (
           <span className="line-detail-count" title={t("line.countTitle")}>
             {counter.chars} {t("line.chars")} · {counter.lines} {t("line.lines")}
