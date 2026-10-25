@@ -119,8 +119,16 @@ export default function Library() {
     await refresh();
   }, [selected, refresh]);
 
+  // export filter (direction 88): pinned-only overrides the row selection
+  const [pinnedOnly, setPinnedOnly] = useState(false);
+  const pinnedIds = useMemo(
+    () => filtered.filter((x) => x.pinned).map((x) => x.id),
+    [filtered],
+  );
+  const exportTargets = pinnedOnly ? pinnedIds : [...selected];
+
   const exportText = useCallback(async () => {
-    const ids = [...selected];
+    const ids = exportTargets;
     if (ids.length === 0) return;
     try {
       const path = await invoke<string>("export_selected_text", { ids });
@@ -129,10 +137,10 @@ export default function Library() {
     } catch (e) {
       setMsg(`导出失败: ${e}`);
     }
-  }, [selected]);
+  }, [exportTargets]);
 
   const exportMarkdown = useCallback(async () => {
-    const ids = [...selected];
+    const ids = exportTargets;
     if (ids.length === 0) return;
     try {
       const path = await invoke<string>("export_selected_markdown", { ids });
@@ -141,7 +149,7 @@ export default function Library() {
     } catch (e) {
       setMsg(`导出失败: ${e}`);
     }
-  }, [selected]);
+  }, [exportTargets]);
 
   // swatch-grid view over the color-kind items (direction 51)
   const [view, setView] = useState<"table" | "palette">(
@@ -389,10 +397,26 @@ export default function Library() {
         </span>
         {msg && <span className="lib-msg">{msg}</span>}
         <div className="lib-actions">
-          <button className="btn ghost" onClick={exportText} disabled={selected.size === 0}>
+          <label className="lib-pinonly" title={t("lib.pinnedOnlyHint")}>
+            <input
+              type="checkbox"
+              checked={pinnedOnly}
+              onChange={(e) => setPinnedOnly(e.target.checked)}
+            />
+            {t("lib.pinnedOnly")} ({pinnedIds.length})
+          </label>
+          <button
+            className="btn ghost"
+            onClick={exportText}
+            disabled={exportTargets.length === 0}
+          >
             {t("lib.export")}
           </button>
-          <button className="btn ghost" onClick={exportMarkdown} disabled={selected.size === 0}>
+          <button
+            className="btn ghost"
+            onClick={exportMarkdown}
+            disabled={exportTargets.length === 0}
+          >
             {t("lib.exportMd")}
           </button>
           <button className="btn primary" onClick={del} disabled={selected.size === 0}>

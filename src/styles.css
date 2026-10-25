@@ -2319,3 +2319,15 @@ select:focus-visible,
   outline: 1.5px solid var(--accent);
   outline-offset: -1px;
 }
+
+/* pinned-only export toggle (direction 88) */
+.lib-pinonly {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: calc(12px * var(--fs));
+  color: var(--text-2, rgba(20, 20, 22, 0.62));
+  cursor: pointer;
+  margin-right: 8px;
+  white-space: nowrap;
+}
