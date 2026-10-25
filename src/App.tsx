@@ -944,6 +944,14 @@ function Card({
       {idx < 10 && <div className="index-kbd">{MOD}{idx === 9 ? 0 : idx + 1}</div>}
       <div className="actions" onClick={(e) => e.stopPropagation()}>
         <button className="action primary" onClick={onPaste}>{t("card.paste")}</button>
+        <button
+          className="action"
+          title={t("ctx.copy")}
+          aria-label={t("ctx.copy")}
+          onClick={() => navigator.clipboard.writeText(item.content).catch(() => {})}
+        >
+          ⧉
+        </button>
         {item.kind === "color" && (
           <button
             className="action"
