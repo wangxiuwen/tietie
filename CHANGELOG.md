@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **73** [`9f25f28`](https://github.com/wangxiuwen/tietie/commit/9f25f28) 抽屉卡片复制按钮：actions 悬停行首增 ⧉（粘贴旁）直接写剪贴板免右键，aria/title 复用 ctx.copy，CDP 实测 hover 可见+点击后剪贴板=行0 内容（GBK 对齐验证）
+
 - **72** [`22f8bf5`](https://github.com/wangxiuwen/tietie/commit/22f8bf5) Library 表格快捷键：↑↓ 键盘光标（accent 描边+scrollIntoView，输入框/色板视图豁免），↵ 复制行（应用内提示），Del/Backspace 删行，CDP 实测光标步进/回车提示/净零删除
 
 - **71** [`b14bc30`](https://github.com/wangxiuwen/tietie/commit/b14bc30) 热键占用实时检测：recheck_hotkeys 命令对被拒组合重探测（成功即接管热键并写回状态），设置页热键区加「重新检测被拒组合」按钮，真机实测三组合全注册+命令往返+按钮在位。同批扩池 73-78
