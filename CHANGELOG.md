@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **81** [`157fc38`](https://github.com/wangxiuwen/tietie/commit/157fc38) 便签衣夹历史色板：add_memo_direct 增 color 参数，新建便签脚部显示最近 3 个不同衣夹色（点击选/再点取消=默认蓝），CDP 实测 recents 提取+选中色落库+净零
+
 - **80** [`29217ba`](https://github.com/wangxiuwen/tietie/commit/29217ba) Esc 梯度审计修复：补右键菜单与备注浮层两层（此前开菜单按 Esc 会连抽屉一起关），梯度七层逐级剥，真机实测菜单/备注各开 Esc 仅关自身抽屉保持
 
 - **79** [`8418bf6`](https://github.com/wangxiuwen/tietie/commit/8418bf6) 富文本徽标卡角化：✦ 徽标改绝对定位钉卡片右上角（正文截断不遮），点击仍开沙箱预览，加 aria-label 与 hover 底色；CDP 实测 corner 定位+点击 overlay 弹出净零
