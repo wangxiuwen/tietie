@@ -704,6 +704,19 @@ function MemoDetail({
   const [editing, setEditing] = useState(initialEditing);
   const [draft, setDraft] = useState(memo.content);
   const { zoom, onZoomKey } = useDetailZoom();
+  // palette hovered: number keys 1..N pick the matching pin color (direction 99)
+  const [paletteHot, setPaletteHot] = useState(false);
+  useEffect(() => {
+    if (!paletteHot) return;
+    const onKey = (e: KeyboardEvent) => {
+      const n = Number(e.key);
+      if (!Number.isInteger(n) || n < 1 || n > MEMO_COLORS.length) return;
+      e.preventDefault();
+      invoke("set_memo_color", { id: memo.id, color: MEMO_COLORS[n - 1] }).catch(() => {});
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [paletteHot, memo.id]);
 
   const canEdit = memo.kind !== "image"; // image memos carry no editable text
 
@@ -729,12 +742,18 @@ function MemoDetail({
       style={{ ["--memo-zoom" as string]: String(zoom) }}
     >
       {!editing && (
-        <div className="line-palette" title={t("line.color")}>
-          {MEMO_COLORS.map((c) => (
+        <div
+          className="line-palette"
+          title={t("line.colorKeys")}
+          onMouseEnter={() => setPaletteHot(true)}
+          onMouseLeave={() => setPaletteHot(false)}
+        >
+          {MEMO_COLORS.map((c, i) => (
             <button
               key={c}
               className={"pal-dot" + (memo.color === c ? " active" : "")}
               style={{ background: c }}
+              title={String(i + 1)}
               onClick={() =>
                 invoke("set_memo_color", { id: memo.id, color: c }).catch(() => {})
               }
