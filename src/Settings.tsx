@@ -208,6 +208,13 @@ export default function Settings() {
   useEffect(() => {
     invoke<boolean>("db_integrity_ok").then((ok) => setDbBad(!ok));
   }, []);
+  // drawer width preset (direction 87)
+  const [dwidth, setDwidth] = useState<"full" | "80" | "60">("full");
+  useEffect(() => {
+    invoke<string>("drawer_width").then((w) => {
+      if (w === "80" || w === "60") setDwidth(w);
+    });
+  }, []);
   const toggleDedupe = useCallback(async () => {
     const next = !dedupe;
     setDedupe(next);
@@ -519,6 +526,26 @@ export default function Settings() {
                 <option value="paste">{t("settings.dblPaste")}</option>
                 <option value="copy">{t("settings.dblCopy")}</option>
                 <option value="edit">{t("settings.dblEdit")}</option>
+              </select>
+            </span>
+          </div>
+
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.drawerWidth")}</span>
+            <span className="settings-value">
+              <select
+                className="lang-select"
+                value={dwidth}
+                aria-label={t("settings.drawerWidth")}
+                onChange={async (e) => {
+                  const v = e.target.value as "full" | "80" | "60";
+                  setDwidth(v);
+                  await invoke("set_drawer_width", { preset: v }).catch(() => {});
+                }}
+              >
+                <option value="full">{t("settings.wFull")}</option>
+                <option value="80">{t("settings.w80")}</option>
+                <option value="60">{t("settings.w60")}</option>
               </select>
             </span>
           </div>

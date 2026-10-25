@@ -503,6 +503,8 @@ pub fn run() {
             set_dedupe_history,
             dblclick_action,
             set_dblclick_action,
+            drawer_width,
+            set_drawer_width,
             retention_days,
             set_retention_days,
             max_history,
@@ -885,18 +887,51 @@ fn position_drawer<R: Runtime>(win: &WebviewWindow<R>) {
     if let Some(m) = monitor_with_cursor(win) {
         let size = m.size();
         let scale = m.scale_factor();
-        let target_w = size.width;
+        // width preset (direction 87): "full" spans the monitor, "80"/"60"
+        // center that fraction of it; anything else behaves as full
+        let preset = load_setting(win.app_handle(), "drawer_width", "full");
+        let frac = match preset.as_str() {
+            "80" => 0.8f64,
+            "60" => 0.6,
+            _ => 1.0,
+        };
+        let target_w = (size.width as f64 * frac).round() as u32;
         let target_h = (DRAWER_HEIGHT as f64 * scale) as u32;
 
         // dock_inset_px = points-of-dock × scale; 0 on non-mac
         let dock_inset_px = mac_dock_inset_px(scale);
         let margin_px = (DRAWER_BOTTOM_MARGIN * scale) as i32;
 
+        let x = m.position().x + ((size.width - target_w) / 2) as i32;
         let _ = win.set_size(PhysicalSize::new(target_w, target_h));
         let _ = win.set_position(PhysicalPosition::new(
-            m.position().x,
+            x,
             m.position().y + size.height as i32 - target_h as i32 - dock_inset_px - margin_px,
         ));
+    }
+}
+
+/// Persisted drawer width preset: "full" | "80" | "60" (direction 87);
+/// applies immediately by repositioning the drawer.
+#[tauri::command]
+fn set_drawer_width(app: AppHandle, preset: String) -> Result<(), String> {
+    if !["full", "80", "60"].contains(&preset.as_str()) {
+        return Err("invalid preset".into());
+    }
+    save_setting(&app, "drawer_width", &preset)?;
+    if let Some(win) = app.get_webview_window("drawer") {
+        position_drawer(&win);
+    }
+    Ok(())
+}
+
+#[tauri::command]
+fn drawer_width(app: AppHandle) -> String {
+    let v = load_setting(&app, "drawer_width", "full");
+    if ["full", "80", "60"].contains(&v.as_str()) {
+        v
+    } else {
+        "full".into()
     }
 }
 
