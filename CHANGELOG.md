@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **76** [`a7701d5`](https://github.com/wangxiuwen/tietie/commit/a7701d5) 空库引导：Empty 态三步上手卡（编号圆点+i18n 双语），搜索无命中复用同组件，CDP 实测渲染/消失双向
+
 - **75** [`a782780`](https://github.com/wangxiuwen/tietie/commit/a782780) Library 筛选记忆：新增类型筛选下拉+视图/排序/类型三项 localStorage 持久化，跨窗口重开甚至跨应用重启还原，真机实测 color 筛选重启后精确恢复
 
 - **74** [`e3bb5e3`](https://github.com/wangxiuwen/tietie/commit/e3bb5e3) 条目备注：clip_item 加 note 列+set_item_note 命令（空白即清除），右键「添加/编辑备注」居中浮层（⌘↵存/Esc 取），meta 行 📝 显示，抽屉/库/托盘三处搜索并入备注，CDP 实测往返/搜索命中/清除净零
