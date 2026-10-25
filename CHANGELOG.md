@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **97** [`824c7bf`](https://github.com/wangxiuwen/tietie/commit/824c7bf) 搜索 token 前缀 - 变排除语义（三处搜索面共用 matchQuery 一次生效），含拼音/子序列同口径 |
+
 - **96** [`a994948`](https://github.com/wangxiuwen/tietie/commit/a994948) 设置页版本号变可点击按钮，一键复制版本串并显 ✓ 反馈 |
 
 - **95** [`0bdd41b`](https://github.com/wangxiuwen/tietie/commit/0bdd41b) 图片挂卡无 preview 时显示 🖼️ 占位块而非尺寸文字，有 preview 缩略图不受影响 |
