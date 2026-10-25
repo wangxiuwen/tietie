@@ -22,7 +22,24 @@ export default function Library() {
   const [msg, setMsg] = useState<string | null>(null);
   const [stats, setStats] = useState<ClipStats | null>(null);
   type SortKey = "time" | "kind" | "size" | "source";
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "time", dir: -1 });
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>(() => {
+    // filter memory (direction 75): structural filters survive reopens
+    try {
+      const raw = localStorage.getItem("lib-sort");
+      const v = raw ? JSON.parse(raw) : null;
+      if (
+        v &&
+        ["time", "kind", "size", "source"].includes(v.key) &&
+        (v.dir === 1 || v.dir === -1)
+      ) {
+        return v as { key: SortKey; dir: 1 | -1 };
+      }
+    } catch { /* fall through to default */ }
+    return { key: "time", dir: -1 };
+  });
+  useEffect(() => {
+    localStorage.setItem("lib-sort", JSON.stringify(sort));
+  }, [sort]);
 
   interface ClipStats {
     total: number;
@@ -45,10 +62,20 @@ export default function Library() {
     return () => unlistens.forEach((u) => u());
   }, [refresh]);
 
+
+  // kind filter (direction 75): chips over text/link/image/code/color
+  const [kindFilter, setKindFilter] = useState<string>(
+    () => localStorage.getItem("lib-kind") || "all",
+  );
+  useEffect(() => {
+    localStorage.setItem("lib-kind", kindFilter);
+  }, [kindFilter]);
   const filtered = useMemo(() => {
-    const base = query.trim()
-      ? items.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query))
-      : items;
+    let base = kindFilter !== "all" ? items.filter((x) => x.kind === kindFilter) : items;
+    if (query.trim()) {
+      const q = query.trim();
+      base = base.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), q));
+    }
     const dir = sort.dir;
     return base.slice().sort((a, b) => {
       switch (sort.key) {
@@ -62,7 +89,7 @@ export default function Library() {
           return (a.used_at - b.used_at) * dir;
       }
     });
-  }, [items, query, sort]);
+  }, [items, query, sort, kindFilter]);
 
   const sortBy = (key: SortKey) =>
     setSort((s) =>
@@ -117,7 +144,12 @@ export default function Library() {
   }, [selected]);
 
   // swatch-grid view over the color-kind items (direction 51)
-  const [view, setView] = useState<"table" | "palette">("table");
+  const [view, setView] = useState<"table" | "palette">(
+    () => (localStorage.getItem("lib-view") === "palette" ? "palette" : "table"),
+  );
+  useEffect(() => {
+    localStorage.setItem("lib-view", view);
+  }, [view]);
   const colors = useMemo(
     () => filtered.filter((x) => x.kind === "color"),
     [filtered],
@@ -190,6 +222,20 @@ export default function Library() {
         >
           {t("lib.palette")}
         </button>
+        <select
+          className="lang-select"
+          value={kindFilter}
+          aria-label={t("lib.kindFilter")}
+          title={t("lib.kindFilter")}
+          onChange={(e) => setKindFilter(e.target.value)}
+        >
+          <option value="all">{t("tab.all")}</option>
+          <option value="text">{t("kind.text")}</option>
+          <option value="link">{t("kind.link")}</option>
+          <option value="image">{t("kind.image")}</option>
+          <option value="code">{t("kind.code")}</option>
+          <option value="color">{t("kind.color")}</option>
+        </select>
         <button className="btn ghost" onClick={() => getCurrentWindow().hide()}>
           {t("lib.collapse")}
         </button>
