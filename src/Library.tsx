@@ -127,6 +127,53 @@ export default function Library() {
     setMsg(`${t("lib.copied")} ${hex}`);
   }, []);
 
+  // keyboard rows (direction 72): ↑/↓ move a cursor, ↵ copies the row,
+  // Del removes it — the table works without touching the mouse. The
+  // cursor is index-based over `filtered` and skipped while typing in the
+  // search box or in the palette view.
+  const [cursor, setCursor] = useState(-1);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement | null)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (view !== "table" || filtered.length === 0) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        setCursor((c) =>
+          e.key === "ArrowDown"
+            ? Math.min(c + 1, filtered.length - 1)
+            : Math.max(c - 1, 0),
+        );
+      } else if (e.key === "Enter" && cursor >= 0 && cursor < filtered.length) {
+        e.preventDefault();
+        const it = filtered[cursor];
+        if (it.kind !== "image") {
+          navigator.clipboard.writeText(it.content).catch(() => {});
+          setMsg(`${t("lib.copied")} ${oneLine(it.content).slice(0, 24)}`);
+        }
+      } else if ((e.key === "Delete" || e.key === "Backspace") && cursor >= 0) {
+        e.preventDefault();
+        const it = filtered[cursor];
+        invoke<number>("delete_items", { ids: [it.id] }).then((n) => {
+          setMsg(`${t("lib.deleted")} ${n}`);
+          refresh();
+          setCursor((c) => Math.min(c, filtered.length - 2));
+        });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [view, filtered, cursor, refresh]);
+
+  // keep the cursor row visible
+  useEffect(() => {
+    if (cursor < 0 || view !== "table") return;
+    const el = document.querySelector(
+      `.lib-table tbody tr:nth-child(${cursor + 1})`,
+    );
+    el?.scrollIntoView({ block: "nearest" });
+  }, [cursor, view]);
+
   return (
     <div className="lib">
       <div className="lib-head">
@@ -233,10 +280,13 @@ export default function Library() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((it) => (
+            {filtered.map((it, idx) => (
               <tr
                 key={it.id}
-                className={selected.has(it.id) ? "sel" : ""}
+                className={
+                  (selected.has(it.id) ? "sel " : "") +
+                  (idx === cursor ? " kcursor" : "")
+                }
                 onClick={() => toggle(it.id)}
               >
                 <td className="w-check">
