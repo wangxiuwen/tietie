@@ -191,6 +191,12 @@ export default function Settings() {
   useEffect(() => {
     invoke<boolean>("dedupe_history").then(setDedupe);
   }, []);
+  const [dbl, setDbl] = useState<"paste" | "copy" | "edit">("paste");
+  useEffect(() => {
+    invoke<string>("dblclick_action").then((a) => {
+      if (a === "copy" || a === "edit") setDbl(a);
+    });
+  }, []);
   const toggleDedupe = useCallback(async () => {
     const next = !dedupe;
     setDedupe(next);
@@ -469,6 +475,26 @@ export default function Settings() {
             </span>
           </div>
           <p className="settings-hint">{t("settings.dedupeHint")}</p>
+
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.dblclick")}</span>
+            <span className="settings-value">
+              <select
+                className="lang-select"
+                value={dbl}
+                aria-label={t("settings.dblclick")}
+                onChange={async (e) => {
+                  const v = e.target.value as "paste" | "copy" | "edit";
+                  setDbl(v);
+                  await invoke("set_dblclick_action", { action: v }).catch(() => {});
+                }}
+              >
+                <option value="paste">{t("settings.dblPaste")}</option>
+                <option value="copy">{t("settings.dblCopy")}</option>
+                <option value="edit">{t("settings.dblEdit")}</option>
+              </select>
+            </span>
+          </div>
 
           {wayland && (
             <div className="settings-row">

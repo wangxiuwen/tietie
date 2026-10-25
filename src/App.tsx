@@ -76,6 +76,13 @@ export default function App() {
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   // ? cheatsheet overlay
   const [cheatsheet, setCheatsheet] = useState(false);
+  // what a card double-click does (direction 68): paste / copy / edit
+  const [dblAction, setDblAction] = useState<"paste" | "copy" | "edit">("paste");
+  useEffect(() => {
+    invoke<string>("dblclick_action").then((a) => {
+      if (a === "copy" || a === "edit") setDblAction(a);
+    });
+  }, []);
   // rendered rich-HTML preview of a clip item
   const [richView, setRichView] = useState<ClipItem | null>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
@@ -100,6 +107,13 @@ export default function App() {
       setDrawerVisible(true);
       setSelectedIdx(0);
       setEditing(null);
+      // re-read the double-click preference: it can change in settings
+      // while this window lives on (direction 68)
+      try {
+        const a = await invoke<string>("dblclick_action");
+        if (a === "copy" || a === "edit") setDblAction(a);
+        else setDblAction("paste");
+      } catch { /* keep current */ }
       requestAnimationFrame(() => searchRef.current?.focus());
     }).then((u) => unlistens.push(u));
     listen<null>("hide-drawer", () => {
@@ -247,6 +261,20 @@ export default function App() {
     setEditValue(item.content);
     requestAnimationFrame(() => editRef.current?.focus());
   }, []);
+
+  // configurable double-click behavior (direction 68): paste / copy / edit
+  const dblAct = useCallback(
+    (it: ClipItem) => {
+      if (dblAction === "copy") {
+        navigator.clipboard.writeText(it.content).catch(() => {});
+      } else if (dblAction === "edit") {
+        startEdit(it);
+      } else {
+        paste(it);
+      }
+    },
+    [dblAction, paste, startEdit],
+  );
 
   const saveEdit = useCallback(async (alsoPaste: boolean) => {
     if (!editing) return;
@@ -519,7 +547,7 @@ export default function App() {
                       if (it.kind === "image") setZoomId(it.id);
                       else setZoomId(null);
                     }}
-                    onDoubleClick={() => paste(it)}
+                    onDoubleClick={() => dblAct(it)}
                   />
                 ) : (
                   <Card
@@ -548,7 +576,7 @@ export default function App() {
                       if (it.kind === "image") setZoomId(it.id);
                       else setZoomId(null);
                     }}
-                    onDoubleClick={() => paste(it)}
+                    onDoubleClick={() => dblAct(it)}
                     onPin={() => togglePin(it.id)}
                     onEdit={() => startEdit(it)}
                     onDelete={() => deleteItem(it.id)}

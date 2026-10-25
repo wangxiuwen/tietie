@@ -463,6 +463,8 @@ pub fn run() {
             wayland_session,
             dedupe_history,
             set_dedupe_history,
+            dblclick_action,
+            set_dblclick_action,
             retention_days,
             set_retention_days,
             max_history,
@@ -2176,6 +2178,27 @@ fn set_dedupe_history(
         "dedupe_history",
         if enabled { "true" } else { "false" },
     )
+}
+
+// ─────────────────────── drawer double-click action ───────────────────────
+
+/// What a card double-click does: "paste" (default) / "copy" / "edit".
+#[tauri::command]
+fn dblclick_action(app: AppHandle) -> String {
+    let v = load_setting(&app, "dblclick_action", "paste");
+    if ["paste", "copy", "edit"].contains(&v.as_str()) {
+        v
+    } else {
+        "paste".into()
+    }
+}
+
+#[tauri::command]
+fn set_dblclick_action(app: AppHandle, action: String) -> Result<(), String> {
+    if !["paste", "copy", "edit"].contains(&action.as_str()) {
+        return Err("invalid action".into());
+    }
+    save_setting(&app, "dblclick_action", &action)
 }
 
 // ─────────────────────── wayland session notice ───────────────────────
