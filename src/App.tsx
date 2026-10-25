@@ -37,6 +37,21 @@ const CARD_DRAG_SUPPRESS_MS = 150;
 // session-level drawer scroll memory (direction 84): the horizontal card
 // strip's last offset — restored on the next open, never persisted to disk
 let drawerScrollLeft = 0;
+// session-level search history (direction 90): the last 5 distinct
+// non-empty queries, newest last; committed when the drawer opens with a
+// query — the moment a search "counts" as done
+const searchHist: string[] = [];
+function searchHistory(): string[] {
+  return searchHist;
+}
+function commitSearchHistory(q: string) {
+  const v = q.trim();
+  if (!v) return;
+  const i = searchHist.indexOf(v);
+  if (i >= 0) searchHist.splice(i, 1);
+  searchHist.push(v);
+  if (searchHist.length > 5) searchHist.shift();
+}
 
 const TYPE_TABS: { id: FilterTab; labelKey: string; dot: string }[] = [
   { id: "all", labelKey: "tab.all", dot: "var(--accent)" },
@@ -89,6 +104,10 @@ export default function App() {
     if (per != null) setCompactState(per === "1");
   }, [folderId]);
   const [query, setQuery] = useState("");
+  // the show-drawer listener is registered once, so it reads the live
+  // query through this ref to commit it into search history (direction 90)
+  const queryRef = useRef("");
+  queryRef.current = query;
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [editing, setEditing] = useState<ClipItem | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -140,6 +159,9 @@ export default function App() {
       setDrawerVisible(true);
       setSelectedIdx(0);
       setEditing(null);
+      // a query that was still in the box at reopen counts as a finished
+      // search — commit it to the session history (direction 90)
+      commitSearchHistory(queryRef.current);
       // re-read the double-click preference: it can change in settings
       // while this window lives on (direction 68)
       try {
@@ -829,6 +851,9 @@ function Header({
   counts: Record<string, number>;
   searchRef: React.RefObject<HTMLInputElement>;
 }) {
+  // session-level search history (direction 90): ↑ cycles the last 5
+  // committed queries (committed = drawer opened with a non-empty query)
+  const [histIdx, setHistIdx] = useState(-1);
   return (
     <div className="bar-header">
       <label className="search">
@@ -838,7 +863,29 @@ function Header({
           placeholder={t("search.placeholder")}
           aria-label={t("search.placeholder")}
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setHistIdx(-1);
+          }}
+          onKeyDown={(e) => {
+            const hist = searchHistory();
+            if (hist.length === 0) return;
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              const n = Math.min(histIdx + 1, hist.length - 1);
+              if (n !== histIdx) {
+                setHistIdx(n);
+                setQuery(hist[hist.length - 1 - n]);
+              }
+            } else if (e.key === "ArrowDown") {
+              e.preventDefault();
+              const n = Math.max(histIdx - 1, -1);
+              if (n !== histIdx) {
+                setHistIdx(n);
+                setQuery(n < 0 ? "" : hist[hist.length - 1 - n]);
+              }
+            }
+          }}
         />
         <span className="kbd">{MOD}F</span>
       </label>
