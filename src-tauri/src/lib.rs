@@ -1698,7 +1698,23 @@ fn export_selected_markdown(
         let mut out = format!("## {title}\n\n");
         for (_, content) in got {
             match kind {
-                "link" => out.push_str(&format!("- [{}]({})\n", content, content)),
+                "link" => {
+                    // readable label from the URL itself: strip the scheme
+                    // and a leading www., keep the full URL as the target
+                    // (direction 100). The link preview column is just a
+                    // 120-char truncation of the URL, not a page title.
+                    let stripped = content
+                        .trim_start_matches("https://")
+                        .trim_start_matches("http://")
+                        .trim_start_matches("www.")
+                        .trim_end_matches('/');
+                    let label = if stripped.is_empty() {
+                        content.clone()
+                    } else {
+                        stripped.chars().take(60).collect::<String>()
+                    };
+                    out.push_str(&format!("- [{}]({})\n", label, content));
+                }
                 "code" => out.push_str(&format!("```\n{content}\n```\n")),
                 "image" => out.push_str(&format!("- [图片 {content}]\n")),
                 "color" => out.push_str(&format!("- `{content}`\n")),
