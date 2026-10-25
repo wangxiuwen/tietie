@@ -17,6 +17,10 @@ export default function TrayPopover() {
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(0); // arrow-key selection into `filtered`
+  // progressive list (direction 77): start at 30 rows; pressing ↓ on the
+  // last visible row appends another page so long histories stay light.
+  const PAGE = 30;
+  const [pageCount, setPageCount] = useState(1);
 
   const refresh = useCallback(async () => {
     const is = await invoke<ClipItem[]>("list_items", { limit: 100 });
@@ -48,9 +52,14 @@ export default function TrayPopover() {
     await invoke("paste_item", { id: it.id });
   };
 
-  const filtered = query
+  const matched = query
     ? items.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query))
-    : items; // full scrollable list — no 12-row cap
+    : items; // full history, no cap
+  const filtered = matched.slice(0, pageCount * PAGE);
+  // reset paging when the query changes or the panel refetches
+  useEffect(() => {
+    setPageCount(1);
+  }, [query]);
 
 
   return (
@@ -67,6 +76,12 @@ export default function TrayPopover() {
           onKeyDown={(e) => {
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
               e.preventDefault();
+              if (e.key === "ArrowDown" && sel === filtered.length - 1 && sel < matched.length - 1) {
+                // hit the bottom of the visible page → auto-load more
+                setPageCount((p) => p + 1);
+                setSel((i) => i + 1);
+                return;
+              }
               setSel((i) =>
                 e.key === "ArrowDown"
                   ? Math.min(i + 1, Math.max(0, filtered.length - 1))
