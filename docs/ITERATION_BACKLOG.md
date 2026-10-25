@@ -87,7 +87,7 @@
 - [x] 60. 500 条大表性能审计：EXPLAIN QUERY PLAN list_items，必要时加 covering index
   - 2026-10-25 审计结论：无需改动。生产库 EXPLAIN=SCAN clip_item USING INDEX idx_clip_pinned（复合索引按 (pinned,used_at) 序直读+LIMIT 早停、零临时排序）；合成 5000 行基准 0.354ms/查询（抽掉索引对照 0.793ms=2.2×劣化且走 TEMP B-TREE 排序）；covering index 判定不必要——SELECT 含 content/preview/rich_html 大字段，覆盖=全量数据翻倍，现计划的 LIMIT 有界取行即最优形态
 - [x] 61. 托盘面板图片缩略图：图片条目行内小缩略图预览（preview 本就是 b64，直接 img）
-- [ ] 62. 抽屉搜索命中计数：搜索时底栏显示「命中 N / 共 M」
+- [x] 62. 抽屉搜索命中计数：搜索时底栏显示「命中 N / 共 M」
 - [ ] 63. 备份健康提醒：超过 7 天未导出备份时设置页顶部黄条提示一键导出
 - [ ] 64. Library 行内快捷复制：行 hover 显示复制按钮（免进详情）
 - [ ] 65. 便签提醒编辑：便签详情里可改/取消定时提醒
@@ -96,6 +96,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-25 | 62 | TBD | 抽屉搜索命中计数：底栏计数搜索时标签化「命中 N/M」+accent 高亮（空闲保持裸 N/M），CDP 实测 turing→命中 8/24、清空还原
 2026-10-25 | 61 | ecb6471 | 托盘面板图片缩略图：图片行内嵌 18px 缩略图（preview 即 b64 缩略图直用 data URL），行文本改显尺寸杜绝 base64 露出，CDP 实测 5 行缩略图解码 320x90+零泄漏
 2026-10-25 | 60 | 审计 | list_items 性能审计收口：生产 EXPLAIN 已走 idx_clip_pinned 序读+LIMIT 早停，5000 行合成基准 0.354ms（无索引对照 2.2× 劣化），covering index 不必要——零代码改动
 2026-10-25 | 59 | 2753300 | 视觉 token 化审计：圆角五档阶梯+环境阴影两档+毛玻璃两档 token 落 :root，散值 15→9 种收敛（药丸/圆/绳锚保留），CDP 三窗 .btn/token 解析同值实证

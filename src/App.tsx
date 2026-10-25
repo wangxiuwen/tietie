@@ -589,7 +589,7 @@ export default function App() {
             </button>
           </div>
         )}
-        <Footer count={filtered.length} total={items.length} />
+        <Footer count={filtered.length} total={items.length} searching={query.trim().length > 0} />
         {cheatsheet && <Cheatsheet onClose={() => setCheatsheet(false)} />}
 
         {richView && <RichOverlay item={richView} onClose={() => setRichView(null)} />}
@@ -1105,7 +1105,15 @@ function EditCard({
   );
 }
 
-function Footer({ count, total }: { count: number; total: number }) {
+function Footer({
+  count,
+  total,
+  searching,
+}: {
+  count: number;
+  total: number;
+  searching: boolean;
+}) {
   return (
     <div className="bar-foot">
       <div className="hints">
@@ -1117,7 +1125,11 @@ function Footer({ count, total }: { count: number; total: number }) {
         <span><span className="kbd">{MOD}</span><span className="kbd">D</span> {t("footer.del")}</span>
       </div>
       <div>
-        {count}/{total} <span className="kbd">Esc</span> {t("footer.close")}
+        {/* searching: label + accent the live hit count (direction 62) */}
+        <span className={searching ? "hit-count" : undefined}>
+          {searching ? `${t("footer.hits")} ` : ""}{count}/{total}
+        </span>{" "}
+        <span className="kbd">Esc</span> {t("footer.close")}
       </div>
     </div>
   );

@@ -2153,3 +2153,9 @@ select:focus-visible,
   flex-shrink: 0;
   border: 1px solid rgba(128, 128, 128, 0.3);
 }
+
+/* search hit counter (direction 62) */
+.hit-count {
+  color: var(--accent);
+  font-weight: 600;
+}
