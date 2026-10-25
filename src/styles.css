@@ -238,6 +238,7 @@ button {
   background: rgba(0, 0, 0, 0.04);
   border-radius: 999px;
   white-space: nowrap;
+  transition: transform 0.12s ease;
 }
 .chip.active {
   background: var(--accent);
@@ -1629,6 +1630,8 @@ body.dragging-hang * {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
   background: var(--accent-dim);
+  /* scale feedback while a dragged card hovers the chip (direction 93) */
+  transform: scale(1.1);
 }
 
 mark.hl {
