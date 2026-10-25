@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **104** [`b62e1ea`](https://github.com/wangxiuwen/tietie/commit/b62e1ea) 选中卡片按 N 开备注编辑器并自动聚焦，搜索框输入时仅 ⌘N 触发，速查表补条目 |
+
 - **103** [`719c850`](https://github.com/wangxiuwen/tietie/commit/719c850) 托盘无搜索时拆「置顶/最近」两段，置顶>5 折叠显「展开 +N」，键盘选择与渲染行同步 |
 
 - **102** [`eca6c3b`](https://github.com/wangxiuwen/tietie/commit/eca6c3b) 详情头每秒倒数剩余时间（到期变橙标已到期），到期挂卡改呼吸灯辉光 |
