@@ -2303,3 +2303,19 @@ select:focus-visible,
   width: 14px;
   height: 14px;
 }
+
+/* memo note row (direction 85) */
+.line-note-input {
+  flex: 1;
+  min-width: 0;
+  font-size: calc(12px * var(--fs));
+  background: rgba(128, 128, 128, 0.1);
+  border: 1px solid rgba(128, 128, 128, 0.25);
+  border-radius: var(--r-sm);
+  color: inherit;
+  padding: calc(3px * var(--fs)) calc(8px * var(--fs));
+}
+.line-note-input:focus {
+  outline: 1.5px solid var(--accent);
+  outline-offset: -1px;
+}

@@ -47,6 +47,7 @@ pub struct Memo {
     pub source_item_id: Option<i64>,
     pub created_at: i64,
     pub remind_at: Option<i64>,
+    pub note: Option<String>,
 }
 
 pub fn open(path: &Path) -> SqlResult<Connection> {
@@ -128,6 +129,8 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
     );
     // memo reminder (direction 53): unix ts the hanging card should flash at
     let _ = conn.execute("ALTER TABLE memo ADD COLUMN remind_at INTEGER", []);
+    // memo note (direction 85): searchable from the clothesline
+    let _ = conn.execute("ALTER TABLE memo ADD COLUMN note TEXT", []);
     Ok(conn)
 }
 
@@ -489,7 +492,7 @@ pub fn delete_folder(conn: &Connection, id: i64) -> SqlResult<()> {
 
 pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
     let mut stmt = conn.prepare(
-        "SELECT id, kind, content, preview, color, pinned, sort, source_item_id, created_at, remind_at
+        "SELECT id, kind, content, preview, color, pinned, sort, source_item_id, created_at, remind_at, note
          FROM memo ORDER BY pinned DESC, sort ASC, id ASC",
     )?;
     let ms = stmt
@@ -505,6 +508,7 @@ pub fn list_memos(conn: &Connection) -> SqlResult<Vec<Memo>> {
                 source_item_id: row.get(7)?,
                 created_at: row.get(8)?,
                 remind_at: row.get(9)?,
+                note: row.get(10)?,
             })
         })?
         .collect::<SqlResult<Vec<_>>>()?;

@@ -492,6 +492,7 @@ pub fn run() {
             reorder_memo,
             set_memo_color,
             set_memo_reminder,
+            set_memo_note,
             export_memos,
             copy_memo,
             hang_preview,
@@ -1423,6 +1424,35 @@ fn set_memo_reminder(
         conn.execute(
             "UPDATE memo SET remind_at = ?1 WHERE id = ?2",
             rusqlite::params![remind_at, id],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    emit_memos_changed(&app);
+    Ok(())
+}
+
+/// Set/clear a memo note (direction 85): searchable from the line.
+/// Empty or whitespace-only text clears it.
+#[tauri::command]
+fn set_memo_note(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: i64,
+    note: Option<String>,
+) -> Result<(), String> {
+    let trimmed = note.unwrap_or_default().trim().to_string();
+    {
+        let conn = state.conn.lock();
+        conn.execute(
+            "UPDATE memo SET note = ?1 WHERE id = ?2",
+            rusqlite::params![
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed)
+                },
+                id
+            ],
         )
         .map_err(|e| e.to_string())?;
     }

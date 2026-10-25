@@ -36,6 +36,7 @@ export interface Memo {
   source_item_id: number | null;
   created_at: number;
   remind_at: number | null;
+  note?: string | null;
 }
 
 export const KIND_COLOR: Record<ItemKind, string> = {

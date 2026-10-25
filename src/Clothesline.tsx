@@ -795,6 +795,32 @@ function MemoDetail({
           </select>
         </div>
       )}
+      {!editing && (
+        <div className="line-remind-row">
+          <span className="line-remind-state" title={memo.note ?? undefined}>
+            {memo.note
+              ? "📝 " + memo.note.slice(0, 24)
+              : "📝 " + t("line.noteNone")}
+          </span>
+          <input
+            className="line-note-input"
+            aria-label={t("line.note")}
+            placeholder={t("ctx.notePlaceholder")}
+            onKeyDown={(e) => {
+              e.stopPropagation();
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const v = (e.target as HTMLInputElement).value;
+                invoke("set_memo_note", { id: memo.id, note: v }).catch(() => {});
+                (e.target as HTMLInputElement).blur();
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                (e.target as HTMLInputElement).blur();
+              }
+            }}
+          />
+        </div>
+      )}
       {editing ? (
         <div className="line-detail-body">
           <textarea
