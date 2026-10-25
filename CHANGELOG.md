@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **59** [`2753300`](https://github.com/wangxiuwen/tietie/commit/2753300) 视觉 token 化审计：圆角五档阶梯+环境阴影两档+毛玻璃两档 token 落 :root，散值 15→9 种收敛（药丸/圆/绳锚保留），CDP 三窗 .btn/token 解析同值实证
+
 - **58** [`8438d54`](https://github.com/wangxiuwen/tietie/commit/8438d54) README 双语全量同步：功能清单对齐 60+ 轮现实（紧凑列表/物理绳/拼音搜索/Markdown 导出/敏感加密/夜间回收/跳转列表/无障碍/新键位表），Roadmap 勘误已交付项，双语逐节平行
 
 - **57** [`9edc1c3`](https://github.com/wangxiuwen/tietie/commit/9edc1c3) CHANGELOG 自动化：scripts/gen_changelog.py 解析迭代记录区全量生成 CHANGELOG.md（日期分组+sha 链接+--check 防过期），首跑 62 条落盘
