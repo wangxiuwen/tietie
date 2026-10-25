@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **65** [`58b4fa0`](https://github.com/wangxiuwen/tietie/commit/58b4fa0) 便签提醒编辑：详情新增提醒行（状态 ⏰ 不提醒/剩 Nm/已到期 + 改提醒下拉 5/15/30/60/取消），set_memo_reminder 命令，CDP 实测设 5m 落库 299s→取消归 NULL→净零
+
 - **64** [`2adb3c9`](https://github.com/wangxiuwen/tietie/commit/2adb3c9) Library 行内快捷复制：非图片行 hover 显 ⧉ 按钮（stopPropagation 不触选择），点击写剪贴板+「已复制」提示，CDP 实测 19 行显隐/剪贴板精确命中/图片行无按钮
 
 - **63** [`6fae34f`](https://github.com/wangxiuwen/tietie/commit/6fae34f) 备份健康提醒：export_backup 成功即记 last_backup_at，设置页超 7 天（含从未）顶部黄条+一键导出即消，CDP 实测出现→导出→消失→时间戳落盘，测试文件与时间戳均还原
