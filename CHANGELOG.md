@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **58** [`8438d54`](https://github.com/wangxiuwen/tietie/commit/8438d54) README 双语全量同步：功能清单对齐 60+ 轮现实（紧凑列表/物理绳/拼音搜索/Markdown 导出/敏感加密/夜间回收/跳转列表/无障碍/新键位表），Roadmap 勘误已交付项，双语逐节平行
+
 - **57** [`9edc1c3`](https://github.com/wangxiuwen/tietie/commit/9edc1c3) CHANGELOG 自动化：scripts/gen_changelog.py 解析迭代记录区全量生成 CHANGELOG.md（日期分组+sha 链接+--check 防过期），首跑 62 条落盘
 
 - **56** [`d5cdcfa`](https://github.com/wangxiuwen/tietie/commit/d5cdcfa) 全键盘审计收口：MOD+↑挂绳/Menu⇧F10 右键菜单/⇧↑↓ 多选/空格大图/MOD+R 复制 rgb()，速查表 15 行，CDP 真机 5/5 全过
