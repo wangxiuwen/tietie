@@ -19,10 +19,14 @@ export default function TrayPopover() {
   const [sel, setSel] = useState(0); // arrow-key selection into `filtered`
   // search input handle: the × clear button (direction 92) returns focus here
   const poSearchRef = useRef<HTMLInputElement>(null);
+  // pinned-section expansion (direction 103): collapsed again per session
+  const [pinExpanded, setPinExpanded] = useState(false);
   // progressive list (direction 77): start at 30 rows; pressing ↓ on the
   // last visible row appends another page so long histories stay light.
   const PAGE = 30;
   const [pageCount, setPageCount] = useState(1);
+  // pinned rows above this count collapse behind an expand link (direction 103)
+  const PIN_MAX = 5;
 
   const refresh = useCallback(async () => {
     const is = await invoke<ClipItem[]>("list_items", { limit: 100 });
@@ -58,6 +62,17 @@ export default function TrayPopover() {
     ? items.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query))
     : items; // full history, no cap
   const filtered = matched.slice(0, pageCount * PAGE);
+  // pinned section collapse (direction 103): without a query the pinned rows
+  // sit in their own section capped at PIN_MAX until expanded; `shown` is the
+  // array actually rendered, so keyboard selection never lands on hidden rows
+  const pinnedAll = query ? [] : filtered.filter((x) => x.pinned);
+  const collapsePinned = pinnedAll.length > PIN_MAX && !pinExpanded;
+  const shown = collapsePinned
+    ? [...pinnedAll.slice(0, PIN_MAX), ...filtered.filter((x) => !x.pinned)]
+    : filtered;
+  const cut = shown.findIndex((x) => !x.pinned); // pinned render first
+  const pinnedShown = cut === -1 ? shown : shown.slice(0, cut);
+  const restShown = cut === -1 ? [] : shown.slice(cut);
   // reset paging when the query changes or the panel refetches
   useEffect(() => {
     setPageCount(1);
@@ -80,7 +95,7 @@ export default function TrayPopover() {
           onKeyDown={(e) => {
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
               e.preventDefault();
-              if (e.key === "ArrowDown" && sel === filtered.length - 1 && sel < matched.length - 1) {
+              if (e.key === "ArrowDown" && sel === shown.length - 1 && sel < matched.length - 1) {
                 // hit the bottom of the visible page → auto-load more
                 setPageCount((p) => p + 1);
                 setSel((i) => i + 1);
@@ -88,11 +103,11 @@ export default function TrayPopover() {
               }
               setSel((i) =>
                 e.key === "ArrowDown"
-                  ? Math.min(i + 1, Math.max(0, filtered.length - 1))
+                  ? Math.min(i + 1, Math.max(0, shown.length - 1))
                   : Math.max(0, i - 1),
               );
             } else if (e.key === "Enter") {
-              const it = filtered[sel] ?? filtered[0];
+              const it = shown[sel] ?? shown[0];
               if (it) copyBack(it);
             } else if (e.key === "Escape") {
               getCurrentWindow().hide();
@@ -117,38 +132,95 @@ export default function TrayPopover() {
       </div>
 
       <div className="po-scroll">
-        <div className="po-section">
-          <div className="po-title">
-            <span>
-              {query ? t("tray.results") : t("tray.recent")} · {filtered.length}
-            </span>
-            <button
-              className="po-link"
-              onClick={async () => {
-                await invoke("show_drawer");
-                await getCurrentWindow().hide();
-              }}
-            >
-              {t("tray.viewAll")}
-            </button>
-          </div>
-          {filtered.length === 0 ? (
-            <div className="po-empty">{query ? t("tray.noMatch") : t("tray.none")}</div>
-          ) : (
-            <div className="po-list">
-              {filtered.map((it, idx) => (
-                <Row
-                  key={it.id}
-                  data-idx={idx}
-                  item={it}
-                  active={idx === sel}
-                  query={query}
-                  onClick={() => copyBack(it)}
-                />
-              ))}
+        {query ? (
+          <div className="po-section">
+            <div className="po-title">
+              <span>{t("tray.results")} · {filtered.length}</span>
+              <button
+                className="po-link"
+                onClick={async () => {
+                  await invoke("show_drawer");
+                  await getCurrentWindow().hide();
+                }}
+              >
+                {t("tray.viewAll")}
+              </button>
             </div>
-          )}
-        </div>
+            {filtered.length === 0 ? (
+              <div className="po-empty">{t("tray.noMatch")}</div>
+            ) : (
+              <div className="po-list">
+                {filtered.map((it, idx) => (
+                  <Row
+                    key={it.id}
+                    data-idx={idx}
+                    item={it}
+                    active={idx === sel}
+                    query={query}
+                    onClick={() => copyBack(it)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {pinnedAll.length > 0 && (
+              <div className="po-section">
+                <div className="po-title">
+                  <span>{t("tray.pinned")} · {pinnedAll.length}</span>
+                  {collapsePinned && (
+                    <button className="po-link" onClick={() => setPinExpanded(true)}>
+                      {t("tray.expand")} +{pinnedAll.length - PIN_MAX}
+                    </button>
+                  )}
+                </div>
+                <div className="po-list">
+                  {pinnedShown.map((it, idx) => (
+                    <Row
+                      key={it.id}
+                      data-idx={idx}
+                      item={it}
+                      active={idx === sel}
+                      query={query}
+                      onClick={() => copyBack(it)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="po-section">
+              <div className="po-title">
+                <span>{t("tray.recent")} · {restShown.length}</span>
+                <button
+                  className="po-link"
+                  onClick={async () => {
+                    await invoke("show_drawer");
+                    await getCurrentWindow().hide();
+                  }}
+                >
+                  {t("tray.viewAll")}
+                </button>
+              </div>
+              {shown.length === 0 ? (
+                <div className="po-empty">{t("tray.none")}</div>
+              ) : (
+                <div className="po-list">
+                  {restShown.map((it, idx) => (
+                    <Row
+                      key={it.id}
+                      data-idx={idx + pinnedShown.length}
+                      item={it}
+                      active={idx + pinnedShown.length === sel}
+                      query={query}
+                      onClick={() => copyBack(it)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="po-foot">
