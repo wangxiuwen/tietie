@@ -102,7 +102,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-25 | 68 | TBD | 双击行为可配置：设置页三选一（粘贴/仅复制/编辑）持久化 settings.json，卡片与紧凑行共用 dblAct 分发，show-drawer 事件重读设置即时生效，CDP 实测 copy=剪贴板命中/edit=编辑器打开/还原默认净零
+2026-10-25 | 68 | 474c86e | 双击行为可配置：设置页三选一（粘贴/仅复制/编辑）持久化 settings.json，卡片与紧凑行共用 dblAct 分发，show-drawer 事件重读设置即时生效，CDP 实测 copy=剪贴板命中/edit=编辑器打开/还原默认净零
 2026-10-25 | 67 | 7183fcc | 剪贴板捕获暂停：托盘「暂停捕获 10 分钟/恢复捕获」两菜单+pause_capture/capture_paused_remaining 命令，轮询双分支（文本/图片）gate 且暂停期哈希照记防恢复泄漏，CDP 实测暂停期复制零入库/恢复即录/净零
 2026-10-25 | 66 | de7359c | 导出后打开位置：reveal_path 命令三平台（Explorer /select、mac open -R、linux xdg-open 父目录）+Library 文本/Markdown 导出成功即触发，真机走真实按钮路径实测新 Explorer 窗口弹出+日志留痕+净零
 2026-10-25 | 65 | 58b4fa0 | 便签提醒编辑：详情新增提醒行（状态 ⏰ 不提醒/剩 Nm/已到期 + 改提醒下拉 5/15/30/60/取消），set_memo_reminder 命令，CDP 实测设 5m 落库 299s→取消归 NULL→净零
