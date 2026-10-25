@@ -53,6 +53,14 @@ function commitSearchHistory(q: string) {
   if (searchHist.length > 5) searchHist.shift();
 }
 
+/** True when a keydown originates inside a text field (search box / editor). */
+function typingInField(e: KeyboardEvent): boolean {
+  return (
+    e.target instanceof HTMLElement &&
+    (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+  );
+}
+
 const TYPE_TABS: { id: FilterTab; labelKey: string; dot: string }[] = [
   { id: "all", labelKey: "tab.all", dot: "var(--accent)" },
   { id: "text", labelKey: "kind.text", dot: "var(--cat-text)" },
@@ -526,6 +534,18 @@ export default function App() {
         e.preventDefault();
         const it = filtered[selectedIdx];
         if (it) deleteItem(it.id);
+        return;
+      }
+      // N opens the note editor for the selected card (direction 104);
+      // while typing in the search box only ⌘/Ctrl+N fires so plain "n"
+      // still types normally
+      if (e.key.toLowerCase() === "n" && (!typingInField(e) || isMod)) {
+        e.preventDefault();
+        const it = filtered[selectedIdx];
+        if (it) {
+          setNoteEdit(it);
+          setNoteDraft(it.note ?? "");
+        }
         return;
       }
       if (isMod && e.key.toLowerCase() === "f") {
@@ -1406,6 +1426,7 @@ function Cheatsheet({ onClose }: { onClose: () => void }) {
     [`${MOD}E`, t("cs.edit")],
     [`${MOD}P`, t("cs.pin")],
     [`${MOD}D`, t("cs.del")],
+    ["N", t("cs.note")],
     ["Tab", t("cs.tab")],
     [`${MOD}+点击 / ⇧↑↓`, t("cs.multi")],
     [`${MOD}↑`, t("cs.hang")],
