@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **94** [`b13783b`](https://github.com/wangxiuwen/tietie/commit/b13783b) Library 表格偶数行加 0.03 微底色斑马纹，声明在 hover/sel 之前不遮高亮 |
+
 - **93** [`bda34f5`](https://github.com/wangxiuwen/tietie/commit/bda34f5) 拖卡经过文件夹 chip 时 drop-hot 状态下平滑放大到 1.1，移开还原 |
 
 - **92** [`d4a1658`](https://github.com/wangxiuwen/tietie/commit/d4a1658) 托盘搜索框尾部 × 清空钮：有词才显、点击清空并回焦输入框 |
