@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **83** [`a421cc2`](https://github.com/wangxiuwen/tietie/commit/a421cc2) 图片卡复制：copy_item_image 命令走后端写图像剪贴板（复用 arboard/NSPasteboard 路径+touch 计数，无合成⌘V），图片卡 actions 行 🖼 按钮，真机实测剪贴板 IMG 3840x1080+日志留痕
+
 - **82** `复验` 托盘 kind 着色勘误收口：与既有实现重复（.kind-* 与 .badge.* 共用类别色变量），真机探针四类 computed 颜色精确命中，零代码改动
 
 - **81** [`157fc38`](https://github.com/wangxiuwen/tietie/commit/157fc38) 便签衣夹历史色板：add_memo_direct 增 color 参数，新建便签脚部显示最近 3 个不同衣夹色（点击选/再点取消=默认蓝），CDP 实测 recents 提取+选中色落库+净零
