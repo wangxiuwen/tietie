@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **102** [`eca6c3b`](https://github.com/wangxiuwen/tietie/commit/eca6c3b) 详情头每秒倒数剩余时间（到期变橙标已到期），到期挂卡改呼吸灯辉光 |
+
 - **101** [`e0566e0`](https://github.com/wangxiuwen/tietie/commit/e0566e0) 热键录制显示冲突警告（系统常见组合/与其他热键重复，不阻断）；顺手修录制中 Esc 被窗口级拦截关窗的 bug |
 
 - **100** [`98a69bc`](https://github.com/wangxiuwen/tietie/commit/98a69bc) Markdown 导出链接行改为 [去scheme可读标签](完整URL)，标签60字截断 |
