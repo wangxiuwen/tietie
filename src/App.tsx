@@ -53,14 +53,41 @@ export default function App() {
   const [items, setItems] = useState<ClipItem[]>([]);
   const [folders, setFolders] = useState<Folder[]>([]);
   const [tab, setTab] = useState<FilterTab>("all");
-  // card / compact-list display mode (direction 52), persisted per machine
-  const [compact, setCompact] = useState(
+  const [folderId, setFolderId] = useState<number | "pinned" | null>(null);
+  // card / compact-list display mode (direction 52), persisted PER FOLDER
+  // (direction 86): switching folders recalls that folder's last view.
+  const folderKey = (f: number | "pinned" | null) =>
+    `tietie-compact-${f == null ? "all" : f}`;
+  const [compact, setCompactState] = useState(
     () => localStorage.getItem("tietie-compact") === "1",
   );
+  const setCompact = useCallback((v: boolean | ((prev: boolean) => boolean)) => {
+    setCompactState((prev) => {
+      const next = typeof v === "function" ? v(prev) : v;
+      const f = folderIdRef.current;
+      if (f == null) {
+        // toggling in 全部 writes the global key (= all's own memory)
+        localStorage.setItem("tietie-compact", next ? "1" : "0");
+      } else {
+        // toggling inside a folder writes ONLY that folder's key — the
+        // all-view memory is untouched (direction 86)
+        localStorage.setItem(folderKey(f), next ? "1" : "0");
+      }
+      return next;
+    });
+  }, []);
+  // ref mirrors folderId so the setter above always reads the fresh value
+  const folderIdRef = useRef(folderId);
+  // when the folder changes, restore that folder's remembered view; 全部
+  // reads the global key, a never-visited folder keeps the current view
   useEffect(() => {
-    localStorage.setItem("tietie-compact", compact ? "1" : "0");
-  }, [compact]);
-  const [folderId, setFolderId] = useState<number | "pinned" | null>(null);
+    folderIdRef.current = folderId;
+    const per =
+      folderId == null
+        ? localStorage.getItem("tietie-compact")
+        : localStorage.getItem(folderKey(folderId));
+    if (per != null) setCompactState(per === "1");
+  }, [folderId]);
   const [query, setQuery] = useState("");
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [editing, setEditing] = useState<ClipItem | null>(null);
