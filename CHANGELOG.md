@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **79** [`8418bf6`](https://github.com/wangxiuwen/tietie/commit/8418bf6) 富文本徽标卡角化：✦ 徽标改绝对定位钉卡片右上角（正文截断不遮），点击仍开沙箱预览，加 aria-label 与 hover 底色；CDP 实测 corner 定位+点击 overlay 弹出净零
+
 - **78** [`222a602`](https://github.com/wangxiuwen/tietie/commit/222a602) 便签字号快捷调节：详情内 ⌘+/⌘− 步进 0.15（0.7~2.0 钳制）、⌘0 复位，--memo-zoom 会话级（跨详情共享、不落盘），CDP 实测 1→1.3→1.15→1.0→字号 14.95px 全链
 
 - **77** [`ed3170f`](https://github.com/wangxiuwen/tietie/commit/ed3170f) 托盘面板分页：30 行起步、↑↓ 触底自动加一页（查询变更即重置回首页），CDP 实测 30→32（满库）+查询重置 28 行+探针净零；★批量派发 keydown 会读到陈旧 sel，要逐 rAF 派发。同批扩池 79-84
