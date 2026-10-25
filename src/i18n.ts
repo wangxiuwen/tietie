@@ -111,6 +111,7 @@ export const zh: Dict = {
   "lib.deleted": "已删除", "lib.collapse": "收起",
   // tray popover
   "tray.pinned": "📌 置顶", "tray.recent": "最近", "tray.results": "搜索结果",
+  "tray.clearSearch": "清空搜索",
   "tray.viewAll": "查看全部 →", "tray.noMatch": "没找到匹配项", "tray.none": "暂无内容",
   "tray.full": "唤起完整面板", "tray.quit": "退出",
   // batch
@@ -227,6 +228,7 @@ export const en: Dict = {
   "lib.noMatch": "No matching items", "lib.empty": "Clipboard history is empty",
   "lib.deleted": "Deleted", "lib.collapse": "Collapse",
   "tray.pinned": "📌 Pinned", "tray.recent": "Recent", "tray.results": "Results",
+  "tray.clearSearch": "Clear search",
   "tray.viewAll": "View all →", "tray.noMatch": "No matches", "tray.none": "Nothing yet",
   "tray.full": "Open full panel", "tray.quit": "Quit",
   "batch.selected": "Selected", "batch.hang": "Hang all",

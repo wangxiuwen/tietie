@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -17,6 +17,8 @@ export default function TrayPopover() {
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(0); // arrow-key selection into `filtered`
+  // search input handle: the × clear button (direction 92) returns focus here
+  const poSearchRef = useRef<HTMLInputElement>(null);
   // progressive list (direction 77): start at 30 rows; pressing ↓ on the
   // last visible row appends another page so long histories stay light.
   const PAGE = 30;
@@ -65,7 +67,9 @@ export default function TrayPopover() {
   return (
     <div className="popover">
       <div className="po-search">
+        <div className="po-search-box">
         <input
+          ref={poSearchRef}
           autoFocus
           placeholder={t("search.tray")}
           value={query}
@@ -95,6 +99,21 @@ export default function TrayPopover() {
             }
           }}
         />
+        {query && (
+          <button
+            className="po-clear"
+            aria-label={t("tray.clearSearch")}
+            title={t("tray.clearSearch")}
+            onClick={() => {
+              setQuery("");
+              setSel(0);
+              poSearchRef.current?.focus();
+            }}
+          >
+            ×
+          </button>
+        )}
+        </div>
       </div>
 
       <div className="po-scroll">
