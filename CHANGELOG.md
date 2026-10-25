@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **95** [`0bdd41b`](https://github.com/wangxiuwen/tietie/commit/0bdd41b) 图片挂卡无 preview 时显示 🖼️ 占位块而非尺寸文字，有 preview 缩略图不受影响 |
+
 - **94** [`b13783b`](https://github.com/wangxiuwen/tietie/commit/b13783b) Library 表格偶数行加 0.03 微底色斑马纹，声明在 hover/sel 之前不遮高亮 |
 
 - **93** [`bda34f5`](https://github.com/wangxiuwen/tietie/commit/bda34f5) 拖卡经过文件夹 chip 时 drop-hot 状态下平滑放大到 1.1，移开还原 |
