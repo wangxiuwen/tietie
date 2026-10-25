@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **92** [`d4a1658`](https://github.com/wangxiuwen/tietie/commit/d4a1658) 托盘搜索框尾部 × 清空钮：有词才显、点击清空并回焦输入框 |
+
 - **91** [`e71c577`](https://github.com/wangxiuwen/tietie/commit/e71c577) 便签详情头显示字数/行数（码点计不含换行），编辑态逐键实时，图片/色卡不显示 |
 
 ## 2026-10-25
