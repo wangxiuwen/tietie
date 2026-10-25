@@ -619,6 +619,36 @@ function reminderLabel(at: number): string {
   return `⏰ ${t("line.remindLeft")} ${mins}m`;
 }
 
+// session-level memo body zoom (direction 78): ⌘+/-/0 inside the detail
+const detailZoom = { v: 1.0, subs: new Set<() => void>() };
+function useDetailZoom() {
+  const [zoom, setZoom] = useState(detailZoom.v);
+  useEffect(() => {
+    const fn = () => setZoom(detailZoom.v);
+    detailZoom.subs.add(fn);
+    return () => { detailZoom.subs.delete(fn); };
+  }, []);
+  return {
+    zoom,
+    onZoomKey: (e: React.KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      if (e.key === "+" || e.key === "=") {
+        e.preventDefault();
+        detailZoom.v = Math.min(2, detailZoom.v + 0.15);
+      } else if (e.key === "-") {
+        e.preventDefault();
+        detailZoom.v = Math.max(0.7, detailZoom.v - 0.15);
+      } else if (e.key === "0") {
+        e.preventDefault();
+        detailZoom.v = 1.0;
+      } else {
+        return;
+      }
+      detailZoom.subs.forEach((s) => s());
+    },
+  };
+}
+
 function MemoDetail({
   memo,
   initialEditing = false,
@@ -640,11 +670,17 @@ function MemoDetail({
 }) {
   const [editing, setEditing] = useState(initialEditing);
   const [draft, setDraft] = useState(memo.content);
+  const { zoom, onZoomKey } = useDetailZoom();
 
   const canEdit = memo.kind !== "image"; // image memos carry no editable text
 
   return (
-    <div className="line-detail" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="line-detail"
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={onZoomKey}
+      style={{ ["--memo-zoom" as string]: String(zoom) }}
+    >
       {!editing && (
         <div className="line-palette" title={t("line.color")}>
           {MEMO_COLORS.map((c) => (

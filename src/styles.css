@@ -1231,7 +1231,8 @@ body.dragging-hang * {
 .line-detail-text {
   margin: 0;
   font-family: inherit;
-  font-size: calc(13px * var(--fs));
+  /* --memo-zoom: session-level ⌘+/- zoom on the detail body (direction 78) */
+  font-size: calc(13px * var(--fs) * var(--memo-zoom, 1));
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-all;
