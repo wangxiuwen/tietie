@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **100** [`98a69bc`](https://github.com/wangxiuwen/tietie/commit/98a69bc) Markdown 导出链接行改为 [去scheme可读标签](完整URL)，标签60字截断 |
+
 - **99** [`2e7dc67`](https://github.com/wangxiuwen/tietie/commit/2e7dc67) 便签调色板悬停时数字键 1-8 直选衣夹色（dot 带 1-8 提示），移开即失效 |
 
 - **98** [`33c71b6`](https://github.com/wangxiuwen/tietie/commit/33c71b6) 链接卡片标题行内嵌 🔗，点击直达复制完整 URL（悬停强调色） |
