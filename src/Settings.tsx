@@ -56,6 +56,8 @@ export default function Settings() {
   useLang();
   const close = () => getCurrentWindow().hide();
   const [version, setVersion] = useState<string>("");
+  // click-to-copy feedback for the version number (direction 96)
+  const [verCopied, setVerCopied] = useState(false);
   const [acc, setAcc] = useState<boolean | null>(null);
   const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
   const [hks, setHks] = useState<HotkeysInfo | null>(null);
@@ -301,7 +303,18 @@ export default function Settings() {
         <div className="settings-row">
           <span className="settings-label">{t("settings.version")}</span>
             <span className="settings-value">
-              <span>{version || "..."}</span>
+              <button
+                className="ver-copy"
+                title={t("settings.copyVersion")}
+                onClick={() => {
+                  if (!version) return;
+                  navigator.clipboard.writeText(version).catch(() => {});
+                  setVerCopied(true);
+                  window.setTimeout(() => setVerCopied(false), 1200);
+                }}
+              >
+                {version || "..."}{verCopied ? " ✓" : ""}
+              </button>
               {upd.kind === "checking" && <span className="settings-tag muted">{t("settings.checking")}</span>}
               {upd.kind === "uptodate" && (
                 <>

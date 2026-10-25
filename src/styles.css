@@ -840,6 +840,16 @@ button {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: calc(12px * var(--fs));
 }
+/* click-to-copy version number (direction 96) */
+.ver-copy {
+  all: unset;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+}
+.ver-copy:hover {
+  color: var(--accent);
+}
 .settings-tag {
   padding: 2px 8px;
   border-radius: var(--r-sm);
