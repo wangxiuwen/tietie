@@ -34,6 +34,9 @@ const cardDrag = {
 // set when a drag actually moved; cards swallow the trailing click for 150ms
 let lastCardDragEnd = 0;
 const CARD_DRAG_SUPPRESS_MS = 150;
+// session-level drawer scroll memory (direction 84): the horizontal card
+// strip's last offset — restored on the next open, never persisted to disk
+let drawerScrollLeft = 0;
 
 const TYPE_TABS: { id: FilterTab; labelKey: string; dot: string }[] = [
   { id: "all", labelKey: "tab.all", dot: "var(--accent)" },
@@ -127,9 +130,27 @@ export default function App() {
       // is grabbed — release it or the hidden window keeps eating the mouse.
       getCurrentWindow().setCursorGrab(false).catch(() => {});
       document.body.classList.remove("dragging-hang");
+      // session-level scroll memory (direction 84): snapshot the horizontal
+      // card-strip offset so the next open lands where the user left off
+      if (cardsRef.current) {
+        drawerScrollLeft = cardsRef.current.scrollLeft;
+      }
     }).then((u) => unlistens.push(u));
     return () => unlistens.forEach((u) => u());
   }, [refresh]);
+
+  // restore the remembered scroll position once the strip has laid out
+  useEffect(() => {
+    if (!drawerVisible || !cardsRef.current) return;
+    const el = cardsRef.current;
+    if (drawerScrollLeft > 0 && el.scrollWidth > el.clientWidth) {
+      const target = drawerScrollLeft;
+      // wait a frame so the cards have real widths before scrolling back
+      requestAnimationFrame(() => {
+        el.scrollTo({ left: target });
+      });
+    }
+  }, [drawerVisible, items.length]);
 
   // One window-level drag tracker for every card (see cardDrag above).
   useEffect(() => {
