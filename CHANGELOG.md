@@ -3,6 +3,10 @@
 > 由 docs/ITERATION_BACKLOG.md 的迭代记录生成——`py -3 scripts/gen_changelog.py`，请勿手改。
 
 
+## 2026-10-26
+
+- **91** [`e71c577`](https://github.com/wangxiuwen/tietie/commit/e71c577) 便签详情头显示字数/行数（码点计不含换行），编辑态逐键实时，图片/色卡不显示 |
+
 ## 2026-10-25
 
 - **90** [`9b71061`](https://github.com/wangxiuwen/tietie/commit/9b71061) 搜索历史会话级：重开抽屉提交搜索词，↑↓翻最近5条，输入即重置游标 |
