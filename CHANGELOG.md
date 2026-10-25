@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **77** [`ed3170f`](https://github.com/wangxiuwen/tietie/commit/ed3170f) 托盘面板分页：30 行起步、↑↓ 触底自动加一页（查询变更即重置回首页），CDP 实测 30→32（满库）+查询重置 28 行+探针净零；★批量派发 keydown 会读到陈旧 sel，要逐 rAF 派发。同批扩池 79-84
+
 - **76** [`a7701d5`](https://github.com/wangxiuwen/tietie/commit/a7701d5) 空库引导：Empty 态三步上手卡（编号圆点+i18n 双语），搜索无命中复用同组件，CDP 实测渲染/消失双向
 
 - **75** [`a782780`](https://github.com/wangxiuwen/tietie/commit/a782780) Library 筛选记忆：新增类型筛选下拉+视图/排序/类型三项 localStorage 持久化，跨窗口重开甚至跨应用重启还原，真机实测 color 筛选重启后精确恢复
