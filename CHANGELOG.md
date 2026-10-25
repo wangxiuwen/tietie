@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **87** [`cbf32ee`](https://github.com/wangxiuwen/tietie/commit/cbf32ee) 抽屉宽度档位：drawer_width 设置（full/80/60）进 position_drawer 按显示器宽取比例并水平居中，设置页三档下拉即时生效，Win32 实测 1920→1536→1152 精确+居中，还原 full
+
 - **86** [`3dcf35e`](https://github.com/wangxiuwen/tietie/commit/3dcf35e) 视图随文件夹：在文件夹内切换只写该文件夹键（tietie-compact-<id>）、在「全部」切换写全局键，切文件夹时恢复各自记忆（未访问文件夹保持当前视图），CDP 实测 all cards→folder compact→回 all cards→再进 folder compact 全对
 
 - **85** [`f121b3b`](https://github.com/wangxiuwen/tietie/commit/f121b3b) 便签备注：memo 表加 note 列+set_memo_note 命令，详情提醒行下新增备注行（📝 状态显示+内联输入 Enter 存/Esc 退出/空即清除），CDP 实测设/清往返净零；晾衣架暂无搜索框，搜索参与随未来便签搜索落地
