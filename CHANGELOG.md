@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **74** [`e3bb5e3`](https://github.com/wangxiuwen/tietie/commit/e3bb5e3) 条目备注：clip_item 加 note 列+set_item_note 命令（空白即清除），右键「添加/编辑备注」居中浮层（⌘↵存/Esc 取），meta 行 📝 显示，抽屉/库/托盘三处搜索并入备注，CDP 实测往返/搜索命中/清除净零
+
 - **73** [`9f25f28`](https://github.com/wangxiuwen/tietie/commit/9f25f28) 抽屉卡片复制按钮：actions 悬停行首增 ⧉（粘贴旁）直接写剪贴板免右键，aria/title 复用 ctx.copy，CDP 实测 hover 可见+点击后剪贴板=行0 内容（GBK 对齐验证）
 
 - **72** [`22f8bf5`](https://github.com/wangxiuwen/tietie/commit/22f8bf5) Library 表格快捷键：↑↓ 键盘光标（accent 描边+scrollIntoView，输入框/色板视图豁免），↵ 复制行（应用内提示），Del/Backspace 删行，CDP 实测光标步进/回车提示/净零删除
