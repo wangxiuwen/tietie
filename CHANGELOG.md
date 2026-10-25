@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **99** [`2e7dc67`](https://github.com/wangxiuwen/tietie/commit/2e7dc67) 便签调色板悬停时数字键 1-8 直选衣夹色（dot 带 1-8 提示），移开即失效 |
+
 - **98** [`33c71b6`](https://github.com/wangxiuwen/tietie/commit/33c71b6) 链接卡片标题行内嵌 🔗，点击直达复制完整 URL（悬停强调色） |
 
 - **97** [`824c7bf`](https://github.com/wangxiuwen/tietie/commit/824c7bf) 搜索 token 前缀 - 变排除语义（三处搜索面共用 matchQuery 一次生效），含拼音/子序列同口径 |
