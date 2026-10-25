@@ -110,6 +110,7 @@ export const zh: Dict = {
   "cs.pin": "置顶/取消", "cs.del": "删除", "cs.tab": "切换类型标签",
   "cs.multi": "多选（批量删除/挂绳）", "cs.hang": "挂到晾衣架", "cs.file": "归类到文件夹",
   "cs.menu": "上下文菜单", "cs.close": "关闭",
+  "cs.zoom": "图片卡大图开关", "cs.rgb": "颜色卡复制 rgb()",
   // context menu
   "ctx.copy": "复制", "ctx.pasteBack": "粘贴到原应用", "ctx.pin": "置顶",
   "ctx.unpin": "取消置顶", "ctx.hang": "挂到晾衣架", "ctx.moveTo": "移入文件夹…",
@@ -203,6 +204,7 @@ export const en: Dict = {
   "cs.pin": "Toggle pin", "cs.del": "Delete", "cs.tab": "Switch type tab",
   "cs.multi": "Multi-select (batch)", "cs.hang": "Hang on the line", "cs.file": "File into folder",
   "cs.menu": "Context menu", "cs.close": "Close",
+  "cs.zoom": "Zoom selected image card", "cs.rgb": "Copy color as rgb()",
   "ctx.copy": "Copy", "ctx.pasteBack": "Paste to previous app", "ctx.pin": "Pin",
   "ctx.unpin": "Unpin", "ctx.hang": "Hang on the line", "ctx.moveTo": "Move to folder…",
   "ctx.markSensitive": "🔒 Mark sensitive (encrypted at rest)", "ctx.unmarkSensitive": "Remove sensitive mark",

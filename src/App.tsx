@@ -265,16 +265,75 @@ export default function App() {
       const isMod = e.metaKey || e.ctrlKey;
 
       // Arrow keys always switch selection — bail out of edit mode if needed.
-      // ↑/↓ alias ←/→: the strip is a single horizontal row, but up/down
+      // ↑/↓ alias ←/→: the strip is a single horizontal row, but up-down
       // matches the muscle memory of vertical list navigation.
+      // MOD+↑ hangs the selection on the clothesline (drag-up is the mouse
+      // path); Shift+↑/↓ extends the multi-selection instead of moving.
       if (["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) {
         e.preventDefault();
         if (editing) setEditing(null);
         if (zoomId !== null) setZoomId(null);
+        if (isMod && e.key === "ArrowUp") {
+          const it = filtered[selectedIdx];
+          if (it) invoke("hang_item", { id: it.id }).catch(() => {});
+          return;
+        }
+        const extend = e.shiftKey && (e.key === "ArrowDown" || e.key === "ArrowUp");
+        if (extend) {
+          const cur = filtered[selectedIdx];
+          if (cur) {
+            setMultiSel((s) => {
+              const n = new Set(s);
+              n.add(cur.id);
+              return n;
+            });
+          }
+        }
         if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-          setSelectedIdx((i) => Math.min(i + 1, Math.max(0, filtered.length - 1)));
+          const next = Math.min(selectedIdx + 1, Math.max(0, filtered.length - 1));
+          if (extend && filtered[next]) {
+            const add = filtered[next].id;
+            setMultiSel((s) => new Set(s).add(add));
+          }
+          setSelectedIdx(next);
         } else {
-          setSelectedIdx((i) => Math.max(0, i - 1));
+          const prev = Math.max(0, selectedIdx - 1);
+          if (extend && filtered[prev]) {
+            const add = filtered[prev].id;
+            setMultiSel((s) => new Set(s).add(add));
+          }
+          setSelectedIdx(prev);
+        }
+        return;
+      }
+
+      // Context-menu key / Shift+F10 opens the selected card's menu at the
+      // card itself — every context action (copy / pin / hang / file /
+      // sensitive / delete) then works with arrows + Enter.
+      if (e.key === "ContextMenu" || (e.shiftKey && e.key === "F10")) {
+        const it = filtered[selectedIdx];
+        if (it) {
+          e.preventDefault();
+          const el = cardsRef.current?.querySelector<HTMLElement>(
+            `[data-idx="${selectedIdx}"]`,
+          );
+          const r = el?.getBoundingClientRect();
+          setCtxMenu({
+            x: r ? r.left + r.width / 2 : window.innerWidth / 2,
+            y: r ? r.top + r.height / 2 : window.innerHeight / 2,
+            itemId: it.id,
+          });
+        }
+        return;
+      }
+
+      // Space toggles the full-size zoom on the selected image card
+      // (click is the mouse path).
+      if (e.key === " " && !editing) {
+        const it = filtered[selectedIdx];
+        if (it && it.kind === "image") {
+          e.preventDefault();
+          setZoomId((z) => (z === it.id ? null : it.id));
         }
         return;
       }
@@ -357,6 +416,18 @@ export default function App() {
       if (isMod && e.key.toLowerCase() === "f") {
         e.preventDefault();
         searchRef.current?.focus();
+        return;
+      }
+      // rgb() copy for the selected color card (the RGB button is the
+      // mouse path)
+      if (isMod && e.key.toLowerCase() === "r") {
+        const it = filtered[selectedIdx];
+        if (it && it.kind === "color") {
+          e.preventDefault();
+          navigator.clipboard
+            .writeText(hexToRgb(it.content))
+            .catch(() => {});
+        }
         return;
       }
     }
@@ -1119,10 +1190,12 @@ function Cheatsheet({ onClose }: { onClose: () => void }) {
     [`${MOD}P`, t("cs.pin")],
     [`${MOD}D`, t("cs.del")],
     ["Tab", t("cs.tab")],
-    [`${MOD}+点击`, t("cs.multi")],
-    ["拖卡片↑", t("cs.hang")],
+    [`${MOD}+点击 / ⇧↑↓`, t("cs.multi")],
+    [`${MOD}↑`, t("cs.hang")],
     ["拖卡片→文件夹", t("cs.file")],
-    ["右键卡片", t("cs.menu")],
+    ["右键 / Menu ⇧F10", t("cs.menu")],
+    ["空格", t("cs.zoom")],
+    [`${MOD}R`, t("cs.rgb")],
     ["Esc", t("cs.close")],
   ];
   return (
