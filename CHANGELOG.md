@@ -5,6 +5,8 @@
 
 ## 2026-10-25
 
+- **70** [`96249b4`](https://github.com/wangxiuwen/tietie/commit/96249b4) 启动完整性自检：setup 跑 PRAGMA integrity_check（ok 记 info/异常记 error 全行），db_ok 原子贯穿 db_integrity_ok 命令，设置页异常时红条+一键导出备份，真机实测日志 ok+命令 true+无红条误报
+
 - **69** [`2c3763a`](https://github.com/wangxiuwen/tietie/commit/2c3763a) 便签批量导出：export_memos 命令（置顶📌前缀/⏰提醒标注/图片占位）写 Documents/notes-*.md，晾衣架工具栏「导出便签」按钮+导出即 reveal，CDP 实测文件内容含便签+按钮在位+净零
 
 - **68** [`474c86e`](https://github.com/wangxiuwen/tietie/commit/474c86e) 双击行为可配置：设置页三选一（粘贴/仅复制/编辑）持久化 settings.json，卡片与紧凑行共用 dblAct 分发，show-drawer 事件重读设置即时生效，CDP 实测 copy=剪贴板命中/edit=编辑器打开/还原默认净零
