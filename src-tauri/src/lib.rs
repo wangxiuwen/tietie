@@ -456,6 +456,7 @@ pub fn run() {
             reorder_memo,
             set_memo_color,
             set_memo_reminder,
+            export_memos,
             copy_memo,
             hang_preview,
             toggle_clothesline_cmd,
@@ -1468,6 +1469,44 @@ fn delete_items(
     };
     let _ = app.emit("clipboard-changed", ());
     Ok(n)
+}
+
+/// Export every clothesline memo to Documents/notes-<ts>.md (direction 69):
+/// pinned first, reminders annotated. Image memos export as placeholders.
+#[tauri::command]
+fn export_memos(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let memos = {
+        let conn = state.conn.lock();
+        db::list_memos(&conn).map_err(|e| e.to_string())?
+    };
+    if memos.is_empty() {
+        return Err("晾衣架上还没有便签".into());
+    }
+    let mut md = format!("# 贴贴便签（{} 张）\n\n", memos.len());
+    for m in &memos {
+        let pin = if m.pinned { "📌 " } else { "" };
+        let remind = match m.remind_at {
+            Some(at) if at > db::now_unix() => format!(" ⏰{}", at),
+            Some(_) => " ⏰已到期".to_string(),
+            None => String::new(),
+        };
+        let body = if m.kind == "image" {
+            format!("[图片 {}]", m.content)
+        } else {
+            m.content.replace('\n', " ")
+        };
+        md.push_str(&format!("- {pin}{body}{remind}\n"));
+    }
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("notes-{}.md", time_fmt(db::now_unix())));
+    std::fs::write(&path, md).map_err(|e| e.to_string())?;
+    log::info!("exported {} memos to {}", memos.len(), path.display());
+    Ok(path.to_string_lossy().into_owned())
 }
 
 /// Dump the selected items as Markdown: kind-grouped headings, links as
