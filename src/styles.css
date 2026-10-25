@@ -1526,6 +1526,12 @@ body.dragging-hang * {
   max-width: 480px;
 }
 
+/* zebra stripes (direction 94): faint tint on alternate rows for easier
+   long-table scanning; declared before :hover/.sel so those still win */
+.lib-table tbody tr:nth-child(even) {
+  background: rgba(0, 0, 0, 0.03);
+}
+
 .lib-table tbody tr:hover {
   background: var(--accent-dim);
 }
