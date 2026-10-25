@@ -113,6 +113,7 @@ export const zh: Dict = {
   // context menu
   "ctx.copy": "复制", "ctx.pasteBack": "粘贴到原应用", "ctx.pin": "置顶",
   "ctx.unpin": "取消置顶", "ctx.hang": "挂到晾衣架", "ctx.moveTo": "移入文件夹…",
+  "ctx.markSensitive": "🔒 标记敏感（本机加密存储）", "ctx.unmarkSensitive": "取消敏感标记",
   "ctx.clearFolder": "　移出文件夹", "ctx.delete": "删除",
   // rel time
   "rt.now": "刚刚", "rt.min": "分钟前", "rt.hour": "小时前", "rt.day": "天前",
@@ -204,6 +205,7 @@ export const en: Dict = {
   "cs.menu": "Context menu", "cs.close": "Close",
   "ctx.copy": "Copy", "ctx.pasteBack": "Paste to previous app", "ctx.pin": "Pin",
   "ctx.unpin": "Unpin", "ctx.hang": "Hang on the line", "ctx.moveTo": "Move to folder…",
+  "ctx.markSensitive": "🔒 Mark sensitive (encrypted at rest)", "ctx.unmarkSensitive": "Remove sensitive mark",
   "ctx.clearFolder": "　Remove from folder", "ctx.delete": "Delete",
   "rt.now": "just now", "rt.min": " min ago", "rt.hour": " h ago", "rt.day": " d ago",
 };

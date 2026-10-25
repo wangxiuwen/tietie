@@ -18,6 +18,8 @@ pub struct ClipItem {
     pub byte_size: i64,
     /// rich_html captured at copy time (macOS); drives the HTML preview
     pub rich_html: Option<String>,
+    /// manually marked sensitive → stored AES-sealed, decrypted on read
+    pub sensitive: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -106,6 +108,11 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
     // Idempotent migrations for older databases (created before rich-text support).
     let _ = conn.execute("ALTER TABLE clip_item ADD COLUMN rich_html TEXT", []);
     let _ = conn.execute("ALTER TABLE clip_item ADD COLUMN rich_rtf BLOB", []);
+    // manually marked sensitive items (direction 54): AES-sealed at rest
+    let _ = conn.execute(
+        "ALTER TABLE clip_item ADD COLUMN sensitive INTEGER NOT NULL DEFAULT 0",
+        [],
+    );
     // memo pinned (clothesline sticky notes)
     let _ = conn.execute(
         "ALTER TABLE memo ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
@@ -123,7 +130,7 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
 pub fn list_items(conn: &Connection, limit: i64) -> SqlResult<Vec<ClipItem>> {
     let mut stmt = conn.prepare(
         "SELECT id, kind, content, preview, meta, pinned, folder_id, source_app,
-                created_at, used_at, use_count, byte_size, rich_html
+                created_at, used_at, use_count, byte_size, rich_html, sensitive
          FROM clip_item
          ORDER BY pinned DESC, used_at DESC
          LIMIT ?1",
@@ -135,7 +142,7 @@ pub fn list_items(conn: &Connection, limit: i64) -> SqlResult<Vec<ClipItem>> {
 }
 
 fn row_to_item(row: &rusqlite::Row) -> SqlResult<ClipItem> {
-    Ok(ClipItem {
+    let mut it = ClipItem {
         id: row.get(0)?,
         kind: row.get(1)?,
         content: row.get(2)?,
@@ -149,7 +156,18 @@ fn row_to_item(row: &rusqlite::Row) -> SqlResult<ClipItem> {
         use_count: row.get(10)?,
         byte_size: row.get(11)?,
         rich_html: row.get(12)?,
-    })
+        sensitive: row.get::<_, i64>(13)? != 0,
+    };
+    if it.sensitive {
+        // transparent decrypt for display/search/copy inside this machine
+        it.content = crate::crypt::open_str(&it.content).unwrap_or(it.content);
+        it.preview = crate::crypt::open_str(&it.preview).unwrap_or(it.preview);
+        it.rich_html = match it.rich_html.take() {
+            Some(h) => crate::crypt::open_str(&h).or(Some(h)),
+            None => None,
+        };
+    }
+    Ok(it)
 }
 
 pub struct InsertItem<'a> {
@@ -259,20 +277,36 @@ pub struct FullItem {
 /// Read full payload for an item — used by paste_item to compose the
 /// right pasteboard write.
 pub fn get_full(conn: &Connection, id: i64) -> SqlResult<FullItem> {
-    conn.query_row(
-        "SELECT kind, content, image_blob, rich_html, rich_rtf
+    let mut full = conn.query_row(
+        "SELECT kind, content, image_blob, rich_html, rich_rtf, sensitive
          FROM clip_item WHERE id = ?1",
         params![id],
         |r| {
-            Ok(FullItem {
-                kind: r.get(0)?,
-                content: r.get(1)?,
-                image_blob: r.get(2)?,
-                rich_html: r.get(3)?,
-                rich_rtf: r.get(4)?,
-            })
+            let sensitive = r.get::<_, i64>(5)? != 0;
+            Ok((
+                FullItem {
+                    kind: r.get(0)?,
+                    content: r.get(1)?,
+                    image_blob: r.get(2)?,
+                    rich_html: r.get(3)?,
+                    rich_rtf: r.get(4)?,
+                },
+                sensitive,
+            ))
         },
-    )
+    )?;
+    if full.1 {
+        full.0.content = crate::crypt::open_str(&full.0.content).unwrap_or(full.0.content);
+        full.0.rich_html = match full.0.rich_html.take() {
+            Some(h) => crate::crypt::open_str(&h).or(Some(h)),
+            None => None,
+        };
+        full.0.image_blob = match full.0.image_blob.take() {
+            Some(b) => crate::crypt::open_bytes(&b).or(Some(b)),
+            None => None,
+        };
+    }
+    Ok(full.0)
 }
 
 pub fn touch_item(conn: &Connection, id: i64) -> SqlResult<()> {
@@ -314,11 +348,75 @@ pub fn set_folder(conn: &Connection, id: i64, folder_id: Option<i64>) -> SqlResu
 }
 
 pub fn get_image_blob(conn: &Connection, id: i64) -> SqlResult<Option<Vec<u8>>> {
-    conn.query_row(
+    let blob: Option<Vec<u8>> = conn.query_row(
         "SELECT image_blob FROM clip_item WHERE id = ?1",
         params![id],
         |r| r.get(0),
-    )
+    )?;
+    Ok(blob.and_then(|b| crate::crypt::open_bytes(&b).or(Some(b))))
+}
+
+/// Mark/unmark an item sensitive: seal or open content, preview, rich
+/// variants and the image blob in place (direction 54).
+pub fn set_sensitive(conn: &Connection, id: i64, on: bool) -> SqlResult<()> {
+    #[allow(clippy::type_complexity)]
+    let row: Option<(
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+        Option<Vec<u8>>,
+        bool,
+    )> = match conn.query_row(
+        "SELECT content, preview, rich_html, rich_rtf, image_blob, sensitive
+         FROM clip_item WHERE id = ?1",
+        params![id],
+        |r| {
+            Ok((
+                r.get(0)?,
+                r.get(1)?,
+                r.get(2)?,
+                r.get(3)?,
+                r.get(4)?,
+                r.get::<_, i64>(5)? != 0,
+            ))
+        },
+    ) {
+        Ok(r) => Some(r),
+        Err(rusqlite::Error::QueryReturnedNoRows) => None,
+        Err(e) => return Err(e),
+    };
+    let Some((content, preview, rich_html, rich_rtf, blob, sensitive)) = row else {
+        return Ok(());
+    };
+    if on == sensitive {
+        return Ok(());
+    }
+    let (nc, np, nh, nr, nb, flag) = if on {
+        (
+            crate::crypt::seal_str(&content),
+            crate::crypt::seal_str(&preview),
+            rich_html.map(|h| crate::crypt::seal_str(&h)),
+            rich_rtf.map(|r| crate::crypt::seal_str(&r)),
+            blob.map(|b| crate::crypt::seal_bytes(&b)),
+            1,
+        )
+    } else {
+        (
+            crate::crypt::open_str(&content).unwrap_or(content),
+            crate::crypt::open_str(&preview).unwrap_or(preview),
+            rich_html.and_then(|h| crate::crypt::open_str(&h)),
+            rich_rtf.and_then(|r| crate::crypt::open_str(&r)),
+            blob.and_then(|b| crate::crypt::open_bytes(&b)),
+            0,
+        )
+    };
+    conn.execute(
+        "UPDATE clip_item SET content=?2, preview=?3, rich_html=?4, rich_rtf=?5,
+                image_blob=?6, sensitive=?7 WHERE id=?1",
+        params![id, nc, np, nh, nr, nb, flag],
+    )?;
+    Ok(())
 }
 
 /// Trim to keep history bounded.

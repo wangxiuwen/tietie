@@ -33,6 +33,8 @@ once_cell = "1"
 arboard = { version = "3", features = ["wayland-data-control"] }
 sha2 = "0.10"
 png = "0.17"
+aes-gcm = "0.10"
+getrandom = "0.3"
 
 [target."cfg(windows)".dependencies]
 windows = { version = "0.58", features = [

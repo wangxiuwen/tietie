@@ -587,6 +587,14 @@ function buildCtxItems({
     { label: t("ctx.pasteBack"), onClick: () => paste(item) },
     { label: item.pinned ? t("ctx.unpin") : t("ctx.pin"), onClick: () => { togglePin(item.id); } },
     { label: t("ctx.hang"), onClick: () => onHang(item.id) },
+    {
+      label: item.sensitive ? t("ctx.unmarkSensitive") : t("ctx.markSensitive"),
+      onClick: () => {
+        invoke("set_item_sensitive", { id: item.id, on: !item.sensitive })
+          .catch((e) => console.warn("set_item_sensitive:", e))
+          .finally(() => refresh());
+      },
+    },
   ];
   if (folders.length > 0) {
     items.push({ separatorBefore: true, label: t("ctx.moveTo"), onClick: () => {} }); // header row
@@ -823,6 +831,7 @@ function Card({
       title={t("card.hint")}
     >
       <span className={"badge " + item.kind}>{kindLabel(item.kind)}</span>
+      {item.sensitive && <span className="lock" title={t("ctx.markSensitive")}>🔒</span>}
       {item.pinned && (
         <span className="pin">
           <PinIcon />
@@ -895,6 +904,7 @@ function CardRow({
         <HighlightText text={text} query={query} />
       </span>
       <span className="row-meta">
+        {item.sensitive && "🔒 "}
         {item.source_app || "—"} · {relTime(item.used_at)}
       </span>
       {item.pinned && (

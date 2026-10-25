@@ -1,4 +1,5 @@
 mod clipboard;
+mod crypt;
 mod db;
 mod filelog;
 #[cfg(target_os = "windows")]
@@ -426,6 +427,7 @@ pub fn run() {
             touch_item,
             update_item_content,
             set_item_folder,
+            set_item_sensitive,
             get_item_image,
             get_item_rich,
             clip_stats,
@@ -1019,6 +1021,24 @@ fn delete_folder(state: tauri::State<'_, AppState>, id: i64) -> Result<(), Strin
 fn toggle_pin(state: tauri::State<'_, AppState>, id: i64) -> Result<(), String> {
     let conn = state.conn.lock();
     db::toggle_pin(&conn, id).map_err(|e| e.to_string())
+}
+
+/// Mark/unmark an item sensitive: AES-seals its content at rest (direction
+/// 54 — protects a leaked DB file, not this machine; the app decrypts
+/// transparently for display/search/copy).
+#[tauri::command]
+fn set_item_sensitive(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: i64,
+    on: bool,
+) -> Result<(), String> {
+    {
+        let conn = state.conn.lock();
+        db::set_sensitive(&conn, id, on).map_err(|e| e.to_string())?;
+    }
+    let _ = app.emit("clipboard-changed", ());
+    Ok(())
 }
 
 #[tauri::command]
