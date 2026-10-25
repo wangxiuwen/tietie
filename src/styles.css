@@ -2220,3 +2220,9 @@ select:focus-visible,
 .line-remind-state {
   white-space: nowrap;
 }
+
+/* db integrity failure banner (direction 70) */
+.backup-banner.db-bad {
+  background: rgba(255, 59, 48, 0.14);
+  border-color: rgba(255, 59, 48, 0.55);
+}

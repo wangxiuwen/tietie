@@ -40,6 +40,7 @@ export const zh: Dict = {
   // settings
   "settings.title": "设置",
   "backup.banner": "已超过 7 天未导出备份，建议保存一份", "backup.exportNow": "立即导出",
+  "db.badBanner": "数据库完整性自检未通过——建议立即导出备份并重启应用",
   "settings.version": "版本", "settings.checking": "检查中…", "settings.uptodate": "已是最新",
   "settings.recheck": "重新检查", "settings.upgrade": "升级到", "settings.download": "下载",
   "settings.restarting": "即将重启…", "settings.checkUpdate": "检查更新",
@@ -149,6 +150,7 @@ export const en: Dict = {
   "edit.chars": "chars", "edit.lines": "lines",
   "settings.title": "Settings",
   "backup.banner": "No backup exported in over 7 days — save one now", "backup.exportNow": "Export now",
+  "db.badBanner": "Database integrity check FAILED — export a backup now and restart the app",
   "settings.version": "Version", "settings.checking": "Checking…", "settings.uptodate": "Up to date",
   "settings.recheck": "Recheck", "settings.upgrade": "Upgrade to", "settings.download": "Download",
   "settings.restarting": "Restarting…", "settings.checkUpdate": "Check for updates",

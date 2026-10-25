@@ -197,6 +197,11 @@ export default function Settings() {
       if (a === "copy" || a === "edit") setDbl(a);
     });
   }, []);
+  // startup db integrity verdict (direction 70); assume ok until told
+  const [dbBad, setDbBad] = useState(false);
+  useEffect(() => {
+    invoke<boolean>("db_integrity_ok").then((ok) => setDbBad(!ok));
+  }, []);
   const toggleDedupe = useCallback(async () => {
     const next = !dedupe;
     setDedupe(next);
@@ -263,6 +268,14 @@ export default function Settings() {
 
   return (
     <div className="settings-win">
+      {dbBad && (
+        <div className="backup-banner db-bad" role="alert">
+          <span>🚨 {t("db.badBanner")}</span>
+          <button className="btn ghost" onClick={exportNow}>
+            {t("backup.exportNow")}
+          </button>
+        </div>
+      )}
       {backupStale && (
         <div className="backup-banner" role="status">
           <span>⚠️ {t("backup.banner")}</span>

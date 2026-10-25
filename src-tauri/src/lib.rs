@@ -55,6 +55,8 @@ pub struct AppState {
     /// the poll loop records nothing — the password-manager scenario
     /// (direction 67).
     pub capture_paused_until: Arc<std::sync::atomic::AtomicI64>,
+    /// startup PRAGMA integrity_check verdict (direction 70)
+    pub db_ok: Arc<std::sync::atomic::AtomicBool>,
 }
 
 /// All three shortcuts live here. screenshot / clothesline are Option — when
@@ -323,10 +325,42 @@ pub fn run() {
                 load_setting(app.handle(), "dedupe_history", "true") == "true",
             ));
             let capture_paused_until = Arc::new(std::sync::atomic::AtomicI64::new(0));
+            // startup integrity self-check (direction 70): PRAGMA
+            // integrity_check — "ok" or the first problem line, logged and
+            // surfaced in the settings page when not ok.
+            let db_ok = Arc::new(std::sync::atomic::AtomicBool::new(false));
+            {
+                let c = conn.lock();
+                let mut stmt = match c.prepare("PRAGMA integrity_check") {
+                    Ok(s) => s,
+                    Err(e) => {
+                        log::error!("db integrity check failed to run: {e}");
+                        app.manage(AppState {
+                            conn: conn.clone(),
+                            dedupe: dedupe.clone(),
+                            capture_paused_until: capture_paused_until.clone(),
+                            db_ok: db_ok.clone(),
+                        });
+                        return Ok(());
+                    }
+                };
+                let rows: Vec<String> = stmt
+                    .query_map([], |r| r.get::<_, String>(0))
+                    .map(|it| it.filter_map(|x| x.ok()).collect())
+                    .unwrap_or_default();
+                drop(stmt);
+                if rows.len() == 1 && rows[0] == "ok" {
+                    db_ok.store(true, std::sync::atomic::Ordering::Relaxed);
+                    log::info!("db integrity: ok");
+                } else {
+                    log::error!("db integrity PROBLEM: {}", rows.join(" | "));
+                }
+            }
             app.manage(AppState {
                 conn: conn.clone(),
                 dedupe: dedupe.clone(),
                 capture_paused_until: capture_paused_until.clone(),
+                db_ok: db_ok.clone(),
             });
 
             // start clipboard polling (retention: 0=forever, else days;
@@ -443,6 +477,7 @@ pub fn run() {
             set_item_sensitive,
             pause_capture,
             capture_paused_remaining,
+            db_integrity_ok,
             get_item_image,
             get_item_rich,
             clip_stats,
@@ -1098,6 +1133,13 @@ fn capture_paused_remaining(state: tauri::State<'_, AppState>) -> i64 {
     use std::sync::atomic::Ordering;
     let until = state.capture_paused_until.load(Ordering::Relaxed);
     (until - db::now_unix()).max(0)
+}
+
+/// Startup integrity verdict (direction 70): true = PRAGMA integrity_check
+/// said "ok". False drives the red banner in settings.
+#[tauri::command]
+fn db_integrity_ok(state: tauri::State<'_, AppState>) -> bool {
+    state.db_ok.load(std::sync::atomic::Ordering::Relaxed)
 }
 
 /// Mark/unmark an item sensitive: AES-seals its content at rest (direction
