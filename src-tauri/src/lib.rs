@@ -528,6 +528,7 @@ pub fn run() {
             open_accessibility_settings,
             app_version,
             get_hotkeys,
+            recheck_hotkeys,
             set_hotkey,
             begin_hotkey_capture,
             cancel_hotkey_capture,
@@ -1951,8 +1952,36 @@ struct Hotkeys {
 
 #[tauri::command]
 fn get_hotkeys(app: AppHandle) -> Hotkeys {
+    hotkeys_snapshot(&app)
+}
+
+/// Live occupancy re-check (direction 71): for each screenshot/clothesline
+/// combo we do NOT currently own, probe-register it once more — success
+/// means the other app released it (we keep the registration), failure
+/// means it is still taken. Returns the fresh status for the settings page.
+#[tauri::command]
+fn recheck_hotkeys(app: AppHandle) -> Hotkeys {
+    if let Some(state) = app.try_state::<HotkeyState>() {
+        for (kind, slot) in [
+            ("screenshot", &state.screenshot),
+            ("clothesline", &state.clothesline),
+        ] {
+            if slot.lock().is_none() {
+                let won = register_simple_hotkey(&app, kind);
+                *slot.lock() = won;
+                match won {
+                    Some(s) => log::info!("recheck: {kind} hotkey now registered ({s})"),
+                    None => log::warn!("recheck: {kind} hotkey still taken by another app"),
+                }
+            }
+        }
+    }
+    hotkeys_snapshot(&app)
+}
+
+fn hotkeys_snapshot(app: &AppHandle) -> Hotkeys {
     let state = app.try_state::<HotkeyState>();
-    let configured = |key: &str, default: &str| load_setting(&app, key, default);
+    let configured = |key: &str, default: &str| load_setting(app, key, default);
     Hotkeys {
         drawer: configured("drawer_hotkey", DEFAULT_DRAWER_HOTKEY),
         screenshot: configured("screenshot_hotkey", DEFAULT_SCREENSHOT_HOTKEY),

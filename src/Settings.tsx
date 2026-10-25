@@ -108,6 +108,12 @@ export default function Settings() {
     setHks(await invoke<HotkeysInfo>("get_hotkeys"));
   }, []);
 
+  // live occupancy re-probe (direction 71): retry any refused combo and
+  // refresh the whole hotkey panel
+  const recheckHotkeys = useCallback(async () => {
+    setHks(await invoke<HotkeysInfo>("recheck_hotkeys"));
+  }, []);
+
   const recheck = useCallback(async () => {
     const ok = await invoke<boolean>("check_accessibility");
     setAcc(ok);
@@ -338,6 +344,14 @@ export default function Settings() {
             registered={hks?.clothesline_registered ?? true}
             onSaved={reloadHotkeys}
           />
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.hkRecheck")}</span>
+            <span className="settings-value">
+              <button className="btn ghost" onClick={recheckHotkeys}>
+                {t("settings.hkRecheckBtn")}
+              </button>
+            </span>
+          </div>
 
           <div className="settings-subhead">{t("settings.general")}</div>
           <div className="settings-row">
