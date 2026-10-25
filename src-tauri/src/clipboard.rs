@@ -35,6 +35,7 @@ pub fn start_polling(
         let mut last_text_hash: Option<String> = None;
         let mut last_image_hash: Option<String> = None;
         let mut quiet_runs: u32 = 0;
+        let mut last_reclaim_day: Option<String> = None;
 
         loop {
             let poll = POLL_BACKOFF_STEPS[(quiet_runs as usize).min(POLL_BACKOFF_STEPS.len() - 1)];
@@ -46,6 +47,28 @@ pub fn start_polling(
                     quiet_runs,
                     poll
                 );
+            }
+
+            // Nightly idle reclaim (direction 55): once per local day inside
+            // the 02:00–05:00 window, drop expired items (per retention),
+            // re-apply the history cap and truncate the WAL so the DB file
+            // actually shrinks even when nothing was copied that day.
+            let now = chrono::Local::now();
+            use chrono::Timelike;
+            let today = now.format("%Y-%m-%d").to_string();
+            if should_night_reclaim(now.hour(), &today, &last_reclaim_day) {
+                let today = now.format("%Y-%m-%d").to_string();
+                let mut removed = 0usize;
+                {
+                    let c = conn.lock();
+                    if let Ok(n) = db::trim_expired(&c, retention_days) {
+                        removed = n;
+                    }
+                    let _ = db::trim_history(&c, max_history);
+                    let _ = c.execute_batch("PRAGMA wal_checkpoint(TRUNCATE)");
+                }
+                log::info!("nightly reclaim: {removed} expired trimmed, wal truncated");
+                last_reclaim_day = Some(today);
             }
 
             // Try text first
@@ -159,6 +182,12 @@ pub fn start_polling(
             }
         }
     });
+}
+
+/// First poll inside the 02:00–05:00 local window each day triggers the
+/// reclaim; `last_run` is the local "YYYY-MM-DD" it last ran on.
+fn should_night_reclaim(hour: u32, today: &str, last_run: &Option<String>) -> bool {
+    (2..5).contains(&hour) && last_run.as_deref() != Some(today)
 }
 
 fn classify_text(s: &str) -> (&'static str, String) {
@@ -294,6 +323,28 @@ fn nearest_rescale(src: &[u8], sw: u32, sh: u32, dw: u32, dh: u32) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn night_gate_windows_and_suppression() {
+        let none: Option<String> = None;
+        // inside the window, never ran → go
+        assert!(should_night_reclaim(3, "2026-10-25", &none));
+        // outside the window → never
+        assert!(!should_night_reclaim(1, "2026-10-25", &none));
+        assert!(!should_night_reclaim(5, "2026-10-25", &none));
+        // already ran today → suppressed all day
+        assert!(!should_night_reclaim(
+            4,
+            "2026-10-25",
+            &Some("2026-10-25".into())
+        ));
+        // next day inside the window → runs again
+        assert!(should_night_reclaim(
+            2,
+            "2026-10-26",
+            &Some("2026-10-25".into())
+        ));
+    }
 
     #[test]
     fn classify_colors() {
