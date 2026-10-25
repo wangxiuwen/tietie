@@ -51,6 +51,10 @@ pub struct AppState {
     pub conn: Arc<Mutex<rusqlite::Connection>>,
     /// merge-history preference (re-copy bumps instead of adding rows)
     pub dedupe: Arc<std::sync::atomic::AtomicBool>,
+    /// capture pause deadline (unix ts; 0 = recording). While now < deadline
+    /// the poll loop records nothing — the password-manager scenario
+    /// (direction 67).
+    pub capture_paused_until: Arc<std::sync::atomic::AtomicI64>,
 }
 
 /// All three shortcuts live here. screenshot / clothesline are Option — when
@@ -318,9 +322,11 @@ pub fn run() {
             let dedupe = Arc::new(std::sync::atomic::AtomicBool::new(
                 load_setting(app.handle(), "dedupe_history", "true") == "true",
             ));
+            let capture_paused_until = Arc::new(std::sync::atomic::AtomicI64::new(0));
             app.manage(AppState {
                 conn: conn.clone(),
                 dedupe: dedupe.clone(),
+                capture_paused_until: capture_paused_until.clone(),
             });
 
             // start clipboard polling (retention: 0=forever, else days;
@@ -338,7 +344,14 @@ pub fn run() {
                 jumplist::init_aumid(app.handle());
                 jumplist::refresh(&conn);
             }
-            clipboard::start_polling(app.handle().clone(), conn, dedupe, retention, max_history);
+            clipboard::start_polling(
+                app.handle().clone(),
+                conn,
+                dedupe,
+                capture_paused_until,
+                retention,
+                max_history,
+            );
 
             // Register all hotkeys FIRST so the tray tooltip can show the
             // combos that actually took. Drawer walks a fallback chain (a
@@ -428,6 +441,8 @@ pub fn run() {
             update_item_content,
             set_item_folder,
             set_item_sensitive,
+            pause_capture,
+            capture_paused_remaining,
             get_item_image,
             get_item_rich,
             clip_stats,
@@ -576,6 +591,14 @@ fn create_tray<R: Runtime>(
         None::<&str>,
     )?;
     let library = MenuItem::with_id(app, "library", "剪贴板库（管理窗）", true, None::<&str>)?;
+    let pause = MenuItem::with_id(
+        app,
+        "pause_capture",
+        "暂停捕获 10 分钟（口令场景）",
+        true,
+        None::<&str>,
+    )?;
+    let resume = MenuItem::with_id(app, "resume_capture", "恢复捕获", true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
     // on Wayland, auto-paste is impossible — say so right in the tray
     #[cfg(all(unix, not(target_os = "macos")))]
@@ -597,19 +620,23 @@ fn create_tray<R: Runtime>(
         Menu::with_items(
             app,
             &[
-                &show, &recent, &shot, &line, &library, note, &sep, &about, &quit,
+                &show, &recent, &shot, &line, &library, &pause, &resume, note, &sep, &about, &quit,
             ],
         )?
     } else {
         Menu::with_items(
             app,
-            &[&show, &recent, &shot, &line, &library, &sep, &about, &quit],
+            &[
+                &show, &recent, &shot, &line, &library, &pause, &resume, &sep, &about, &quit,
+            ],
         )?
     };
     #[cfg(not(all(unix, not(target_os = "macos"))))]
     let menu = Menu::with_items(
         app,
-        &[&show, &recent, &shot, &line, &library, &sep, &about, &quit],
+        &[
+            &show, &recent, &shot, &line, &library, &pause, &resume, &sep, &about, &quit,
+        ],
     )?;
 
     let mut tooltip = format!(
@@ -648,6 +675,23 @@ fn create_tray<R: Runtime>(
             }
             "about" => {
                 let _ = app.emit("show-about", ());
+            }
+            "pause_capture" => {
+                if let Some(state) = app.try_state::<AppState>() {
+                    let until = db::now_unix() + 10 * 60;
+                    state
+                        .capture_paused_until
+                        .store(until, std::sync::atomic::Ordering::Relaxed);
+                    log::info!("capture paused 10m from tray (until {until})");
+                }
+            }
+            "resume_capture" => {
+                if let Some(state) = app.try_state::<AppState>() {
+                    state
+                        .capture_paused_until
+                        .store(0, std::sync::atomic::Ordering::Relaxed);
+                    log::info!("capture resumed from tray");
+                }
             }
             "quit" => {
                 app.exit(0);
@@ -1024,6 +1068,33 @@ fn delete_folder(state: tauri::State<'_, AppState>, id: i64) -> Result<(), Strin
 fn toggle_pin(state: tauri::State<'_, AppState>, id: i64) -> Result<(), String> {
     let conn = state.conn.lock();
     db::toggle_pin(&conn, id).map_err(|e| e.to_string())
+}
+
+/// Pause clipboard capture for N minutes (0 = resume now). While paused the
+/// poll loop records nothing — the password-manager scenario (direction 67).
+#[tauri::command]
+fn pause_capture(state: tauri::State<'_, AppState>, minutes: i64) -> Result<(), String> {
+    use std::sync::atomic::Ordering;
+    let until = if minutes > 0 {
+        db::now_unix() + minutes * 60
+    } else {
+        0
+    };
+    state.capture_paused_until.store(until, Ordering::Relaxed);
+    if until > 0 {
+        log::info!("capture paused for {minutes}m (until {until})");
+    } else {
+        log::info!("capture resumed");
+    }
+    Ok(())
+}
+
+/// Remaining capture-pause seconds (0 = recording normally).
+#[tauri::command]
+fn capture_paused_remaining(state: tauri::State<'_, AppState>) -> i64 {
+    use std::sync::atomic::Ordering;
+    let until = state.capture_paused_until.load(Ordering::Relaxed);
+    (until - db::now_unix()).max(0)
 }
 
 /// Mark/unmark an item sensitive: AES-seals its content at rest (direction

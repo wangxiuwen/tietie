@@ -21,6 +21,7 @@ pub fn start_polling(
     app: AppHandle,
     conn: Arc<Mutex<rusqlite::Connection>>,
     dedupe: Arc<std::sync::atomic::AtomicBool>,
+    capture_paused_until: Arc<std::sync::atomic::AtomicI64>,
     retention_days: i64,
     max_history: i64,
 ) {
@@ -71,6 +72,12 @@ pub fn start_polling(
                 last_reclaim_day = Some(today);
             }
 
+            // capture pause gate (direction 67): while paused (password
+            // manager scenario) track the hash so it doesn't leak in on
+            // resume, but record nothing
+            let paused_until = capture_paused_until.load(std::sync::atomic::Ordering::Relaxed);
+            let paused = paused_until > db::now_unix();
+
             // Try text first
             if let Ok(text) = clipboard.get_text() {
                 let hash = hash_str(&text);
@@ -78,6 +85,13 @@ pub fn start_polling(
                     last_text_hash = Some(hash.clone());
                     last_image_hash = None;
                     quiet_runs = 0; // new content -> fast poll next round
+                    if paused {
+                        log::info!(
+                            "capture paused ({}s left), skipping text",
+                            paused_until - db::now_unix()
+                        );
+                        continue;
+                    }
                     let (kind, preview) = classify_text(&text);
                     // record who copied it (frontmost app right now);
                     // blacklisted apps (password managers etc.) are ignored
@@ -139,6 +153,13 @@ pub fn start_polling(
                     last_image_hash = Some(hash.clone());
                     last_text_hash = None;
                     quiet_runs = 0; // new content -> fast poll next round
+                    if paused {
+                        log::info!(
+                            "capture paused ({}s left), skipping image",
+                            paused_until - db::now_unix()
+                        );
+                        continue;
+                    }
                     let source = crate::frontmost_app_name(&app);
                     if crate::source_blacked(&app, &source) {
                         log::info!("source app blacklisted, skipping image insert");
