@@ -39,6 +39,11 @@ struct SyncPayload {
     kind: String,
     content: String,
     ts: i64,
+    /// image captures only: b64-encoded PNG (direction 137); text sync
+    /// sends none and receivers must not require it
+    image_b64: Option<String>,
+    /// content_hash of the sending side — receivers dedupe on it
+    hash: Option<String>,
 }
 
 fn session_key(token: &str) -> [u8; 32] {
@@ -177,10 +182,15 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
                 log::warn!("sync frame failed to decrypt (bad key/AAD)");
                 continue;
             };
-            let hash = {
-                let mut h = Sha256::new();
-                h.update(p.content.as_bytes());
-                format!("t:{}", hex(&h.finalize()))
+            // dedupe on the sender's hash when present (images), else the
+            // local content hash — both stop A→B→A echoes
+            let hash = match p.hash.as_deref() {
+                Some(h) if !h.is_empty() => h.to_string(),
+                _ => {
+                    let mut h = Sha256::new();
+                    h.update(p.content.as_bytes());
+                    format!("t:{}", hex(&h.finalize()))
+                }
             };
             if *last_received().lock() == hash {
                 continue; // echo of our own content
@@ -188,15 +198,22 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
             *last_received().lock() = hash.clone();
             let c = conn.lock();
             let preview: String = p.content.chars().take(120).collect();
+            let img_blob: Option<Vec<u8>> = if p.kind == "image" {
+                p.image_b64
+                    .as_deref()
+                    .and_then(|b| base64::engine::general_purpose::STANDARD.decode(b).ok())
+            } else {
+                None
+            };
             let item = InsertItem {
                 kind: &p.kind,
                 content: &p.content,
                 preview: &preview,
-                meta: "",
+                meta: if p.kind == "image" { &p.content } else { "" },
                 content_hash: &hash,
                 source_app: Some(&env.sender),
                 byte_size: p.content.len() as i64,
-                image_blob: None,
+                image_blob: img_blob.as_deref(),
                 rich_html: None,
                 rich_rtf: None,
             };
@@ -221,13 +238,16 @@ fn touch_last_sync(conn: &Connection, instance: &str) {
 
 /// Outbound fan-out after a local capture. Never blocks the poll loop:
 /// peers are pushed from a background thread with short timeouts.
-pub fn on_captured(conn: &Arc<Mutex<Connection>>, kind: &str, content: &str) {
+pub fn on_captured(
+    conn: &Arc<Mutex<Connection>>,
+    kind: &str,
+    content: &str,
+    hash: &str,
+    image_b64: Option<String>,
+) {
     if !enabled(&conn.lock()) {
         return;
     }
-    let mut h = Sha256::new();
-    h.update(content.as_bytes());
-    let hash = format!("t:{}", hex(&h.finalize()));
     if *last_received().lock() == hash {
         return; // this capture IS an inbound sync echo
     }
@@ -246,6 +266,7 @@ pub fn on_captured(conn: &Arc<Mutex<Connection>>, kind: &str, content: &str) {
     }
     let kind = kind.to_string();
     let content = content.to_string();
+    let hash = hash.to_string();
     let conn = conn.clone();
     std::thread::spawn(move || {
         let me = hostname_instance();
@@ -253,6 +274,8 @@ pub fn on_captured(conn: &Arc<Mutex<Connection>>, kind: &str, content: &str) {
             kind,
             content,
             ts: db::now_unix(),
+            image_b64,
+            hash: Some(hash),
         };
         for (instance, addr, token) in rows {
             let env = seal(&session_key(&token), &me, &p);

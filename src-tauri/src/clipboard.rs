@@ -1,6 +1,7 @@
 use crate::db;
 use arboard::{Clipboard, ImageData};
-use base64::{engine::general_purpose, Engine as _};
+use base64::Engine as _;
+use base64::engine::general_purpose;
 use parking_lot::Mutex;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
@@ -135,9 +136,9 @@ pub fn start_polling(
                         // release the guard BEFORE the sync fan-out — it
                         // locks the same mutex inside (deadlock otherwise)
                         drop(conn_g);
-                        // fan out to paired devices (direction 129); text
-                        // payloads only for now — image sync rides later
-                        crate::sync::on_captured(&conn, kind, &text);
+                        // fan out to paired devices (direction 129/137):
+                        // text payloads carry their hash, no image blob
+                        crate::sync::on_captured(&conn, kind, &text, &hash, None);
                         let _ = app.emit("clipboard-changed", ());
                         #[cfg(target_os = "windows")]
                         crate::jumplist::refresh(&conn);
@@ -203,6 +204,19 @@ pub fn start_polling(
                         let _ = db::trim_expired(&conn_g, retention_days);
                         drop(conn_g);
                         let _ = app.emit("clipboard-changed", ());
+                        // image sync (direction 137): PNG rides the sealed
+                        // frame; cap at 4 MiB so frames stay reasonable
+                        if png.len() <= 4 * 1024 * 1024 {
+                            crate::sync::on_captured(
+                                &conn,
+                                "image",
+                                &meta,
+                                &hash,
+                                Some(base64::engine::general_purpose::STANDARD.encode(&png)),
+                            );
+                        } else {
+                            log::info!("sync: image too large to push ({}B)", png.len());
+                        }
                     }
                 }
             }
