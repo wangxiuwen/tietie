@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **141** [`ce96880`](https://github.com/wangxiuwen/tietie/commit/ce96880) sync 模块事件环（in/out/fail≤20）+ sync_events 命令 + 设置页日志行（最新在前，⇦⇨⚠着色） |
+
 - **140** [`aeb2dc5`](https://github.com/wangxiuwen/tietie/commit/aeb2dc5) 托盘行右键菜单（复制回粘/置顶切换/删除走真实命令并刷新），三处 Row 全接 |
 
 - **139** [`0f7167e`](https://github.com/wangxiuwen/tietie/commit/0f7167e) 编写器「存为模板」chip（会话级去重≤8）点击原样填入，实现一键挂绳常用短语 |
