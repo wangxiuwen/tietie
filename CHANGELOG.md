@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **129** [`d4362a5`](https://github.com/wangxiuwen/tietie/commit/d4362a5) 加密同步传输：AES-GCM 密封帧（会话密钥=SHA256(配对token‖v1标签)）双向 TCP 41784，回声抑制+入库去重，设置页开关（默认关） |
+
 - **128** [`daf525f`](https://github.com/wangxiuwen/tietie/commit/daf525f) 配对码状态机：6位码5分钟有效/错码拒配/正码入长期信任表（含随机token供129）/可移除，设置页配对+已配对UI |
 
 - **127b** `TBD` mDNS 验证补注：同主机双实例因 Windows 5353 REUSEADDR 组播单投递不可互见（0/5 实证），跨主机对端缺位未闭环；mdns 全链日志与 --browse 探针已就位供真机双设备回归 |
