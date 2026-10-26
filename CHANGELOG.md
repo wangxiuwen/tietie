@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **修复** [`9a21c66`](https://github.com/wangxiuwen/tietie/commit/9a21c66) 热键失效修复（用户报「快捷键呼不出主界面」）：诊断=本机 72h 长会话 win32k 输入辅助层渐进失效（RegisterHotKey 派发先死、LL 钩子派发后死，物理/注入全灭，三方对照实验定位），应用侧链路经 PostMessage 直投验证完全健康；新增 hotkey_hook 低级键盘钩子兜底（命中组合键即向 global-hotkey 隐藏窗口重放 WM_HOTKEY，复用全分发链路）+handler 400ms 去重防 OS 恢复后双触发，热键增删改四处同步钩子表；重启会话后热键走 OS 路径恢复、若派发再死由钩子接棒 |
+
 - **120** [`622bcc8`](https://github.com/wangxiuwen/tietie/commit/622bcc8) Library 表格行双击即复制（图片行走复制图片），带已复制反馈不动勾选 |
 
 - **119** [`b72b5fb`](https://github.com/wangxiuwen/tietie/commit/b72b5fb) 便签提醒到点跃迁时发一次系统通知（Win Toast/macOS osascript/Linux notify-send），防重+不补发 |
