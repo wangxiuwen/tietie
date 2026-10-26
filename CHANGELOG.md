@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **106** [`5143550`](https://github.com/wangxiuwen/tietie/commit/5143550) 新增 open_url 命令（仅 http(s)，跨平台默认浏览器），Library 链接行 Ctrl/⌘+点击直开不占选 |
+
 - **105** [`5eb3e76`](https://github.com/wangxiuwen/tietie/commit/5eb3e76) export_memos 加 txt 格式（换行原样保留+分隔线），晾衣架新增「导出纯文本」按钮 |
 
 - **104** [`b62e1ea`](https://github.com/wangxiuwen/tietie/commit/b62e1ea) 选中卡片按 N 开备注编辑器并自动聚焦，搜索框输入时仅 ⌘N 触发，速查表补条目 |
