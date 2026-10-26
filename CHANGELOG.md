@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **108** [`f0e1904`](https://github.com/wangxiuwen/tietie/commit/f0e1904) 详情调色板最近三色排前（数字键快选同步顺序），顺修 recentPinColors 方向性 bug（原取最旧三色） |
+
 - **107** [`3bd8cb5`](https://github.com/wangxiuwen/tietie/commit/3bd8cb5) 空态分家：真空库保留三步引导卡，搜索无匹配/空分类改紧凑提示不再误导 |
 
 - **106** [`5143550`](https://github.com/wangxiuwen/tietie/commit/5143550) 新增 open_url 命令（仅 http(s)，跨平台默认浏览器），Library 链接行 Ctrl/⌘+点击直开不占选 |
