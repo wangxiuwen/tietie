@@ -151,6 +151,18 @@ export default function Library() {
     }
   }, [exportTargets]);
 
+  const exportCsv = useCallback(async () => {
+    const ids = exportTargets;
+    if (ids.length === 0) return;
+    try {
+      const path = await invoke<string>("export_selected_csv", { ids });
+      setMsg(`已导出: ${path}`);
+      invoke("reveal_path", { path }).catch(() => {}); // open at the file
+    } catch (e) {
+      setMsg(`导出失败: ${e}`);
+    }
+  }, [exportTargets]);
+
   // swatch-grid view over the color-kind items (direction 51)
   const [view, setView] = useState<"table" | "palette">(
     () => (localStorage.getItem("lib-view") === "palette" ? "palette" : "table"),
@@ -427,6 +439,13 @@ export default function Library() {
             disabled={exportTargets.length === 0}
           >
             {t("lib.exportMd")}
+          </button>
+          <button
+            className="btn ghost"
+            onClick={exportCsv}
+            disabled={exportTargets.length === 0}
+          >
+            {t("lib.exportCsv")}
           </button>
           <button className="btn primary" onClick={del} disabled={selected.size === 0}>
             {t("lib.delete")}

@@ -515,6 +515,7 @@ pub fn run() {
             open_library,
             delete_items,
             export_selected_text,
+            export_selected_csv,
             export_selected_markdown,
             reveal_path,
             open_url,
@@ -1884,6 +1885,77 @@ fn export_selected_text(
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = dir.join(format!("tietie-export-{}.txt", time_fmt(db::now_unix())));
     std::fs::write(&path, parts.join("\n")).map_err(|e| e.to_string())?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
+/// Dump the selected items as CSV (direction 112): columns kind / content /
+/// source app / byte size / last used (unix). Fields are RFC-4180 escaped
+/// (quote-wrapped when they contain comma/quote/newline, inner quotes
+/// doubled) and the file carries a UTF-8 BOM so Excel opens Chinese text
+/// correctly. Documents/tietie-export-<ts>.csv.
+#[tauri::command]
+fn export_selected_csv(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    ids: Vec<i64>,
+) -> Result<String, String> {
+    fn csv_cell(s: &str) -> String {
+        if s.contains(',') || s.contains('"') || s.contains('\n') || s.contains('\r') {
+            format!("\"{}\"", s.replace('"', "\"\""))
+        } else {
+            s.to_string()
+        }
+    }
+    let mut out = String::from("\u{FEFF}kind,content,source,size,used_at\n");
+    let mut n = 0usize;
+    {
+        let conn = state.conn.lock();
+        for id in &ids {
+            let Ok(row) = conn.query_row(
+                "SELECT kind, content, COALESCE(source_app, ''), byte_size, used_at
+                 FROM clip_item WHERE id = ?1",
+                rusqlite::params![id],
+                |r| {
+                    Ok((
+                        r.get::<_, String>(0)?,
+                        r.get::<_, String>(1)?,
+                        r.get::<_, String>(2)?,
+                        r.get::<_, i64>(3)?,
+                        r.get::<_, i64>(4)?,
+                    ))
+                },
+            ) else {
+                continue;
+            };
+            let (kind, content, src, size, used) = row;
+            let content = if kind == "image" {
+                format!("[图片 {content}]")
+            } else {
+                content
+            };
+            out.push_str(&format!(
+                "{},{},{},{},{}\n",
+                csv_cell(&kind),
+                csv_cell(&content),
+                csv_cell(&src),
+                size,
+                used
+            ));
+            n += 1;
+        }
+    }
+    if n == 0 {
+        return Err("没有可导出的条目".into());
+    }
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("tietie-export-{}.csv", time_fmt(db::now_unix())));
+    std::fs::write(&path, out).map_err(|e| e.to_string())?;
+    log::info!("exported {n} rows to {}", path.display());
     Ok(path.to_string_lossy().into_owned())
 }
 
