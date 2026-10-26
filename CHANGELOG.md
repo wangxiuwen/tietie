@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **138** [`b7aaa95`](https://github.com/wangxiuwen/tietie/commit/b7aaa95) 纯 B 键成为 N 的别名开备注浮层（文本域内仍仅 ⌘N），速查表更新 |
+
 - **137** [`fb1cd66`](https://github.com/wangxiuwen/tietie/commit/fb1cd66) SyncPayload 加 image_b64/hash 字段，出站图片捕获≤4MiB PNG 入帧，入站解 blob 走 image_blob 列，去重用发送方哈希 |
 
 ## 2026-10-26
