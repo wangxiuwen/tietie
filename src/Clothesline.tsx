@@ -1027,9 +1027,57 @@ function DetailBody({ memo }: { memo: Memo }) {
   }
   return (
     <div className="line-detail-body">
-      <pre className="line-detail-text">{memo.content}</pre>
+      <pre className="line-detail-text">
+        <MiniMarkdown text={memo.content} />
+      </pre>
     </div>
   );
+}
+
+/**
+ * Hand-rolled inline Markdown for memo details (direction 135): **bold**,
+ * [label](url) links (Ctrl/⌘+click opens the system browser) and `code`
+ * spans. Renders straight into React text nodes — everything is escaped by
+ * React, so no HTML injection surface at all.
+ */
+function MiniMarkdown({ text }: { text: string }) {
+  const nodes: React.ReactNode[] = [];
+  const re = /\*\*([^*]+)\*\*|`([^`]+)`|\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let key = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    if (m[1]) {
+      nodes.push(<strong key={key++}>{m[1]}</strong>);
+    } else if (m[2]) {
+      nodes.push(
+        <code key={key++} className="md-code">
+          {m[2]}
+        </code>,
+      );
+    } else if (m[3] && m[4]) {
+      const label = m[3];
+      const url = m[4];
+      nodes.push(
+        <a
+          key={key++}
+          className="md-link"
+          href={url}
+          onClick={(e) => {
+            // never navigate the WebView — hand the URL to the OS browser
+            e.preventDefault();
+            invoke("open_url", { url }).catch(() => {});
+          }}
+        >
+          {label}
+        </a>,
+      );
+    }
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return <>{nodes}</>;
 }
 
 /**
