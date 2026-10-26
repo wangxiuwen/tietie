@@ -2373,6 +2373,39 @@ select:focus-visible,
   font-weight: 700;
 }
 
+/* one-tap phrase templates in the composer (direction 139) */
+.composer-templates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 4px;
+}
+.tpl-chip {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--accent);
+  font-size: calc(11px * var(--fs));
+}
+.tpl-chip:hover {
+  background: rgba(0, 122, 255, 0.22);
+}
+.tpl-add {
+  all: unset;
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px dashed rgba(128, 128, 128, 0.5);
+  color: var(--text-3);
+  font-size: calc(11px * var(--fs));
+}
+.tpl-add:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 /* clothespin-color filter chips (direction 132) */
 .line-color-filter {
   display: inline-flex;

@@ -520,6 +520,23 @@ function NoteComposer({
     <div className="line-card composer">
       <div className="line-pin" style={{ background: "#007aff" }} />
       <span className="line-badge">{t("line.composing")}</span>
+      {memoTemplates.length > 0 && (
+        <div className="composer-templates" title={t("line.templates")}>
+          {memoTemplates.map((tp) => (
+            <button
+              key={tp.label}
+              className="tpl-chip"
+              title={tp.text}
+              onClick={() => {
+                setText(tp.text);
+                setRemindMin("0");
+              }}
+            >
+              {tp.label}
+            </button>
+          ))}
+        </div>
+      )}
       <textarea
         className="line-compose"
         autoFocus
@@ -538,6 +555,19 @@ function NoteComposer({
         }}
       />
       <div className="line-compose-foot">
+        <button
+          className="tpl-add"
+          title={t("line.tplAdd")}
+          onClick={() => {
+            const v = text.trim();
+            if (v) {
+              addTemplate(v.slice(0, 6), v);
+              setText("");
+            }
+          }}
+        >
+          ＋{t("line.tplAdd")}
+        </button>
         {recentColors.length > 0 && (
           <span className="composer-recents" title={t("line.recentPins")}>
             {recentColors.map((c) => (
@@ -729,6 +759,21 @@ const detailZoom = { v: 1.0, subs: new Set<() => void>() };
 
 // memo ids whose due-moment notification already fired this session (119)
 const notifiedDue = new Set<number>();
+
+// one-tap hanging templates (direction 139): frequent short phrases stored
+// per-session; "add" pushes {label: text} so the row both fills the textarea
+// and hangs immediately
+interface Template {
+  label: string;
+  text: string;
+}
+const memoTemplates: Template[] = [];
+function addTemplate(label: string, text: string) {
+  const i = memoTemplates.findIndex((x) => x.label === label);
+  if (i >= 0) memoTemplates.splice(i, 1);
+  memoTemplates.unshift({ label, text });
+  if (memoTemplates.length > 8) memoTemplates.pop();
+}
 function useDetailZoom() {
   const [zoom, setZoom] = useState(detailZoom.v);
   useEffect(() => {
