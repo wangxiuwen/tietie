@@ -27,6 +27,56 @@ pub const PORT: u16 = 41784;
 const LABEL: &[u8] = b"tietie-sync-v1";
 const MAX_FRAME: u32 = 4 * 1024 * 1024;
 
+/// Wire messages for the pairing handshake (direction 128): the joiner sends
+/// `pair-req` with the code displayed on the initiator's screen; the
+/// initiator answers `pair-ack` (minting one shared token for both sides)
+/// or `pair-deny`. Same length-prefix framing as sync frames.
+#[derive(Serialize, Deserialize, Default)]
+pub(crate) struct PairMsg {
+    pub(crate) op: String,
+    #[serde(default)]
+    pub(crate) code: String,
+    #[serde(default)]
+    pub(crate) name: String,
+    #[serde(default)]
+    pub(crate) token: String,
+}
+
+fn send_pair(stream: &mut TcpStream, msg: &PairMsg) -> std::io::Result<()> {
+    let body = serde_json::to_vec(msg).map_err(|e| std::io::Error::other(e.to_string()))?;
+    stream.write_all(&(body.len() as u32).to_be_bytes())?;
+    stream.write_all(&body)?;
+    stream.flush()
+}
+
+/// Joiner side of the handshake (used by the `pairing_join` command):
+/// send the code shown on the target's screen, wait for the ack.
+pub fn send_pair_req(stream: &mut TcpStream, code: &str, name: &str) -> std::io::Result<()> {
+    send_pair(
+        stream,
+        &PairMsg {
+            op: "pair-req".into(),
+            code: code.to_string(),
+            name: name.to_string(),
+            ..Default::default()
+        },
+    )
+}
+
+/// Read one pairing frame from the peer (ack or deny).
+pub fn read_pair_ack(stream: &mut TcpStream) -> Option<PairMsg> {
+    let mut len_b = [0u8; 4];
+    stream.read_exact(&mut len_b).ok()?;
+    let len = u32::from_be_bytes(len_b);
+    if len == 0 || len > 4096 {
+        return None;
+    }
+    let mut body = vec![0u8; len as usize];
+    stream.read_exact(&mut body).ok()?;
+    let msg: PairMsg = serde_json::from_slice(&body).ok()?;
+    (msg.op == "pair-ack" || msg.op == "pair-deny").then_some(msg)
+}
+
 #[derive(Serialize, Deserialize)]
 struct Envelope {
     sender: String,
@@ -105,7 +155,7 @@ fn send_frame(stream: &mut TcpStream, env: &Envelope) -> std::io::Result<()> {
     stream.flush()
 }
 
-fn read_frame(stream: &mut TcpStream) -> Option<Envelope> {
+fn read_frame_raw(stream: &mut TcpStream) -> Option<Vec<u8>> {
     let mut len_b = [0u8; 4];
     stream.read_exact(&mut len_b).ok()?;
     let len = u32::from_be_bytes(len_b);
@@ -114,7 +164,7 @@ fn read_frame(stream: &mut TcpStream) -> Option<Envelope> {
     }
     let mut body = vec![0u8; len as usize];
     stream.read_exact(&mut body).ok()?;
-    serde_json::from_slice(&body).ok()
+    Some(body)
 }
 
 /// Sync event ring for the settings page (direction 141): newest last,
@@ -192,7 +242,18 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
             let Ok(_) = s.set_read_timeout(Some(std::time::Duration::from_secs(5))) else {
                 continue;
             };
-            let Some(env) = read_frame(&mut s) else {
+            let Some(raw) = read_frame_raw(&mut s) else {
+                continue;
+            };
+            // pairing handshake first: a `pair-req` frame is answered inline
+            // (and may mint a token) before any sync traffic can flow
+            if let Ok(req) = serde_json::from_slice::<PairMsg>(&raw) {
+                if req.op == "pair-req" {
+                    handle_pair_req(&mut s, &conn, req);
+                }
+                continue;
+            }
+            let Ok(env) = serde_json::from_slice::<Envelope>(&raw) else {
                 continue;
             };
             // only paired instances may talk to us
@@ -262,6 +323,70 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
             }
         }
     });
+}
+
+/// Validate a joiner's `pair-req` against the pairing code displayed on
+/// this machine; on match, mint ONE token, store it for the joiner and hand
+/// it back — both ends then hold the same shared secret (direction 128).
+fn handle_pair_req(stream: &mut TcpStream, conn: &Arc<Mutex<Connection>>, req: PairMsg) {
+    let peer_ip = stream
+        .peer_addr()
+        .map(|a| a.ip().to_string())
+        .unwrap_or_default();
+    let mut deny = |why: &str| {
+        log::info!("pairing denied: {why}");
+        let _ = send_pair(
+            stream,
+            &PairMsg {
+                op: "pair-deny".into(),
+                ..Default::default()
+            },
+        );
+    };
+    let Some(p) = crate::pending_pairing().lock().clone() else {
+        return deny("no pending pairing");
+    };
+    if p.instance != req.name {
+        return deny(&format!(
+            "pending is for {}, req from {}",
+            p.instance, req.name
+        ));
+    }
+    if db::now_unix() > p.expires_at {
+        *crate::pending_pairing().lock() = None;
+        return deny("pairing code expired");
+    }
+    if p.code != req.code.trim() {
+        return deny("wrong code"); // pending stays armed for a retry
+    }
+    *crate::pending_pairing().lock() = None;
+    let mut b = [0u8; 32];
+    if getrandom::fill(&mut b).is_err() {
+        return deny("rng failed");
+    }
+    let token = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(b);
+    {
+        let c = conn.lock();
+        if let Err(e) = c.execute(
+            "INSERT INTO pairing (instance, addr, token, created_at) VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(instance) DO UPDATE SET addr=?2, token=?3, created_at=?4",
+            rusqlite::params![req.name, peer_ip, token, db::now_unix()],
+        ) {
+            log::error!("pairing store: {e}");
+            return;
+        }
+    }
+    log::info!("pairing wire: paired with {} at {peer_ip}", req.name);
+    push_event("in", &req.name, "paired".into());
+    let _ = send_pair(
+        stream,
+        &PairMsg {
+            op: "pair-ack".into(),
+            name: crate::mdns_sync::our_instance(),
+            token,
+            ..Default::default()
+        },
+    );
 }
 
 /// Record a successful sync exchange with a peer (direction 130).

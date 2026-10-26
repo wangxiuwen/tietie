@@ -15,7 +15,6 @@ mod paste_native;
 mod richtext;
 mod sync;
 
-use base64::Engine as _;
 use parking_lot::Mutex;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -728,7 +727,7 @@ pub fn run() {
             export_diagnostics,
             sync_events,
             sync_set,
-            pairing_complete,
+            pairing_join,
             pairing_list,
             pairing_unpair,
             pairing_rename,
@@ -2242,34 +2241,34 @@ struct PairedPeer {
 
 /// One in-flight pairing attempt: a 6-digit code shown on this machine,
 /// valid for 5 minutes, tied to the peer it was generated for.
+#[derive(Clone)]
 struct PendingPairing {
     instance: String,
-    addr: String,
     code: String,
     expires_at: i64,
 }
 
-fn pending_pairing() -> &'static Mutex<Option<PendingPairing>> {
-    static PENDING: std::sync::OnceLock<Mutex<Option<PendingPairing>>> = std::sync::OnceLock::new();
-    PENDING.get_or_init(|| Mutex::new(None))
+/// Shared with the sync server thread: an inbound `pair-req` is validated
+/// against (and consumes) the code shown here.
+pub(crate) fn pending_pairing() -> &'static parking_lot::Mutex<Option<PendingPairing>> {
+    static PENDING: std::sync::OnceLock<parking_lot::Mutex<Option<PendingPairing>>> =
+        std::sync::OnceLock::new();
+    PENDING.get_or_init(|| parking_lot::Mutex::new(None))
 }
 
 /// Begin pairing with a discovered peer: returns the 6-digit code the user
 /// reads to the other end (direction 128; the wire exchange lands with the
-/// sync transport in direction 129). The peer must be in the current mDNS
-/// snapshot.
+/// sync transport in direction 129). The peer should be in the current mDNS
+/// snapshot; an unknown instance still arms the code (the joiner's real
+/// address is learned from its TCP connection when it arrives).
 #[tauri::command]
 fn pairing_begin(instance: String) -> Result<String, String> {
-    let peer = mdns_sync::shared()
-        .and_then(|d| d.snapshot().into_iter().find(|p| p.instance == instance))
-        .ok_or_else(|| "设备不在当前发现列表中".to_string())?;
     let mut b = [0u8; 4];
     getrandom::fill(&mut b).map_err(|e| e.to_string())?;
     let n = u32::from_le_bytes(b) % 1_000_000;
     let code = format!("{n:06}");
     *pending_pairing().lock() = Some(PendingPairing {
-        instance: peer.instance.clone(),
-        addr: peer.addr,
+        instance: instance.clone(),
         code: code.clone(),
         expires_at: db::now_unix() + 300,
     });
@@ -2277,44 +2276,47 @@ fn pairing_begin(instance: String) -> Result<String, String> {
     Ok(code)
 }
 
-/// Complete pairing: the entered code must match the pending one for the
-/// same peer and be within its validity window. On success the peer becomes
-/// a long-term trusted device (random token stored for the future session
-/// handshake, direction 129).
+/// Join pairing: the user typed the code displayed on `instance`'s screen.
+/// Connects to the peer's sync port, performs the wire handshake
+/// (`pair-req` → `pair-ack`), and stores the minted shared token — both
+/// ends end up trusting each other with the same secret (direction 128).
 #[tauri::command]
-fn pairing_complete(
+fn pairing_join(
     state: tauri::State<'_, AppState>,
     instance: String,
     code: String,
 ) -> Result<PairedPeer, String> {
-    let pending = pending_pairing().lock().take();
-    let p = pending.ok_or("没有进行中的配对")?;
-    if p.instance != instance {
-        return Err("配对设备不匹配".into());
-    }
-    if db::now_unix() > p.expires_at {
-        return Err("配对码已过期，请重新生成".into());
-    }
-    if p.code != code.trim() {
+    let peer = mdns_sync::shared()
+        .and_then(|d| d.snapshot().into_iter().find(|p| p.instance == instance))
+        .ok_or_else(|| "设备不在当前发现列表中".to_string())?;
+    let addr = peer
+        .addr
+        .parse::<std::net::SocketAddr>()
+        .map_err(|e| format!("对端地址无效: {e}"))?;
+    let mut stream = std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_secs(4))
+        .map_err(|e| format!("连不上 {addr}: {e}"))?;
+    let _ = stream.set_read_timeout(Some(std::time::Duration::from_secs(6)));
+    let _ = stream.set_write_timeout(Some(std::time::Duration::from_secs(4)));
+    crate::sync::send_pair_req(&mut stream, code.trim(), &mdns_sync::our_instance())
+        .map_err(|e| format!("发送失败: {e}"))?;
+    let ack = crate::sync::read_pair_ack(&mut stream).ok_or("对方未确认（码不对或超时）")?;
+    if ack.op != "pair-ack" {
         return Err("配对码不正确".into());
     }
-    let mut b = [0u8; 32];
-    getrandom::fill(&mut b).map_err(|e| e.to_string())?;
-    let token = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(b);
     let created_at = db::now_unix();
     {
         let conn = state.conn.lock();
         conn.execute(
             "INSERT INTO pairing (instance, addr, token, created_at) VALUES (?1, ?2, ?3, ?4)
              ON CONFLICT(instance) DO UPDATE SET addr=?2, token=?3, created_at=?4",
-            rusqlite::params![instance, p.addr, token, created_at],
+            rusqlite::params![instance, addr.to_string(), ack.token, created_at],
         )
         .map_err(|e| e.to_string())?;
     }
-    log::info!("paired with {instance}");
+    log::info!("pairing wire: joined {} (token shared)", instance);
     Ok(PairedPeer {
         instance,
-        addr: p.addr,
+        addr: addr.to_string(),
         created_at,
         alias: None,
         last_sync_at: 0,

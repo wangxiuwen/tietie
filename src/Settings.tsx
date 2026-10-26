@@ -450,7 +450,7 @@ export default function Settings() {
                     onKeyDown={(e) => {
                       if (e.key !== "Enter") return;
                       e.preventDefault();
-                      invoke("pairing_complete", {
+                      invoke("pairing_join", {
                         instance: pairTarget,
                         code: pairInput,
                       })
