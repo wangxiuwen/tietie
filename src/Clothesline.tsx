@@ -279,8 +279,11 @@ export default function Clothesline() {
 
   // open the detail view already in edit mode (context-menu 编辑)
   const [editOnOpen, setEditOnOpen] = useState(false);
+  // open the detail with the note input focused (context-menu 备注, direction 114)
+  const [noteFocusId, setNoteFocusId] = useState<number | null>(null);
   const openDetailEditing = useCallback((m: Memo) => {
     setEditOnOpen(true);
+    setNoteFocusId(null);
     setViewing(m);
   }, []);
 
@@ -308,9 +311,10 @@ export default function Clothesline() {
           memo={viewing}
           recentColors={recentPinColors(memos)}
           initialEditing={editOnOpen}
+          autoFocusNote={noteFocusId === viewing.id}
           copied={copiedId === viewing.id}
           onCopy={() => copy(viewing)}
-          onClose={() => { setEditOnOpen(false); setViewing(null); }}
+          onClose={() => { setEditOnOpen(false); setNoteFocusId(null); setViewing(null); }}
           onRemove={() => remove(viewing.id)}
           onSave={(content) => saveMemo(viewing.id, content)}
           onTogglePin={() => invoke("toggle_memo_pin", { id: viewing.id }).catch(() => {})}
@@ -418,6 +422,12 @@ export default function Clothesline() {
             onCopy: copy,
             onPin: (id) => invoke("toggle_memo_pin", { id }).catch(() => {}),
             onEdit: openDetailEditing,
+            onNote: (m) => {
+              setCtxMenu(null);
+              setEditOnOpen(false);
+              setNoteFocusId(m.id);
+              setViewing(m);
+            },
             onRemove: remove,
             onSink: (id) => invoke("sink_memo", { id }).catch(() => {}),
           })}
@@ -558,6 +568,7 @@ function buildMemoCtxItems({
   onCopy,
   onPin,
   onEdit,
+  onNote,
   onRemove,
   onSink,
 }: {
@@ -565,6 +576,7 @@ function buildMemoCtxItems({
   onCopy: (m: Memo) => void;
   onPin: (id: number) => void;
   onEdit: (m: Memo) => void;
+  onNote: (m: Memo) => void;
   onRemove: (id: number) => void;
   onSink: (id: number) => void;
 }): MenuItem[] {
@@ -573,6 +585,7 @@ function buildMemoCtxItems({
     { label: t("line.copy"), onClick: () => onCopy(memo) },
     { label: memo.pinned ? t("line.unpin") : t("line.pin"), onClick: () => onPin(memo.id) },
     { label: t("line.edit"), onClick: () => onEdit(memo) },
+    { label: memo.note ? t("ctx.editNote") : t("ctx.addNote"), onClick: () => onNote(memo) },
     { label: t("line.sink"), onClick: () => onSink(memo.id) },
     { label: t("line.takeOff"), onClick: () => onRemove(memo.id) },
   ];
@@ -709,6 +722,7 @@ function MemoDetail({
   memo,
   recentColors = [],
   initialEditing = false,
+  autoFocusNote = false,
   copied,
   onCopy,
   onClose,
@@ -719,6 +733,7 @@ function MemoDetail({
   memo: Memo;
   recentColors?: string[];
   initialEditing?: boolean;
+  autoFocusNote?: boolean;
   copied: boolean;
   onCopy: () => void;
   onClose: () => void;
@@ -734,6 +749,12 @@ function MemoDetail({
   // per-second re-render while a reminder is pending so the head countdown
   // ticks live (direction 102); the label reads the clock at render time
   const [, setRemindTick] = useState(0);
+  // note row input handle: focused on open via the context-menu 备注 path
+  // (direction 114)
+  const noteInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (autoFocusNote) noteInputRef.current?.focus();
+  }, [autoFocusNote]);
   const hasRemind = memo.remind_at != null;
   useEffect(() => {
     if (!hasRemind) return;
@@ -902,6 +923,7 @@ function MemoDetail({
           </span>
           <input
             className="line-note-input"
+            ref={noteInputRef}
             aria-label={t("line.note")}
             placeholder={t("ctx.notePlaceholder")}
             onKeyDown={(e) => {
