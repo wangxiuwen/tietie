@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **118** [`4f1d152`](https://github.com/wangxiuwen/tietie/commit/4f1d152) 链接卡片 URL 行首新增主域名小徽章（去 www.，强调色 pill） |
+
 - **117** [`cb92665`](https://github.com/wangxiuwen/tietie/commit/cb92665) 底部状态始终带标签：平时「显示 N/N」、搜索时「命中 K/N」高亮 |
 
 - **116** [`cca7bb3`](https://github.com/wangxiuwen/tietie/commit/cca7bb3) 便签详情进编辑态（按钮/双击）自动全选正文，进入后点击仍正常落光标 |
