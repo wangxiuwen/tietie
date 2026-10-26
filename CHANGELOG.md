@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **109** [`6c1a8b5`](https://github.com/wangxiuwen/tietie/commit/6c1a8b5) 详情头相对时间悬停显示完整本地日期时间 tooltip |
+
 - **108** [`f0e1904`](https://github.com/wangxiuwen/tietie/commit/f0e1904) 详情调色板最近三色排前（数字键快选同步顺序），顺修 recentPinColors 方向性 bug（原取最旧三色） |
 
 - **107** [`3bd8cb5`](https://github.com/wangxiuwen/tietie/commit/3bd8cb5) 空态分家：真空库保留三步引导卡，搜索无匹配/空分类改紧凑提示不再误导 |
