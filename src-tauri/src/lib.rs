@@ -3,6 +3,8 @@ mod crypt;
 mod db;
 mod filelog;
 #[cfg(target_os = "windows")]
+mod hotkey_hook;
+#[cfg(target_os = "windows")]
 mod jumplist;
 #[cfg(target_os = "macos")]
 mod paste;
@@ -68,8 +70,23 @@ pub struct HotkeyState {
     pub clothesline: Mutex<Option<Shortcut>>,
 }
 
+/// Last fire time per hotkey id. The Windows fallback hook replays WM_HOTKEY
+/// alongside the OS's own delivery; when both arrive for one physical press
+/// the second one within this window is swallowed.
+#[derive(Default)]
+struct HotkeyDebounce(Mutex<std::collections::HashMap<u32, std::time::Instant>>);
+
+const HOTKEY_DEBOUNCE_MS: u64 = 400;
+
 /// Parse "Super+Shift+KeyV" → Shortcut. Last segment must be the Code.
 fn parse_hotkey(s: &str) -> Option<Shortcut> {
+    let (mods, code) = parse_combo_parts(s)?;
+    Some(Shortcut::new(mods, code))
+}
+
+/// Same parse, but also returns the raw parts so the Windows hotkey fallback
+/// hook can map a combo to win32 modifier bits + a virtual-key code.
+fn parse_combo_parts(s: &str) -> Option<(Option<Modifiers>, Code)> {
     let mut mods = Modifiers::empty();
     let mut code: Option<Code> = None;
     for part in s.split('+').map(str::trim).filter(|p| !p.is_empty()) {
@@ -84,10 +101,167 @@ fn parse_hotkey(s: &str) -> Option<Shortcut> {
         }
     }
     let c = code?;
-    Some(Shortcut::new(
-        if mods.is_empty() { None } else { Some(mods) },
-        c,
-    ))
+    Some((if mods.is_empty() { None } else { Some(mods) }, c))
+}
+
+/// keyboard_types Code → win32 virtual-key code, for the fallback hook. Only
+/// keys that make sense in a global hotkey need an entry; unknown codes just
+/// leave that combo on the OS-only path.
+#[cfg(windows)]
+fn code_vk(code: Code) -> Option<u32> {
+    use Code::{ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Backquote, Backslash, Backspace};
+    use Code::{
+        BracketLeft, BracketRight, Comma, ContextMenu, Delete, Digit0, Digit1, Digit2, Digit3,
+        Digit4, Digit5, Digit6, Digit7, Digit8, Digit9, End, Enter, Equal, Escape, Home, Insert,
+        KeyA, KeyB, KeyC, KeyD, KeyE, KeyF, KeyG, KeyH, KeyI, KeyJ, KeyK, KeyL, KeyM, KeyN, KeyO,
+        KeyP, KeyQ, KeyR, KeyS, KeyT, KeyU, KeyV, KeyW, KeyX, KeyY, KeyZ, Minus, Numpad0, Numpad1,
+        Numpad2, Numpad3, Numpad4, Numpad5, Numpad6, Numpad7, Numpad8, Numpad9, PageDown, PageUp,
+        Period, Quote, Semicolon, Slash, Space, Tab, F1, F10, F11, F12, F2, F3, F4, F5, F6, F7, F8,
+        F9,
+    };
+    Some(match code {
+        KeyA => 0x41,
+        KeyB => 0x42,
+        KeyC => 0x43,
+        KeyD => 0x44,
+        KeyE => 0x45,
+        KeyF => 0x46,
+        KeyG => 0x47,
+        KeyH => 0x48,
+        KeyI => 0x49,
+        KeyJ => 0x4A,
+        KeyK => 0x4B,
+        KeyL => 0x4C,
+        KeyM => 0x4D,
+        KeyN => 0x4E,
+        KeyO => 0x4F,
+        KeyP => 0x50,
+        KeyQ => 0x51,
+        KeyR => 0x52,
+        KeyS => 0x53,
+        KeyT => 0x54,
+        KeyU => 0x55,
+        KeyV => 0x56,
+        KeyW => 0x57,
+        KeyX => 0x58,
+        KeyY => 0x59,
+        KeyZ => 0x5A,
+        Digit0 => 0x30,
+        Digit1 => 0x31,
+        Digit2 => 0x32,
+        Digit3 => 0x33,
+        Digit4 => 0x34,
+        Digit5 => 0x35,
+        Digit6 => 0x36,
+        Digit7 => 0x37,
+        Digit8 => 0x38,
+        Digit9 => 0x39,
+        F1 => 0x70,
+        F2 => 0x71,
+        F3 => 0x72,
+        F4 => 0x73,
+        F5 => 0x74,
+        F6 => 0x75,
+        F7 => 0x76,
+        F8 => 0x77,
+        F9 => 0x78,
+        F10 => 0x79,
+        F11 => 0x7A,
+        F12 => 0x7B,
+        Space => 0x20,
+        Enter => 0x0D,
+        Escape => 0x1B,
+        Tab => 0x09,
+        Backspace => 0x08,
+        Delete => 0x2E,
+        Insert => 0x2D,
+        Home => 0x24,
+        End => 0x23,
+        PageUp => 0x21,
+        PageDown => 0x22,
+        ArrowUp => 0x26,
+        ArrowDown => 0x28,
+        ArrowLeft => 0x25,
+        ArrowRight => 0x27,
+        Minus => 0xBD,
+        Equal => 0xBB,
+        BracketLeft => 0xDB,
+        BracketRight => 0xDD,
+        Backslash => 0xDC,
+        Semicolon => 0xBA,
+        Quote => 0xDE,
+        Backquote => 0xC0,
+        Comma => 0xBC,
+        Period => 0xBE,
+        Slash => 0xBF,
+        Numpad0 => 0x60,
+        Numpad1 => 0x61,
+        Numpad2 => 0x62,
+        Numpad3 => 0x63,
+        Numpad4 => 0x64,
+        Numpad5 => 0x65,
+        Numpad6 => 0x66,
+        Numpad7 => 0x67,
+        Numpad8 => 0x68,
+        Numpad9 => 0x69,
+        ContextMenu => 0x5D,
+        _ => return None,
+    })
+}
+
+/// keyboard_types modifier bits → win32 RegisterHotKey modifier bits.
+#[cfg(windows)]
+fn win32_mods(mods: Modifiers) -> u32 {
+    // bitflags 2 exposes these as associated consts, not importable variants
+    let mut m = 0;
+    if mods.contains(Modifiers::SHIFT) {
+        m |= 0x0004;
+    }
+    if mods.contains(Modifiers::CONTROL) {
+        m |= 0x0002;
+    }
+    if mods.contains(Modifiers::ALT) {
+        m |= 0x0001;
+    }
+    if mods.contains(Modifiers::SUPER) || mods.contains(Modifiers::META) {
+        m |= 0x0008;
+    }
+    m
+}
+
+/// Snapshot every live hotkey as (win32 mods, vk, global-hotkey id) for the
+/// Windows fallback hook; combos the hook cannot express (odd key codes) are
+/// simply left on the OS-only path.
+#[cfg(windows)]
+fn collect_hook_combos(app: &AppHandle) -> Vec<(u32, u32, u32)> {
+    let Some(state) = app.try_state::<HotkeyState>() else {
+        return Vec::new();
+    };
+    let entry = |kind: &str, shot: &Shortcut| -> Option<(u32, u32, u32)> {
+        let cfg = load_setting(app, hotkey_settings_key(kind), hotkey_default(kind));
+        let (mods, code) = parse_combo_parts(&cfg)?;
+        Some((
+            win32_mods(mods.unwrap_or_default()),
+            code_vk(code)?,
+            shot.id(),
+        ))
+    };
+    let mut out = Vec::new();
+    out.extend(entry("drawer", &state.drawer.lock()));
+    if let Some(s) = state.screenshot.lock().as_ref() {
+        out.extend(entry("screenshot", s));
+    }
+    if let Some(s) = state.clothesline.lock().as_ref() {
+        out.extend(entry("clothesline", s));
+    }
+    out
+}
+
+/// Re-derive the fallback hook's combo table from current registration state;
+/// call after every hotkey mutation site.
+#[cfg(windows)]
+fn refresh_hook_combos(app: &AppHandle) {
+    hotkey_hook::set_combos(collect_hook_combos(app));
 }
 
 fn settings_path<R: Runtime>(app: &AppHandle<R>) -> std::path::PathBuf {
@@ -253,6 +427,20 @@ pub fn run() {
                     if event.state() != ShortcutState::Pressed {
                         return;
                     }
+                    // The Windows fallback hook may replay a WM_HOTKEY for the
+                    // same physical press the OS just delivered — keep only
+                    // the first fire per id within the debounce window.
+                    let id = shortcut.id();
+                    if let Some(d) = app.try_state::<HotkeyDebounce>() {
+                        let mut seen = d.0.lock();
+                        let now = std::time::Instant::now();
+                        if seen.get(&id).is_some_and(|t| {
+                            now.duration_since(*t).as_millis() < HOTKEY_DEBOUNCE_MS as u128
+                        }) {
+                            return;
+                        }
+                        seen.insert(id, now);
+                    }
                     let Some(state) = app.try_state::<HotkeyState>() else {
                         return;
                     };
@@ -402,6 +590,14 @@ pub fn run() {
                     screenshot: Mutex::new(shot),
                     clothesline: Mutex::new(line),
                 });
+                app.manage(HotkeyDebounce::default());
+                // Windows fallback: replay hotkeys via a low-level hook when
+                // the OS hotkey dispatch itself stops delivering WM_HOTKEY.
+                #[cfg(target_os = "windows")]
+                {
+                    hotkey_hook::set_combos(collect_hook_combos(app.handle()));
+                    hotkey_hook::start();
+                }
                 // startup self-check: any hotkey the OS refused?
                 let failed = [
                     ("screenshot", shot.is_none()),
@@ -2318,6 +2514,8 @@ fn recheck_hotkeys(app: AppHandle) -> Hotkeys {
                 }
             }
         }
+        #[cfg(target_os = "windows")]
+        refresh_hook_combos(&app);
     }
     hotkeys_snapshot(&app)
 }
@@ -2385,6 +2583,8 @@ fn set_hotkey(app: AppHandle, kind: String, value: String) -> Result<(), String>
             ))
         )));
     }
+    #[cfg(target_os = "windows")]
+    refresh_hook_combos(&app);
     Ok(())
 }
 
@@ -2403,6 +2603,8 @@ fn begin_hotkey_capture(app: AppHandle, kind: String) -> Result<(), String> {
     if let Some(cur) = cur {
         let _ = app.global_shortcut().unregister(cur);
     }
+    #[cfg(target_os = "windows")]
+    refresh_hook_combos(&app);
     Ok(())
 }
 
@@ -2421,6 +2623,8 @@ fn cancel_hotkey_capture(app: AppHandle, kind: String) -> Result<(), String> {
     if let Some(cur) = cur {
         let _ = app.global_shortcut().register(cur);
     }
+    #[cfg(target_os = "windows")]
+    refresh_hook_combos(&app);
     Ok(())
 }
 
