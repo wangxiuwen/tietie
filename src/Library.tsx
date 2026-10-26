@@ -184,6 +184,25 @@ export default function Library() {
   // cursor is index-based over `filtered` and skipped while typing in the
   // search box or in the palette view.
   const [cursor, setCursor] = useState(-1);
+  // sensitive rows stay masked until their text is clicked, then show for 5s
+  // before re-masking automatically (direction 123, same UX as cards in 113)
+  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  const revealRow = useCallback((id: number) => {
+    setRevealed((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    window.setTimeout(() => {
+      setRevealed((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 5000);
+  }, []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
@@ -201,7 +220,7 @@ export default function Library() {
         const it = filtered[cursor];
         if (it.kind !== "image") {
           navigator.clipboard.writeText(it.content).catch(() => {});
-          setMsg(`${t("lib.copied")} ${oneLine(it.content).slice(0, 24)}`);
+          setMsg(copiedMsg(it));
         }
       } else if ((e.key === "Delete" || e.key === "Backspace") && cursor >= 0) {
         e.preventDefault();
@@ -368,13 +387,13 @@ export default function Library() {
                   // text-ish rows copy content, image rows copy the image itself
                   if (it.kind === "image") {
                     invoke("copy_item_image", { id: it.id }).catch(() => {});
-                    setMsg(`${t("lib.copied")} ${oneLine(it.content).slice(0, 24)}`);
+                    setMsg(copiedMsg(it));
                     return;
                   }
                   navigator.clipboard
                     .writeText(it.content)
                     .then(() => {
-                      setMsg(`${t("lib.copied")} ${oneLine(it.content).slice(0, 24)}`);
+                      setMsg(copiedMsg(it));
                     })
                     .catch(() => {});
                 }}
@@ -392,10 +411,28 @@ export default function Library() {
                     {kindLabel(it.kind)}
                   </span>
                 </td>
-                <td className="w-content" title={it.content}>
-                  <span className="lib-row-text">
-                    {oneLine(it.kind === "image" ? it.content : it.content).slice(0, 80)}
-                  </span>
+                <td
+                  className="w-content"
+                  title={
+                    it.sensitive && !revealed.has(it.id) ? undefined : it.content
+                  }
+                >
+                  {it.sensitive && !revealed.has(it.id) ? (
+                    // masked sensitive row (direction 123): click reveals for 5s
+                    <span
+                      className="lib-row-text lib-masked"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        revealRow(it.id);
+                      }}
+                    >
+                      •••••••• 🔒 {t("card.tapReveal")}
+                    </span>
+                  ) : (
+                    <span className="lib-row-text">
+                      {oneLine(it.kind === "image" ? it.content : it.content).slice(0, 80)}
+                    </span>
+                  )}
                   {it.kind !== "image" && (
                     <button
                       className="lib-row-copy"
@@ -404,7 +441,7 @@ export default function Library() {
                       onClick={(e) => {
                         e.stopPropagation();
                         navigator.clipboard.writeText(it.content).catch(() => {});
-                        setMsg(`${t("lib.copied")} ${oneLine(it.content).slice(0, 24)}`);
+                        setMsg(copiedMsg(it));
                       }}
                     >
                       ⧉
@@ -473,6 +510,12 @@ export default function Library() {
 
 function oneLine(s: string): string {
   return s.replace(/\s+/g, " ").trim();
+}
+
+/** Copied-status line: never echo sensitive content into the status bar,
+ * even while that row is revealed (direction 123). */
+function copiedMsg(it: ClipItem): string {
+  return `${t("lib.copied")} ${it.sensitive ? "🔒" : oneLine(it.content).slice(0, 24)}`;
 }
 
 function fmtBytes(n: number): string {

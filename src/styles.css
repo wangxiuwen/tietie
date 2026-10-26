@@ -373,6 +373,12 @@ button {
   letter-spacing: 0;
   font-size: calc(11px * var(--fs));
 }
+/* masked sensitive Library row (direction 123), same language as 113 */
+.lib-masked {
+  cursor: pointer;
+  color: var(--text-3);
+  letter-spacing: 2px;
+}
 .body.mono {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: calc(11.5px * var(--fs));
