@@ -201,17 +201,28 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
                 rich_rtf: None,
             };
             match db::upsert_item(&c, item, true) {
-                Ok(_) => log::info!("sync in: {} bytes from {}", p.content.len(), env.sender),
+                Ok(_) => {
+                    log::info!("sync in: {} bytes from {}", p.content.len(), env.sender);
+                    touch_last_sync(&c, &env.sender);
+                }
                 Err(e) => log::error!("sync insert: {e}"),
             }
         }
     });
 }
 
+/// Record a successful sync exchange with a peer (direction 130).
+fn touch_last_sync(conn: &Connection, instance: &str) {
+    let _ = conn.execute(
+        "UPDATE pairing SET last_sync_at = ?2 WHERE instance = ?1",
+        rusqlite::params![instance, db::now_unix()],
+    );
+}
+
 /// Outbound fan-out after a local capture. Never blocks the poll loop:
 /// peers are pushed from a background thread with short timeouts.
-pub fn on_captured(conn: &Connection, kind: &str, content: &str) {
-    if !enabled(conn) {
+pub fn on_captured(conn: &Arc<Mutex<Connection>>, kind: &str, content: &str) {
+    if !enabled(&conn.lock()) {
         return;
     }
     let mut h = Sha256::new();
@@ -221,6 +232,7 @@ pub fn on_captured(conn: &Connection, kind: &str, content: &str) {
         return; // this capture IS an inbound sync echo
     }
     let rows: Vec<(String, String, String)> = match conn
+        .lock()
         .prepare("SELECT instance, addr, token FROM pairing")
         .and_then(|mut s| {
             s.query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
@@ -234,6 +246,7 @@ pub fn on_captured(conn: &Connection, kind: &str, content: &str) {
     }
     let kind = kind.to_string();
     let content = content.to_string();
+    let conn = conn.clone();
     std::thread::spawn(move || {
         let me = hostname_instance();
         let p = SyncPayload {
@@ -241,7 +254,7 @@ pub fn on_captured(conn: &Connection, kind: &str, content: &str) {
             content,
             ts: db::now_unix(),
         };
-        for (_instance, addr, token) in rows {
+        for (instance, addr, token) in rows {
             let env = seal(&session_key(&token), &me, &p);
             let Ok(sock_addr) = std::net::SocketAddr::from_str(&addr) else {
                 log::warn!("sync: bad peer addr {addr}");
@@ -258,6 +271,7 @@ pub fn on_captured(conn: &Connection, kind: &str, content: &str) {
             let _ = stream.set_write_timeout(Some(std::time::Duration::from_secs(2)));
             if send_frame(&mut stream, &env).is_ok() {
                 log::info!("sync out: {} bytes to {}", env.ct.len(), addr);
+                touch_last_sync(&conn.lock(), &instance);
             }
         }
     });

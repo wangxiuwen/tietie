@@ -982,6 +982,18 @@ button {
   color: var(--text-2);
 }
 /* 6-digit pairing entry inside the code chip (direction 128) */
+/* inline alias field on a paired-device chip (direction 130) */
+.pair-name {
+  all: unset;
+  min-width: 90px;
+  padding: 1px 4px;
+  border-radius: var(--r-xs);
+  font-size: calc(11px * var(--fs));
+  color: var(--text);
+}
+.pair-name:focus {
+  background: rgba(0, 0, 0, 0.06);
+}
 .pair-input {
   all: unset;
   width: 76px;

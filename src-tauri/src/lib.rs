@@ -729,6 +729,7 @@ pub fn run() {
             pairing_complete,
             pairing_list,
             pairing_unpair,
+            pairing_rename,
             autostart_enabled,
             set_autostart,
             export_backup,
@@ -848,6 +849,13 @@ fn create_tray<R: Runtime>(
         None::<&str>,
     )?;
     let library = MenuItem::with_id(app, "library", "剪贴板库（管理窗）", true, None::<&str>)?;
+    let sync_toggle = MenuItem::with_id(
+        app,
+        "sync_toggle",
+        "剪贴板同步：开/关切换",
+        true,
+        None::<&str>,
+    )?;
     let pause = MenuItem::with_id(
         app,
         "pause_capture",
@@ -877,14 +885,35 @@ fn create_tray<R: Runtime>(
         Menu::with_items(
             app,
             &[
-                &show, &recent, &shot, &line, &library, &pause, &resume, note, &sep, &about, &quit,
+                &show,
+                &recent,
+                &shot,
+                &line,
+                &library,
+                &sync_toggle,
+                &pause,
+                &resume,
+                note,
+                &sep,
+                &about,
+                &quit,
             ],
         )?
     } else {
         Menu::with_items(
             app,
             &[
-                &show, &recent, &shot, &line, &library, &pause, &resume, &sep, &about, &quit,
+                &show,
+                &recent,
+                &shot,
+                &line,
+                &library,
+                &sync_toggle,
+                &pause,
+                &resume,
+                &sep,
+                &about,
+                &quit,
             ],
         )?
     };
@@ -892,7 +921,17 @@ fn create_tray<R: Runtime>(
     let menu = Menu::with_items(
         app,
         &[
-            &show, &recent, &shot, &line, &library, &pause, &resume, &sep, &about, &quit,
+            &show,
+            &recent,
+            &shot,
+            &line,
+            &library,
+            &sync_toggle,
+            &pause,
+            &resume,
+            &sep,
+            &about,
+            &quit,
         ],
     )?;
 
@@ -919,6 +958,15 @@ fn create_tray<R: Runtime>(
         .on_menu_event(|app, event| match event.id().as_ref() {
             "show" => toggle_drawer(app),
             "recent" => toggle_tray_popover(app),
+            "sync_toggle" => {
+                // flip the sync preference right from the tray (direction 130)
+                let state = app.state::<AppState>();
+                let conn = state.conn.lock();
+                let now = !sync::enabled(&conn);
+                sync::set_enabled(&conn, now);
+                drop(conn);
+                log::info!("sync {} (tray)", if now { "on" } else { "off" });
+            }
             "screenshot" => trigger_screenshot(),
             "clothesline" => {
                 toggle_clothesline(app);
@@ -2185,6 +2233,9 @@ struct PairedPeer {
     instance: String,
     addr: String,
     created_at: i64,
+    #[serde(rename = "name")]
+    alias: Option<String>,
+    last_sync_at: i64,
 }
 
 /// One in-flight pairing attempt: a 6-digit code shown on this machine,
@@ -2263,6 +2314,8 @@ fn pairing_complete(
         instance,
         addr: p.addr,
         created_at,
+        alias: None,
+        last_sync_at: 0,
     })
 }
 
@@ -2270,15 +2323,18 @@ fn pairing_complete(
 #[tauri::command]
 fn pairing_list(state: tauri::State<'_, AppState>) -> Vec<PairedPeer> {
     let conn = state.conn.lock();
-    let mut stmt = match conn.prepare("SELECT instance, addr, created_at FROM pairing") {
-        Ok(s) => s,
-        Err(_) => return Vec::new(),
-    };
+    let mut stmt =
+        match conn.prepare("SELECT instance, addr, created_at, name, last_sync_at FROM pairing") {
+            Ok(s) => s,
+            Err(_) => return Vec::new(),
+        };
     stmt.query_map([], |r| {
         Ok(PairedPeer {
             instance: r.get(0)?,
             addr: r.get(1)?,
             created_at: r.get(2)?,
+            alias: r.get(3).unwrap_or(None),
+            last_sync_at: r.get(4).unwrap_or(0),
         })
     })
     .map(|rows| rows.filter_map(|r| r.ok()).collect())
@@ -2294,6 +2350,32 @@ fn sync_state(state: tauri::State<'_, AppState>) -> bool {
 #[tauri::command]
 fn sync_set(state: tauri::State<'_, AppState>, on: bool) {
     sync::set_enabled(&state.conn.lock(), on);
+}
+
+/// Give a paired device a local display alias (direction 130). Empty clears.
+#[tauri::command]
+fn pairing_rename(
+    state: tauri::State<'_, AppState>,
+    instance: String,
+    name: Option<String>,
+) -> Result<(), String> {
+    let trimmed = name.unwrap_or_default().trim().to_string();
+    {
+        let conn = state.conn.lock();
+        conn.execute(
+            "UPDATE pairing SET name = ?2 WHERE instance = ?1",
+            rusqlite::params![
+                instance,
+                if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed)
+                }
+            ],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 /// Drop trust in a paired device.

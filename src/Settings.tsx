@@ -52,6 +52,15 @@ interface HotkeysInfo {
   clothesline_registered: boolean;
 }
 
+function syncAgo(ts: number): string {
+  if (!ts) return "—";
+  const s = Math.floor(Date.now() / 1000) - ts;
+  if (s < 60) return `${s}s`;
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  return `${Math.floor(s / 86400)}d`;
+}
+
 export default function Settings() {
   useLang();
   const close = () => getCurrentWindow().hide();
@@ -74,10 +83,14 @@ export default function Settings() {
   const [pairCode, setPairCode] = useState<string | null>(null);
   const [pairTarget, setPairTarget] = useState<string | null>(null);
   const [pairInput, setPairInput] = useState("");
-  const [paired, setPaired] = useState<{ instance: string; addr: string; created_at: number }[]>([]);
+  const [paired, setPaired] = useState<
+    { instance: string; addr: string; created_at: number; name: string | null; last_sync_at: number }[]
+  >([]);
   const [syncOn, setSyncOn] = useState(false);
   const reloadPaired = useCallback(() => {
-    invoke<{ instance: string; addr: string; created_at: number }[]>("pairing_list")
+    invoke<
+      { instance: string; addr: string; created_at: number; name: string | null; last_sync_at: number }[]
+    >("pairing_list")
       .then(setPaired)
       .catch(() => {});
   }, []);
@@ -465,7 +478,25 @@ export default function Settings() {
               ) : (
                 paired.map((p) => (
                   <span key={p.instance} className="lan-peer" title={p.addr}>
-                    {p.instance} · {p.addr}
+                    <input
+                      className="pair-name"
+                      defaultValue={p.name ?? p.instance}
+                      aria-label={t("settings.rename")}
+                      onKeyDown={(e) => {
+                        if (e.key !== "Enter") return;
+                        e.preventDefault();
+                        invoke("pairing_rename", {
+                          instance: p.instance,
+                          name: (e.target as HTMLInputElement).value,
+                        })
+                          .then(() => {
+                            (e.target as HTMLInputElement).blur();
+                            reloadPaired();
+                          })
+                          .catch(() => {});
+                      }}
+                    />
+                    · {t("settings.lastSync")} {syncAgo(p.last_sync_at)}
                     <button
                       className="btn ghost"
                       onClick={() => {

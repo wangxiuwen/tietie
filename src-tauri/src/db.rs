@@ -117,6 +117,12 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
         "#,
     )?;
     // Idempotent migrations for older databases (created before rich-text support).
+    // sync device management (direction 130): display alias + last sync ts
+    let _ = conn.execute("ALTER TABLE pairing ADD COLUMN name TEXT", []);
+    let _ = conn.execute(
+        "ALTER TABLE pairing ADD COLUMN last_sync_at INTEGER NOT NULL DEFAULT 0",
+        [],
+    );
     let _ = conn.execute("ALTER TABLE clip_item ADD COLUMN rich_html TEXT", []);
     let _ = conn.execute("ALTER TABLE clip_item ADD COLUMN rich_rtf BLOB", []);
     // manually marked sensitive items (direction 54): AES-sealed at rest
