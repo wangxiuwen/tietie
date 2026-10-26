@@ -2239,6 +2239,20 @@ select:focus-visible,
   width: 12px;
   height: 12px;
 }
+/* compact rows: the ⌘N hint renders as an inline chip at the row tail
+   instead of the absolute corner badge used on cards (direction 111) */
+.row-item .index-kbd {
+  position: static;
+  bottom: auto;
+  right: auto;
+  flex-shrink: 0;
+  padding: 2px 6px;
+  box-shadow: none;
+}
+.row-item.selected .index-kbd {
+  background: var(--accent);
+  padding: 2px 6px;
+}
 
 /* Memo reminder (direction 53): flash for the first minute after due,
    then keep a breathing glow instead of a steady ring (direction 102) */
