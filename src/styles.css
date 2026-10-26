@@ -969,6 +969,18 @@ button {
   background: rgba(255, 45, 85, 0.15);
   color: var(--cat-image);
 }
+/* LAN peer chips (direction 127) */
+.lan-peers {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.lan-peer {
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+  background: var(--accent-dim);
+  font-size: calc(11px * var(--fs));
+  color: var(--text-2);
+}
 /* non-blocking hotkey-conflict hint (direction 101) */
 .settings-tag.warn {
   background: rgba(255, 149, 0, 0.16);

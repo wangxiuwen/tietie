@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **127** `TBD` mDNS 设备发现（mdns-sd 纯 Rust）：应用广播+浏览 _tietie-sync._tcp，设置页局域网区显示在线设备+刷新 |
+
 - **126** [`c9d7b16`](https://github.com/wangxiuwen/tietie/commit/c9d7b16) 搜索框聚焦（空查询）弹最近搜索下拉，点击即用；重聚焦取消关闭定时器修竞态 |
 
 - **125** [`b8ab340`](https://github.com/wangxiuwen/tietie/commit/b8ab340) 默认衣夹色改为跟随系统强调色（Windows DWM ColorizationColor 去透明度位，OnceLock 缓存，失败回退经典蓝） |

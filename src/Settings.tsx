@@ -62,6 +62,13 @@ export default function Settings() {
   const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
   const [hks, setHks] = useState<HotkeysInfo | null>(null);
   const [autostart, setAutostart] = useState<boolean>(false);
+  // LAN peers over _tietie-sync._tcp mDNS (direction 127)
+  const [peers, setPeers] = useState<{ instance: string; hostname: string; addr: string }[]>([]);
+  const reloadPeers = useCallback(() => {
+    invoke<{ instance: string; hostname: string; addr: string }[]>("mdns_peers")
+      .then(setPeers)
+      .catch(() => {});
+  }, []);
   const [langPref, setLangPref] = useState<LangPref>(() => getPref());
   const [fs, setFs] = useState<FontScale>(() => getFontScale());
   useEffect(() => onFontScaleChange(() => setFs(getFontScale())), []);
@@ -149,6 +156,7 @@ export default function Settings() {
     const unlistens: UnlistenFn[] = [];
     listen("settings-open", () => {
       reloadHotkeys();
+      reloadPeers();
       invoke<boolean>("autostart_enabled").then(setAutostart);
       checkForUpdate();
     }).then((u) => unlistens.push(u));
@@ -345,6 +353,25 @@ export default function Settings() {
           {upd.kind === "available" && upd.notes && (
             <pre className="settings-notes">{upd.notes}</pre>
           )}
+
+          <div className="settings-subhead">{t("settings.lan")}</div>
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.lanDevices")}</span>
+            <span className="settings-value lan-peers">
+              {peers.length === 0 ? (
+                <span className="settings-tag muted">{t("settings.lanNone")}</span>
+              ) : (
+                peers.map((p) => (
+                  <span key={p.instance} className="lan-peer" title={p.addr}>
+                    {p.instance} · {p.addr}
+                  </span>
+                ))
+              )}
+              <button className="btn ghost" onClick={reloadPeers}>
+                {t("settings.lanRefresh")}
+              </button>
+            </span>
+          </div>
 
           <div className="settings-subhead">{t("settings.hotkeys")}</div>
           <HotkeyRow

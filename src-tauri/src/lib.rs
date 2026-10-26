@@ -6,6 +6,7 @@ mod filelog;
 mod hotkey_hook;
 #[cfg(target_os = "windows")]
 mod jumplist;
+mod mdns_sync;
 #[cfg(target_os = "macos")]
 mod paste;
 #[cfg(not(target_os = "macos"))]
@@ -716,6 +717,7 @@ pub fn run() {
             reveal_path,
             open_url,
             notify_due,
+            mdns_peers,
             autostart_enabled,
             set_autostart,
             export_backup,
@@ -2153,6 +2155,16 @@ fn notify_due(title: String, body: String) -> Result<(), String> {
     }
     log::info!("due notification fired: {title} / {body}");
     Ok(())
+}
+
+/// LAN peers currently resolved over `_tietie-sync._tcp` mDNS (direction 127).
+/// Starts the daemon lazily on first call; an empty list means either no
+/// peers answered yet or mDNS could not start on this machine.
+#[tauri::command]
+fn mdns_peers() -> Vec<mdns_sync::Peer> {
+    mdns_sync::shared()
+        .map(|d| d.snapshot())
+        .unwrap_or_default()
 }
 
 /// Dump the selected items' text content to Documents/tietie-export-<ts>.txt.
