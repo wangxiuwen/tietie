@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **107** [`3bd8cb5`](https://github.com/wangxiuwen/tietie/commit/3bd8cb5) 空态分家：真空库保留三步引导卡，搜索无匹配/空分类改紧凑提示不再误导 |
+
 - **106** [`5143550`](https://github.com/wangxiuwen/tietie/commit/5143550) 新增 open_url 命令（仅 http(s)，跨平台默认浏览器），Library 链接行 Ctrl/⌘+点击直开不占选 |
 
 - **105** [`5eb3e76`](https://github.com/wangxiuwen/tietie/commit/5eb3e76) export_memos 加 txt 格式（换行原样保留+分隔线），晾衣架新增「导出纯文本」按钮 |
