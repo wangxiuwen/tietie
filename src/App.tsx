@@ -1135,7 +1135,9 @@ function Card({
         {item.note && (
           <span className="note" title={item.note}>📝 {truncate(item.note, 24)}</span>
         )}
-        <span>{relTime(item.used_at)}</span>
+        <span title={new Date(item.used_at * 1000).toLocaleString()}>
+          {relTime(item.used_at)}
+        </span>
       </div>
       {idx < 10 && <div className="index-kbd">{MOD}{idx === 9 ? 0 : idx + 1}</div>}
       <div className="actions" onClick={(e) => e.stopPropagation()}>
@@ -1235,7 +1237,10 @@ function CardRow({
           <HighlightText text={text} query={query} />
         )}
       </span>
-      <span className="row-meta">
+      <span
+        className="row-meta"
+        title={new Date(item.used_at * 1000).toLocaleString()}
+      >
         {item.sensitive && "🔒 "}
         {item.source_app || "—"} · {relTime(item.used_at)}
       </span>
