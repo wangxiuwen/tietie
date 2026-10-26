@@ -3,6 +3,10 @@
 > 由 docs/ITERATION_BACKLOG.md 的迭代记录生成——`py -3 scripts/gen_changelog.py`，请勿手改。
 
 
+## 2026-10-27
+
+- **137** [`fb1cd66`](https://github.com/wangxiuwen/tietie/commit/fb1cd66) SyncPayload 加 image_b64/hash 字段，出站图片捕获≤4MiB PNG 入帧，入站解 blob 走 image_blob 列，去重用发送方哈希 |
+
 ## 2026-10-26
 
 - **136** `—` 入池时已由既有实现覆盖（list_items 即 pinned/used_at DESC）——A→B→A 实测 A 居首，按已具备勾掉 |
