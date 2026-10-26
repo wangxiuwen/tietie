@@ -5,6 +5,10 @@
 
 ## 2026-10-27
 
+- **146** [`da8f2f9`](https://github.com/wangxiuwen/tietie/commit/da8f2f9) 托盘列表滚动>80px 显 ↑ 浮钮，点击回顶并重置选中到首行 |
+
+- **148a** `TBD` 配对设备互发消息：💬 输入框→msg_send 加密帧（绕过同步开关），对端通知+入库可粘贴，发送方本地留档；WSL 虚拟机双向联调实证（win→wsl 命令路径 + wsl→win python 线上客户端，22 字符载荷精确一致） |
+
 - **145** [`a03a893`](https://github.com/wangxiuwen/tietie/commit/a03a893) export_memo_one 命令+详情按钮与右键项「存为 txt」，换行原样保留，导出后资源管理器定位 |
 
 - **128b** [`eb970e8`](https://github.com/wangxiuwen/tietie/commit/eb970e8) 配对协议补全：pair-req/ack/deny 线协议+pairing_join，两端共享同一 token（修复各自随机生成导致同步不可用的断链）；WSL Ubuntu 虚拟机真机联调全通（握手/加密帧跨机/解密入库三方实证） |
