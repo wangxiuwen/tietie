@@ -5,7 +5,9 @@
 
 ## 2026-10-27
 
-- **128b** `TBD` 配对协议补全：pair-req/ack/deny 线协议+pairing_join，两端共享同一 token（修复各自随机生成导致同步不可用的断链）；WSL Ubuntu 虚拟机真机联调全通（握手/加密帧跨机/解密入库三方实证） |
+- **145** [`a03a893`](https://github.com/wangxiuwen/tietie/commit/a03a893) export_memo_one 命令+详情按钮与右键项「存为 txt」，换行原样保留，导出后资源管理器定位 |
+
+- **128b** [`eb970e8`](https://github.com/wangxiuwen/tietie/commit/eb970e8) 配对协议补全：pair-req/ack/deny 线协议+pairing_join，两端共享同一 token（修复各自随机生成导致同步不可用的断链）；WSL Ubuntu 虚拟机真机联调全通（握手/加密帧跨机/解密入库三方实证） |
 
 - **143** [`aca5dc6`](https://github.com/wangxiuwen/tietie/commit/aca5dc6) 提醒下拉（编写器+详情）加 2h 与「明天早上 9:00」预设，at9 折算分钟走既有管线 |
 
