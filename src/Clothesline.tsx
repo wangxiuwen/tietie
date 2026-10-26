@@ -306,6 +306,7 @@ export default function Clothesline() {
       {viewing ? (
         <MemoDetail
           memo={viewing}
+          recentColors={recentPinColors(memos)}
           initialEditing={editOnOpen}
           copied={copiedId === viewing.id}
           onCopy={() => copy(viewing)}
@@ -441,10 +442,10 @@ export default function Clothesline() {
 /** The 3 most recently used distinct clothespin colors (direction 81). */
 function recentPinColors(memos: Memo[]): string[] {
   const seen: string[] = [];
-  for (const m of memos) {
-    // memos are newest-first from list_memos ordering
-    if (m.color && !seen.includes(m.color)) seen.push(m.color);
-    if (seen.length === 3) break;
+  // memos come back oldest-first (sort ASC); recency walks from the end
+  for (let i = memos.length - 1; i >= 0 && seen.length < 3; i--) {
+    const c = memos[i].color;
+    if (c && !seen.includes(c)) seen.push(c);
   }
   return seen;
 }
@@ -706,6 +707,7 @@ function useDetailZoom() {
 
 function MemoDetail({
   memo,
+  recentColors = [],
   initialEditing = false,
   copied,
   onCopy,
@@ -715,6 +717,7 @@ function MemoDetail({
   onTogglePin,
 }: {
   memo: Memo;
+  recentColors?: string[];
   initialEditing?: boolean;
   copied: boolean;
   onCopy: () => void;
@@ -737,17 +740,24 @@ function MemoDetail({
     const iv = setInterval(() => setRemindTick((n) => n + 1), 1000);
     return () => clearInterval(iv);
   }, [hasRemind]);
+  // palette order (direction 108): the 3 most recently used pin colors
+  // float to the front, the rest keep their fixed order. Number-key quick
+  // pick (direction 99) and the dot badges follow this same order.
+  const paletteColors = [
+    ...recentColors.filter((c) => MEMO_COLORS.includes(c)),
+    ...MEMO_COLORS.filter((c) => !recentColors.includes(c)),
+  ];
   useEffect(() => {
     if (!paletteHot) return;
     const onKey = (e: KeyboardEvent) => {
       const n = Number(e.key);
-      if (!Number.isInteger(n) || n < 1 || n > MEMO_COLORS.length) return;
+      if (!Number.isInteger(n) || n < 1 || n > paletteColors.length) return;
       e.preventDefault();
-      invoke("set_memo_color", { id: memo.id, color: MEMO_COLORS[n - 1] }).catch(() => {});
+      invoke("set_memo_color", { id: memo.id, color: paletteColors[n - 1] }).catch(() => {});
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [paletteHot, memo.id]);
+  }, [paletteHot, memo.id, recentColors]);
 
   const canEdit = memo.kind !== "image"; // image memos carry no editable text
 
@@ -779,7 +789,7 @@ function MemoDetail({
           onMouseEnter={() => setPaletteHot(true)}
           onMouseLeave={() => setPaletteHot(false)}
         >
-          {MEMO_COLORS.map((c, i) => (
+          {paletteColors.map((c, i) => (
             <button
               key={c}
               className={"pal-dot" + (memo.color === c ? " active" : "")}
