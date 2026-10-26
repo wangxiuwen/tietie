@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **126** [`c9d7b16`](https://github.com/wangxiuwen/tietie/commit/c9d7b16) 搜索框聚焦（空查询）弹最近搜索下拉，点击即用；重聚焦取消关闭定时器修竞态 |
+
 - **125** [`b8ab340`](https://github.com/wangxiuwen/tietie/commit/b8ab340) 默认衣夹色改为跟随系统强调色（Windows DWM ColorizationColor 去透明度位，OnceLock 缓存，失败回退经典蓝） |
 
 - **124** [`4ab947b`](https://github.com/wangxiuwen/tietie/commit/4ab947b) 托盘行尾 ⌘N 序号徽章（前 10 行）+ ⌘/Ctrl+数字 直接复制对应行，纯数字仍输入搜索 |
