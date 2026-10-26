@@ -626,7 +626,7 @@ export default function App() {
         />
         <div className="strip">
           {filtered.length === 0 ? (
-            <Empty />
+            <Empty hasItems={items.length > 0} query={query} inFolder={folderId != null} />
           ) : (
             <div className="cards" ref={cardsRef} role="listbox" aria-label={t("a11y.cards")}>
               {filtered.map((it, idx) =>
@@ -1551,7 +1551,26 @@ function fmtBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function Empty() {
+function Empty({
+  hasItems,
+  query,
+  inFolder,
+}: {
+  hasItems: boolean;
+  query: string;
+  inFolder: boolean;
+}) {
+  // filtered to nothing while history exists (search miss / empty folder) —
+  // a compact hint, not the first-run guidance (direction 107)
+  if (hasItems) {
+    return (
+      <div className="empty">
+        <div className="empty-icon">{query ? "🔍" : "🗂"}</div>
+        <h3>{query ? t("empty.noMatch") : inFolder ? t("empty.emptyFolder") : t("empty.title")}</h3>
+        {query && <p>{t("empty.noMatchDesc")}</p>}
+      </div>
+    );
+  }
   return (
     <div className="empty">
       <div className="empty-icon">📋</div>
