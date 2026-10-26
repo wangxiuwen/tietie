@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **139** [`0f7167e`](https://github.com/wangxiuwen/tietie/commit/0f7167e) 编写器「存为模板」chip（会话级去重≤8）点击原样填入，实现一键挂绳常用短语 |
+
 - **138** [`b7aaa95`](https://github.com/wangxiuwen/tietie/commit/b7aaa95) 纯 B 键成为 N 的别名开备注浮层（文本域内仍仅 ⌘N），速查表更新 |
 
 - **137** [`fb1cd66`](https://github.com/wangxiuwen/tietie/commit/fb1cd66) SyncPayload 加 image_b64/hash 字段，出站图片捕获≤4MiB PNG 入帧，入站解 blob 走 image_blob 列，去重用发送方哈希 |
