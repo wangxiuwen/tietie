@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **120** [`622bcc8`](https://github.com/wangxiuwen/tietie/commit/622bcc8) Library 表格行双击即复制（图片行走复制图片），带已复制反馈不动勾选 |
+
 - **119** [`b72b5fb`](https://github.com/wangxiuwen/tietie/commit/b72b5fb) 便签提醒到点跃迁时发一次系统通知（Win Toast/macOS osascript/Linux notify-send），防重+不补发 |
 
 - **118** [`4f1d152`](https://github.com/wangxiuwen/tietie/commit/4f1d152) 链接卡片 URL 行首新增主域名小徽章（去 www.，强调色 pill） |
