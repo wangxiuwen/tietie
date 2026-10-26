@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **140** [`aeb2dc5`](https://github.com/wangxiuwen/tietie/commit/aeb2dc5) 托盘行右键菜单（复制回粘/置顶切换/删除走真实命令并刷新），三处 Row 全接 |
+
 - **139** [`0f7167e`](https://github.com/wangxiuwen/tietie/commit/0f7167e) 编写器「存为模板」chip（会话级去重≤8）点击原样填入，实现一键挂绳常用短语 |
 
 - **138** [`b7aaa95`](https://github.com/wangxiuwen/tietie/commit/b7aaa95) 纯 B 键成为 N 的别名开备注浮层（文本域内仍仅 ⌘N），速查表更新 |
