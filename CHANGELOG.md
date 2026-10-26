@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **143** [`aca5dc6`](https://github.com/wangxiuwen/tietie/commit/aca5dc6) 提醒下拉（编写器+详情）加 2h 与「明天早上 9:00」预设，at9 折算分钟走既有管线 |
+
 - **141** [`ce96880`](https://github.com/wangxiuwen/tietie/commit/ce96880) sync 模块事件环（in/out/fail≤20）+ sync_events 命令 + 设置页日志行（最新在前，⇦⇨⚠着色） |
 
 - **140** [`aeb2dc5`](https://github.com/wangxiuwen/tietie/commit/aeb2dc5) 托盘行右键菜单（复制回粘/置顶切换/删除走真实命令并刷新），三处 Row 全接 |
