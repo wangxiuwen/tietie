@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **135** [`44546fc`](https://github.com/wangxiuwen/tietie/commit/44546fc) 详情正文内联解析 **粗体**/[链接](url)/`代码`（React 文本节点零注入面，链接交系统浏览器） |
+
 - **134** [`9272f29`](https://github.com/wangxiuwen/tietie/commit/9272f29) export_diagnostics：版本/OS+设置摘要+数据计数+热键态+末200行日志，通知正文与URL脱敏 |
 
 - **133** [`7d77bfd`](https://github.com/wangxiuwen/tietie/commit/7d77bfd) 卡片/紧凑行 meta 显示 ×N 累计使用徽章（use_count>1 才显示，强调色） |
