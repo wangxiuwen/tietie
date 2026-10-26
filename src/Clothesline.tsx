@@ -743,6 +743,12 @@ function MemoDetail({
 }) {
   const [editing, setEditing] = useState(initialEditing);
   const [draft, setDraft] = useState(memo.content);
+  const editRef = useRef<HTMLTextAreaElement>(null);
+  // entering edit mode pre-selects the whole text for one-shot replacement
+  // (direction 116); clicking inside afterwards still places the caret
+  useEffect(() => {
+    if (editing) editRef.current?.select();
+  }, [editing]);
   const { zoom, onZoomKey } = useDetailZoom();
   // palette hovered: number keys 1..N pick the matching pin color (direction 99)
   const [paletteHot, setPaletteHot] = useState(false);
@@ -944,6 +950,7 @@ function MemoDetail({
       {editing ? (
         <div className="line-detail-body">
           <textarea
+            ref={editRef}
             className="line-detail-edit"
             autoFocus
             value={draft}
