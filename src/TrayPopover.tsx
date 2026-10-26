@@ -259,6 +259,8 @@ function Row({
     <button
       className={"po-row" + (active ? " active" : "")}
       data-idx={idx}
+      // annotated items surface their note on hover (direction 115)
+      title={item.note ?? undefined}
       onClick={onClick}
     >
       <span className={"po-kind kind-" + item.kind}>{kindLabel(item.kind)}</span>
