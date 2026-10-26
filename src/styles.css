@@ -401,6 +401,19 @@ button {
   color: var(--text-3);
   word-break: break-all;
 }
+/* glanceable site-host badge on link cards (direction 118) */
+.link-domain {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  background: rgba(0, 122, 255, 0.12);
+  color: var(--accent);
+  font-size: calc(10px * var(--fs));
+  font-weight: 600;
+  line-height: 1.5;
+  vertical-align: 1px;
+}
 
 .img {
   margin-top: 10px;

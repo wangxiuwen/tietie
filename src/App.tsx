@@ -1254,6 +1254,15 @@ function CardRow({
   );
 }
 
+/** Registrable host of a link ("www." stripped); "" when unparseable. */
+function linkDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "";
+  }
+}
+
 function cardAriaText(item: ClipItem): string {
   const s = item.kind === "image" ? item.content : (item.preview || item.content);
   const one = s.replace(/\s+/g, " ").trim();
@@ -1334,6 +1343,7 @@ function CardBody({
     );
   }
   if (item.kind === "link") {
+    const domain = linkDomain(item.content);
     return (
       <div className="body">
         <div className="link-title">
@@ -1351,7 +1361,11 @@ function CardBody({
           </button>
           <HighlightText text={item.preview || item.content} query={query} />
         </div>
-        <div className="link-url"><HighlightText text={item.content} query={query} /></div>
+        <div className="link-url">
+          {/* registrable host as a glanceable badge (direction 118) */}
+          {domain && <span className="link-domain">{domain}</span>}
+          <HighlightText text={item.content} query={query} />
+        </div>
       </div>
     );
   }
