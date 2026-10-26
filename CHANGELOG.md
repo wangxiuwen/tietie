@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **133** [`7d77bfd`](https://github.com/wangxiuwen/tietie/commit/7d77bfd) 卡片/紧凑行 meta 显示 ×N 累计使用徽章（use_count>1 才显示，强调色） |
+
 - **132** [`4de7af5`](https://github.com/wangxiuwen/tietie/commit/4de7af5) 晾衣架头部色点筛选条（全部∗+8色，点选/再点取消），空色显示专属提示 |
 
 - **131** [`2adb3c9`](https://github.com/wangxiuwen/tietie/commit/2adb3c9) 扩池时与方向64重复——行尾 ⧉ 悬停复制已存在，复验悬停门控/行尾不出界/点击剪贴板精确一致后按已具备勾掉 |
