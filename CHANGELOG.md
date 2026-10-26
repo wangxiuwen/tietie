@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **124** [`4ab947b`](https://github.com/wangxiuwen/tietie/commit/4ab947b) 托盘行尾 ⌘N 序号徽章（前 10 行）+ ⌘/Ctrl+数字 直接复制对应行，纯数字仍输入搜索 |
+
 - **123** [`13d2120`](https://github.com/wangxiuwen/tietie/commit/13d2120) Library 敏感行默认 ••••••••🔒 打码（title 同步防泄漏），点击显形 5 秒自动回码；行内复制/双击复制的状态提示对敏感行只显 🔒 不回显前 24 字 |
 
 - **122** [`7335536`](https://github.com/wangxiuwen/tietie/commit/7335536) 便签 Markdown 导出中链接便签改为 [去scheme可读标签](完整URL)，txt 格式不变 |
