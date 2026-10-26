@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **105** [`5eb3e76`](https://github.com/wangxiuwen/tietie/commit/5eb3e76) export_memos 加 txt 格式（换行原样保留+分隔线），晾衣架新增「导出纯文本」按钮 |
+
 - **104** [`b62e1ea`](https://github.com/wangxiuwen/tietie/commit/b62e1ea) 选中卡片按 N 开备注编辑器并自动聚焦，搜索框输入时仅 ⌘N 触发，速查表补条目 |
 
 - **103** [`719c850`](https://github.com/wangxiuwen/tietie/commit/719c850) 托盘无搜索时拆「置顶/最近」两段，置顶>5 折叠显「展开 +N」，键盘选择与渲染行同步 |
