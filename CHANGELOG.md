@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **111** [`8065cb8`](https://github.com/wangxiuwen/tietie/commit/8065cb8) 紧凑行的 ⌘N 序号改为行内 chip 定位（原继承卡片绝对定位会错位），选中态同步强调色 |
+
 - **110** [`766e143`](https://github.com/wangxiuwen/tietie/commit/766e143) 托盘面板暗色下黑 tint 全部反转白 tint（搜索框/行悬停/底栏/滚动条/色徽） |
 
 - **109** [`6c1a8b5`](https://github.com/wangxiuwen/tietie/commit/6c1a8b5) 详情头相对时间悬停显示完整本地日期时间 tooltip |
