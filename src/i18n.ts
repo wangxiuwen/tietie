@@ -140,6 +140,7 @@ export const zh: Dict = {
   // tray popover
   "tray.pinned": "📌 置顶", "tray.recent": "最近", "tray.results": "搜索结果",
   "tray.expand": "展开",
+  "tray.mCopy": "复制并粘贴回去", "tray.mPin": "置顶", "tray.mUnpin": "取消置顶", "tray.mDel": "删除",
   "tray.clearSearch": "清空搜索",
   "tray.viewAll": "查看全部 →", "tray.noMatch": "没找到匹配项", "tray.none": "暂无内容",
   "tray.full": "唤起完整面板", "tray.quit": "退出",
@@ -287,6 +288,7 @@ export const en: Dict = {
   "lib.deleted": "Deleted", "lib.collapse": "Collapse",
   "tray.pinned": "📌 Pinned", "tray.recent": "Recent", "tray.results": "Results",
   "tray.expand": "Show all",
+  "tray.mCopy": "Copy & paste back", "tray.mPin": "Pin", "tray.mUnpin": "Unpin", "tray.mDel": "Delete",
   "tray.clearSearch": "Clear search",
   "tray.viewAll": "View all →", "tray.noMatch": "No matches", "tray.none": "Nothing yet",
   "tray.full": "Open full panel", "tray.quit": "Quit",

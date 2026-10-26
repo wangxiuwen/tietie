@@ -9,6 +9,7 @@ import { matchQuery } from "./search";
 import { HighlightText } from "./highlight";
 import { t, useLang } from "./i18n";
 import { onFontScaleChange } from "./fontScale";
+import { ContextMenu } from "./ContextMenu";
 
 
 export default function TrayPopover() {
@@ -21,6 +22,8 @@ export default function TrayPopover() {
   const poSearchRef = useRef<HTMLInputElement>(null);
   // pinned-section expansion (direction 103): collapsed again per session
   const [pinExpanded, setPinExpanded] = useState(false);
+  // row context menu (direction 140)
+  const [rowMenu, setRowMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   // progressive list (direction 77): start at 30 rows; pressing ↓ on the
   // last visible row appends another page so long histories stay light.
   const PAGE = 30;
@@ -165,6 +168,7 @@ export default function TrayPopover() {
                     active={idx === sel}
                     query={query}
                     onClick={() => copyBack(it)}
+                    onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
                   />
                 ))}
               </div>
@@ -191,6 +195,7 @@ export default function TrayPopover() {
                       active={idx === sel}
                       query={query}
                       onClick={() => copyBack(it)}
+                      onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
                     />
                   ))}
                 </div>
@@ -221,6 +226,7 @@ export default function TrayPopover() {
                       active={idx + pinnedShown.length === sel}
                       query={query}
                       onClick={() => copyBack(it)}
+                      onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
                     />
                   ))}
                 </div>
@@ -229,6 +235,25 @@ export default function TrayPopover() {
           </>
         )}
       </div>
+
+      {rowMenu && (
+        <ContextMenu
+          x={rowMenu.x}
+          y={rowMenu.y}
+          items={[
+            { label: t("tray.mCopy"), onClick: () => {
+              const it = shown.find((x) => x.id === rowMenu.itemId);
+              if (it) copyBack(it);
+            } },
+            { label: items.find((x) => x.id === rowMenu.itemId)?.pinned
+                ? t("tray.mUnpin") : t("tray.mPin"),
+              onClick: () => { invoke("toggle_pin", { id: rowMenu.itemId }).then(refresh).catch(() => {}); } },
+            { label: t("tray.mDel"), danger: true, separatorBefore: true,
+              onClick: () => { invoke("delete_item", { id: rowMenu.itemId }).then(refresh).catch(() => {}); } },
+          ]}
+          onClose={() => setRowMenu(null)}
+        />
+      )}
 
       <div className="po-foot">
         <button
@@ -255,12 +280,14 @@ function Row({
   query,
   "data-idx": idx,
   onClick,
+  onContext,
 }: {
   item: ClipItem;
   active: boolean;
   query: string;
   "data-idx"?: number;
   onClick: () => void;
+  onContext: (x: number, y: number) => void;
 }) {
   return (
     <button
@@ -269,6 +296,12 @@ function Row({
       // annotated items surface their note on hover (direction 115)
       title={item.note ?? undefined}
       onClick={onClick}
+      onContextMenu={(e) => {
+        // row context menu (direction 140): copy / pin / delete
+        e.preventDefault();
+        e.stopPropagation();
+        onContext(e.clientX, e.clientY);
+      }}
     >
       <span className={"po-kind kind-" + item.kind}>{kindLabel(item.kind)}</span>
       {item.kind === "image" && item.preview && (
