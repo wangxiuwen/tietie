@@ -33,6 +33,12 @@ fn hostname_label() -> String {
         .to_lowercase()
 }
 
+/// Our advertised instance label ("<host>-tietie"), also used as the sync
+/// sender identity (direction 129).
+pub fn our_instance() -> String {
+    format!("{}-tietie", hostname_label())
+}
+
 /// Best-effort LAN IP: ask the OS which source address it would route with.
 fn local_ip() -> IpAddr {
     std::net::UdpSocket::bind("0.0.0.0:0")

@@ -132,6 +132,9 @@ pub fn start_polling(
                     } else {
                         let _ = db::trim_history(&conn_g, max_history);
                         let _ = db::trim_expired(&conn_g, retention_days);
+                        // fan out to paired devices (direction 129); text
+                        // payloads only for now — image sync rides later
+                        crate::sync::on_captured(&conn_g, kind, &text);
                         drop(conn_g);
                         let _ = app.emit("clipboard-changed", ());
                         #[cfg(target_os = "windows")]

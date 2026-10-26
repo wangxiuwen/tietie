@@ -75,6 +75,7 @@ export default function Settings() {
   const [pairTarget, setPairTarget] = useState<string | null>(null);
   const [pairInput, setPairInput] = useState("");
   const [paired, setPaired] = useState<{ instance: string; addr: string; created_at: number }[]>([]);
+  const [syncOn, setSyncOn] = useState(false);
   const reloadPaired = useCallback(() => {
     invoke<{ instance: string; addr: string; created_at: number }[]>("pairing_list")
       .then(setPaired)
@@ -169,6 +170,7 @@ export default function Settings() {
       reloadHotkeys();
       reloadPeers();
       reloadPaired();
+      invoke<boolean>("sync_state").then(setSyncOn).catch(() => {});
       invoke<boolean>("autostart_enabled").then(setAutostart);
       checkForUpdate();
     }).then((u) => unlistens.push(u));
@@ -438,6 +440,21 @@ export default function Settings() {
                   />
                 </span>
               )}
+            </span>
+          </div>
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.syncOn")}</span>
+            <span className="settings-value">
+              <input
+                type="checkbox"
+                checked={syncOn}
+                onChange={(e) => {
+                  const on = e.target.checked;
+                  setSyncOn(on);
+                  invoke("sync_set", { on }).catch(() => {});
+                }}
+              />
+              <span className="settings-tag muted">{t("settings.syncHint")}</span>
             </span>
           </div>
           <div className="settings-row">

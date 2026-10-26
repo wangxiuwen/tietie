@@ -13,6 +13,7 @@ mod paste;
 mod paste_native;
 #[cfg(target_os = "macos")]
 mod richtext;
+mod sync;
 
 use base64::Engine as _;
 use parking_lot::Mutex;
@@ -553,6 +554,9 @@ pub fn run() {
                 db_ok: db_ok.clone(),
             });
 
+            // encrypted sync server for paired devices (direction 129)
+            sync::start_server(conn.clone());
+
             // start clipboard polling (retention: 0=forever, else days;
             // history cap: 200/500/1000/3000 rows before trimming)
             let retention = load_setting(app.handle(), "retention_days", "0")
@@ -720,6 +724,8 @@ pub fn run() {
             notify_due,
             mdns_peers,
             pairing_begin,
+            sync_state,
+            sync_set,
             pairing_complete,
             pairing_list,
             pairing_unpair,
@@ -2277,6 +2283,17 @@ fn pairing_list(state: tauri::State<'_, AppState>) -> Vec<PairedPeer> {
     })
     .map(|rows| rows.filter_map(|r| r.ok()).collect())
     .unwrap_or_default()
+}
+
+/// Sync transport on/off + port for the settings page (direction 129).
+#[tauri::command]
+fn sync_state(state: tauri::State<'_, AppState>) -> bool {
+    sync::enabled(&state.conn.lock())
+}
+
+#[tauri::command]
+fn sync_set(state: tauri::State<'_, AppState>, on: bool) {
+    sync::set_enabled(&state.conn.lock(), on);
 }
 
 /// Drop trust in a paired device.
