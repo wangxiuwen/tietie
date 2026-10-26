@@ -658,6 +658,11 @@ function buildMemoCtxItems({
     { label: t("line.edit"), onClick: () => onEdit(memo) },
     { label: memo.note ? t("ctx.editNote") : t("ctx.addNote"), onClick: () => onNote(memo) },
     { label: t("line.sink"), onClick: () => onSink(memo.id) },
+    { label: t("line.exportOne"), onClick: () => {
+      invoke<string>("export_memo_one", { id: memo.id })
+        .then((path) => invoke("reveal_path", { path }).catch(() => {}))
+        .catch((e) => console.warn("export_memo_one:", e));
+    } },
     { label: t("line.takeOff"), onClick: () => onRemove(memo.id) },
   ];
 }
@@ -981,6 +986,16 @@ function MemoDetail({
               </button>
               <button className="btn ghost" onClick={onRemove}>
                 {t("line.takeOff")}
+              </button>
+              <button
+                className="btn ghost"
+                onClick={() => {
+                  invoke<string>("export_memo_one", { id: memo.id })
+                    .then((path) => invoke("reveal_path", { path }).catch(() => {}))
+                    .catch(() => {});
+                }}
+              >
+                {t("line.exportOne")}
               </button>
             </>
           )}

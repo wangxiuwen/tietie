@@ -726,6 +726,7 @@ pub fn run() {
             sync_state,
             export_diagnostics,
             sync_events,
+            export_memo_one,
             sync_set,
             pairing_join,
             pairing_list,
@@ -2349,6 +2350,35 @@ fn pairing_list(state: tauri::State<'_, AppState>) -> Vec<PairedPeer> {
 #[tauri::command]
 fn sync_events() -> Vec<sync::SyncEvent> {
     sync::recent_events()
+}
+
+/// Export one memo as a plain-text file (direction 145). The memo's own
+/// line breaks survive; images/color export their descriptor text.
+/// Documents/memo-<id>.txt.
+#[tauri::command]
+fn export_memo_one(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    id: i64,
+) -> Result<String, String> {
+    let memo = {
+        let conn = state.conn.lock();
+        let mut stmt = conn
+            .prepare("SELECT content FROM memo WHERE id = ?1")
+            .map_err(|e| e.to_string())?;
+        stmt.query_row(rusqlite::params![id], |r| r.get::<_, String>(0))
+            .map_err(|e| e.to_string())?
+    };
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("memo-{id}.txt"));
+    std::fs::write(&path, &memo).map_err(|e| e.to_string())?;
+    log::info!("exported memo {id} ({}B)", memo.len());
+    Ok(path.to_string_lossy().into_owned())
 }
 
 /// One-click diagnostics bundle (direction 134): version/OS, settings
