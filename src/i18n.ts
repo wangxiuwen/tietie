@@ -24,6 +24,7 @@ export const zh: Dict = {
   // drawer
   "search.placeholder": "搜索剪切板历史 …",
   "search.tray": "搜索 …",
+  "search.histTitle": "最近搜索",
   "search.library": "搜索（支持拼音首字母，如 nz 找「内存」）…",
   "empty.title": "剪切板还是空的",
   "onboard.step1": "随便复制点什么——文本/链接/图片都会自动出现在这里",
@@ -156,6 +157,7 @@ export const en: Dict = {
   "tab.all": "All", "tab.pinned": "Pinned",
   "search.placeholder": "Search clipboard history …",
   "search.tray": "Search …",
+  "search.histTitle": "Recent searches",
   "search.library": "Search (pinyin initials work, e.g. nz for 内存) …",
   "empty.title": "Clipboard is empty",
   "onboard.step1": "Copy anything — text, links and images land here automatically",

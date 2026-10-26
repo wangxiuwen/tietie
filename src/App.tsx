@@ -897,6 +897,10 @@ function Header({
   // session-level search history (direction 90): ↑ cycles the last 5
   // committed queries (committed = drawer opened with a non-empty query)
   const [histIdx, setHistIdx] = useState(-1);
+  // focused-with-empty-query dropdown over the same history (direction 126)
+  const [histOpen, setHistOpen] = useState(false);
+  const histClose = useRef<number | null>(null);
+  const histItems = [...searchHistory()].reverse(); // newest first
   return (
     <div className="bar-header">
       <label className="search">
@@ -905,6 +909,21 @@ function Header({
           ref={searchRef}
           placeholder={t("search.placeholder")}
           aria-label={t("search.placeholder")}
+          onFocus={() => {
+            // refocus within the blur grace period must cancel the close
+            if (histClose.current != null) {
+              window.clearTimeout(histClose.current);
+              histClose.current = null;
+            }
+            setHistOpen(true);
+          }}
+          onBlur={() => {
+            // grace period so a click on a dropdown item still lands
+            histClose.current = window.setTimeout(() => {
+              histClose.current = null;
+              setHistOpen(false);
+            }, 150);
+          }}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -931,6 +950,26 @@ function Header({
           }}
         />
         <span className="kbd">{MOD}F</span>
+        {histOpen && !query && histItems.length > 0 && (
+          <div className="search-hist" aria-label={t("search.histTitle")}>
+            {histItems.map((h) => (
+              <button
+                key={h}
+                type="button"
+                className="search-hist-item"
+                // mousedown beats the input's blur so the click still lands
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  setQuery(h);
+                  setHistIdx(-1);
+                  setHistOpen(false);
+                }}
+              >
+                <span className="search-hist-text">{h}</span>
+              </button>
+            ))}
+          </div>
+        )}
       </label>
       <div className="type-tabs">
         {TYPE_TABS.map((tb) => (

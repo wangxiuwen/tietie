@@ -137,6 +137,7 @@ button {
 }
 
 .search {
+  position: relative;
   flex: 0 0 320px;
   display: flex;
   align-items: center;
@@ -146,6 +147,35 @@ button {
   border-radius: var(--r-lg);
   font-size: calc(13px * var(--fs));
   color: var(--text-2);
+}
+/* recent-search dropdown under the focused empty search box (direction 126) */
+.search-hist {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--bar-bg);
+  border: 1px solid var(--bar-stroke);
+  border-radius: var(--r-md);
+  box-shadow: var(--bar-shadow);
+}
+.search-hist-item {
+  all: unset;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  font-size: calc(12.5px * var(--fs));
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-hist-item:hover {
+  background: var(--accent-dim);
 }
 .search input {
   all: unset;
