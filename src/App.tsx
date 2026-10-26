@@ -1429,9 +1429,11 @@ function Footer({
         <span><span className="kbd">{MOD}</span><span className="kbd">D</span> {t("footer.del")}</span>
       </div>
       <div>
-        {/* searching: label + accent the live hit count (direction 62) */}
+        {/* live status: hit count while searching (direction 62), otherwise
+           visible/total so the bare "39/39" is self-explaining (direction 117) */}
         <span className={searching ? "hit-count" : undefined}>
-          {searching ? `${t("footer.hits")} ` : ""}{count}/{total}
+          {searching ? `${t("footer.hits")} ` : `${t("footer.showing")} `}
+          {count}/{total}
         </span>{" "}
         <span className="kbd">Esc</span> {t("footer.close")}
       </div>
