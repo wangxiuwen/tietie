@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **142** [`c18d149`](https://github.com/wangxiuwen/tietie/commit/c18d149) 实现随 148a 提交一并落库（groupIds 全链路：捕获/幽灵计数/整组入夹/整组挂绳）——本轮真机实证双选整组拖入后 folder_id 齐变，按已具备勾掉 |
+
 - **146** [`da8f2f9`](https://github.com/wangxiuwen/tietie/commit/da8f2f9) 托盘列表滚动>80px 显 ↑ 浮钮，点击回顶并重置选中到首行 |
 
 - **148a** `TBD` 配对设备互发消息：💬 输入框→msg_send 加密帧（绕过同步开关），对端通知+入库可粘贴，发送方本地留档；WSL 虚拟机双向联调实证（win→wsl 命令路径 + wsl→win python 线上客户端，22 字符载荷精确一致） |
