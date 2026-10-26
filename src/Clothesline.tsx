@@ -512,7 +512,10 @@ function NoteComposer({
   const [pin, setPin] = useState<string | null>(null);
   const submit = () => {
     if (text.trim()) {
-      const m = Number(remindMin);
+      const m =
+        remindMin === "at9"
+          ? minutesUntilNext9am()
+          : Number(remindMin);
       onCommit(text, m > 0 ? m : null, pin);
     } else onCancel();
   };
@@ -594,6 +597,8 @@ function NoteComposer({
           <option value="15">{t("line.remindIn")} 15m</option>
           <option value="30">{t("line.remindIn")} 30m</option>
           <option value="60">{t("line.remindIn")} 60m</option>
+          <option value="120">{t("line.remindIn")} 2h</option>
+          <option value="at9">{t("line.remindAt9")}</option>
         </select>
         <button className="btn ghost" onClick={onCancel}>
           {t("line.composeCancel")}
@@ -739,6 +744,19 @@ function HangingCard({
 }
 
 /** Spoken form of a pending reminder for the detail row (direction 65). */
+/** Minutes until the next local 09:00 (tomorrow's if today's has passed) —
+ * lets the "tomorrow 9am" preset ride the existing minutes pipeline
+ * (direction 143). */
+function minutesUntilNext9am(): number {
+  const now = new Date();
+  const target = new Date(now);
+  target.setHours(9, 0, 0, 0);
+  if (target.getTime() <= now.getTime()) {
+    target.setDate(target.getDate() + 1);
+  }
+  return Math.max(1, Math.ceil((target.getTime() - now.getTime()) / 60000));
+}
+
 function reminderLabel(at: number): string {
   const now = Math.floor(Date.now() / 1000);
   if (now >= at) return "⏰ " + t("line.remindDue");
@@ -988,7 +1006,8 @@ function MemoDetail({
               const at =
                 v === "off"
                   ? null
-                  : Math.floor(Date.now() / 1000) + Number(v) * 60;
+                  : Math.floor(Date.now() / 1000) +
+                    (v === "at9" ? minutesUntilNext9am() : Number(v)) * 60;
               invoke("set_memo_reminder", { id: memo.id, remindAt: at }).catch(
                 () => {},
               );
@@ -1000,6 +1019,8 @@ function MemoDetail({
             <option value="15">{t("line.remindIn")} 15m</option>
             <option value="30">{t("line.remindIn")} 30m</option>
             <option value="60">{t("line.remindIn")} 60m</option>
+            <option value="120">{t("line.remindIn")} 2h</option>
+            <option value="at9">{t("line.remindAt9")}</option>
             <option value="off">{t("line.remindCancel")}</option>
           </select>
         </div>
