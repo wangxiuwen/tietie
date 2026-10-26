@@ -969,6 +969,25 @@ button {
   background: rgba(255, 45, 85, 0.15);
   color: var(--cat-image);
 }
+/* scroll-to-top button over the tray list (direction 146) */
+.po-top {
+  all: unset;
+  cursor: pointer;
+  position: absolute;
+  right: 18px;
+  bottom: 64px;
+  z-index: 20;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  text-align: center;
+  line-height: 28px;
+  font-size: calc(14px * var(--fs));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
 /* sync event log chips (direction 141) */
 .sync-log {
   flex-direction: column;

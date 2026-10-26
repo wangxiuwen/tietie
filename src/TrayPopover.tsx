@@ -30,6 +30,9 @@ export default function TrayPopover() {
   const [pageCount, setPageCount] = useState(1);
   // pinned rows above this count collapse behind an expand link (direction 103)
   const PIN_MAX = 5;
+  // scroll-to-top button (direction 146): appears once the list is scrolled
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
 
   const refresh = useCallback(async () => {
     const is = await invoke<ClipItem[]>("list_items", { limit: 100 });
@@ -141,7 +144,11 @@ export default function TrayPopover() {
         </div>
       </div>
 
-      <div className="po-scroll">
+      <div
+        className="po-scroll"
+        ref={scrollRef}
+        onScroll={(e) => setScrolled((e.target as HTMLDivElement).scrollTop > 80)}
+      >
         {query ? (
           <div className="po-section">
             <div className="po-title">
@@ -253,6 +260,20 @@ export default function TrayPopover() {
           ]}
           onClose={() => setRowMenu(null)}
         />
+      )}
+
+      {scrolled && (
+        <button
+          className="po-top"
+          aria-label={t("tray.toTop")}
+          title={t("tray.toTop")}
+          onClick={() => {
+            scrollRef.current?.scrollTo({ top: 0 });
+            setSel(0);
+          }}
+        >
+          ↑
+        </button>
       )}
 
       <div className="po-foot">
