@@ -806,7 +806,12 @@ function MemoDetail({
         <span className="line-badge" style={{ position: "static" }}>
           {kindLabel(memo.kind)}
         </span>
-        <span className="line-detail-time">{relTime(memo.created_at)}</span>
+        <span
+          className="line-detail-time"
+          title={new Date(memo.created_at * 1000).toLocaleString()}
+        >
+          {relTime(memo.created_at)}
+        </span>
         {memo.remind_at != null && (
           <span
             className={
