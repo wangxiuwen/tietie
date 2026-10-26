@@ -97,6 +97,9 @@ export default function Settings() {
   const [paired, setPaired] = useState<
     { instance: string; addr: string; created_at: number; name: string | null; last_sync_at: number }[]
   >([]);
+  // typed-message flow (direction 148): which paired peer is being messaged
+  const [msgTo, setMsgTo] = useState<string | null>(null);
+  const [msgText, setMsgText] = useState("");
   const [syncOn, setSyncOn] = useState(false);
   const reloadPaired = useCallback(() => {
     invoke<
@@ -511,6 +514,15 @@ export default function Settings() {
                     · {t("settings.lastSync")} {syncAgo(p.last_sync_at)}
                     <button
                       className="btn ghost"
+                      title={t("settings.msg")}
+                      onClick={() =>
+                        setMsgTo(msgTo === p.instance ? null : p.instance)
+                      }
+                    >
+                      💬
+                    </button>
+                    <button
+                      className="btn ghost"
                       onClick={() => {
                         invoke("pairing_unpair", { instance: p.instance })
                           .then(reloadPaired)
@@ -521,6 +533,32 @@ export default function Settings() {
                     </button>
                   </span>
                 ))
+              )}
+              {msgTo && (
+                <span className="lan-peer msg-row">
+                  <span className="settings-tag muted">{msgTo}</span>
+                  <input
+                    className="pair-input"
+                    autoFocus
+                    maxLength={2000}
+                    placeholder={t("settings.msgPlaceholder")}
+                    value={msgText}
+                    onChange={(e) => setMsgText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      const text = msgText.trim();
+                      if (!text) return;
+                      invoke("msg_send", { instance: msgTo, text })
+                        .then(() => {
+                          setMsgText("");
+                          setMsgTo(null);
+                          reloadPaired();
+                        })
+                        .catch(() => {});
+                    }}
+                  />
+                </span>
               )}
             </span>
           </div>

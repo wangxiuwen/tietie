@@ -732,6 +732,7 @@ pub fn run() {
             pairing_list,
             pairing_unpair,
             pairing_rename,
+            msg_send,
             autostart_enabled,
             set_autostart,
             export_backup,
@@ -2566,6 +2567,17 @@ fn pairing_unpair(state: tauri::State<'_, AppState>, instance: String) -> Result
     .map_err(|e| e.to_string())?;
     log::info!("unpaired {instance}");
     Ok(())
+}
+
+/// Send a typed message to one (or all) paired devices (direction 148).
+/// Lands in both sides' clipboard store; the receiver also toasts.
+#[tauri::command]
+fn msg_send(
+    state: tauri::State<'_, AppState>,
+    instance: Option<String>,
+    text: String,
+) -> Result<(), String> {
+    sync::send_message(&state.conn, instance, &text)
 }
 
 /// Dump the selected items' text content to Documents/tietie-export-<ts>.txt.

@@ -29,6 +29,9 @@ const cardDrag = {
     startY: number;
     moved: boolean;
     inZone: boolean;
+    // multi-select group drag (direction 142): every selected id travels
+    // together when the dragged card itself is part of the selection
+    groupIds: number[] | null;
   },
 };
 // set when a drag actually moved; cards swallow the trailing click for 150ms
@@ -139,9 +142,12 @@ export default function App() {
   const [editing, setEditing] = useState<ClipItem | null>(null);
   const [editValue, setEditValue] = useState("");
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [dragGhost, setDragGhost] = useState<{ x: number; y: number; inZone: boolean } | null>(
-    null,
-  );
+  const [dragGhost, setDragGhost] = useState<{
+    x: number;
+    y: number;
+    inZone: boolean;
+    count: number;
+  } | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   // folder chip under the pointer during a card drag (drop-to-file target)
   const [dropFolder, setDropFolder] = useState<string | null>(null);
@@ -257,6 +263,7 @@ export default function App() {
         x: e.screenX - window.screenX,
         y: e.screenY - window.screenY,
         inZone,
+        count: st.groupIds?.length ?? 0,
       });
       // drag-to-folder: highlight the chip under the pointer
       const el = document.elementFromPoint(e.clientX, e.clientY);
@@ -281,18 +288,32 @@ export default function App() {
           ?.closest?.("[data-folder-id]");
         const fid = chip?.getAttribute("data-folder-id");
         if (fid && fid !== "pinned") {
-          // dropped on a folder chip → file it there ("all" clears)
+          // dropped on a folder chip → file it there ("all" clears); a
+          // multi-select group files together (direction 142)
           const target = fid === "all" ? null : Number(fid);
-          invoke("set_item_folder", { id: st.itemId, folderId: target })
+          const ids = st.groupIds && st.groupIds.length > 1 ? st.groupIds : [st.itemId];
+          Promise.all(
+            ids.map((id) => invoke("set_item_folder", { id, folderId: target })),
+          )
             .then(() => refresh())
             .catch(() => {});
+          if (st.groupIds && st.groupIds.length > 1) setMultiSel(new Set());
           setDropFolder(null);
           return;
         }
         if (hangIfZone && st.inZone) {
-          invoke("hang_item", { id: st.itemId })
-            .catch(() => {})
-            .finally(() => invoke("hang_preview", { id: null }).catch(() => {}));
+          if (st.groupIds && st.groupIds.length > 1) {
+            // group drag into the hang zone hangs every selected card
+            const ids = st.groupIds;
+            setMultiSel(new Set());
+            invoke("hang_items", { ids })
+              .catch(() => {})
+              .finally(() => invoke("hang_preview", { id: null }).catch(() => {}));
+          } else {
+            invoke("hang_item", { id: st.itemId })
+              .catch(() => {})
+              .finally(() => invoke("hang_preview", { id: null }).catch(() => {}));
+          }
         } else {
           invoke("hang_preview", { id: null }).catch(() => {});
         }
@@ -691,6 +712,7 @@ export default function App() {
                     selected={idx === selectedIdx}
                     beingDragged={draggingId === it.id}
                     multiSelected={multiSel.has(it.id)}
+                    dragGroupIds={multiSel.has(it.id) ? [...multiSel] : null}
                     query={query}
                     revealed={revealed.has(it.id)}
                     onReveal={() => revealItem(it.id)}
@@ -809,6 +831,7 @@ export default function App() {
         {dragGhost &&
           createPortal(
             <div className="drag-ghost" style={{ left: dragGhost.x, top: dragGhost.y }}>
+              {dragGhost.count > 1 && <b className="drag-ghost-count">{dragGhost.count} </b>}
               {dragGhost.inZone ? "松手挂上 ↩" : "拖到顶部挂上"}
             </div>,
             document.body,
@@ -1097,6 +1120,7 @@ function Card({
   selected,
   beingDragged,
   multiSelected,
+  dragGroupIds,
   query,
   revealed,
   onReveal,
@@ -1114,6 +1138,8 @@ function Card({
   selected: boolean;
   beingDragged: boolean;
   multiSelected: boolean;
+  /** non-null while this card is part of an active multi-select group */
+  dragGroupIds: number[] | null;
   revealed: boolean;
   onReveal: () => void;
   query: string;
@@ -1152,7 +1178,13 @@ function Card({
       }}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
-        cardDrag.current = { itemId: item.id, startY: e.screenY, moved: false, inZone: false };
+        cardDrag.current = {
+          itemId: item.id,
+          startY: e.screenY,
+          moved: false,
+          inZone: false,
+          groupIds: dragGroupIds,
+        };
       }}
       onContextMenu={(e) => {
         e.preventDefault();

@@ -1021,6 +1021,11 @@ button {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   color: var(--text);
 }
+/* typed-message row under a paired device (direction 148) */
+.msg-row .pair-input {
+  width: 200px;
+  font-family: inherit;
+}
 /* non-blocking hotkey-conflict hint (direction 101) */
 .settings-tag.warn {
   background: rgba(255, 149, 0, 0.16);
@@ -1388,6 +1393,11 @@ body.dragging-hang * {
   border: 1px solid var(--accent);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.3);
   animation: line-pulse 0.8s ease-in-out infinite alternate;
+}
+/* multi-select group drag count (direction 142) */
+.drag-ghost-count {
+  color: var(--accent);
+  margin-right: 2px;
 }
 
 .card.lifting {

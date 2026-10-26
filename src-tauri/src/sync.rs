@@ -259,9 +259,6 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
             // only paired instances may talk to us
             let token = {
                 let c = conn.lock();
-                if !enabled(&c) {
-                    continue;
-                }
                 c.query_row(
                     "SELECT token FROM pairing WHERE instance = ?1",
                     rusqlite::params![env.sender],
@@ -278,6 +275,43 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
                 push_event("fail", &env.sender, "decrypt failed".into());
                 continue;
             };
+            // typed messages (direction 148) are explicit user intent: they
+            // land in the clipboard store and toast, ignoring the sync gate
+            if p.kind == "msg" {
+                let c = conn.lock();
+                let item = InsertItem {
+                    kind: "text",
+                    content: &p.content,
+                    preview: &p.content.chars().take(120).collect::<String>(),
+                    meta: "",
+                    content_hash: &{
+                        let mut h = Sha256::new();
+                        h.update(p.content.as_bytes());
+                        format!("t:{}", hex(&h.finalize()))
+                    },
+                    source_app: Some(&env.sender),
+                    byte_size: p.content.len() as i64,
+                    image_blob: None,
+                    rich_html: None,
+                    rich_rtf: None,
+                };
+                match db::upsert_item(&c, item, true) {
+                    Ok(_) => {
+                        log::info!("msg in: {} chars from {}", p.content.len(), env.sender);
+                        push_event("in", &env.sender, format!("💬 {} chars", p.content.len()));
+                        let _ = crate::notify_due(
+                            format!("贴贴 · 来自 {}", env.sender),
+                            p.content.clone(),
+                        );
+                    }
+                    Err(e) => log::error!("msg insert: {e}"),
+                }
+                continue;
+            }
+            // clipboard frames honour the sync gate; typed messages above do not
+            if !enabled(&conn.lock()) {
+                continue;
+            }
             // dedupe on the sender's hash when present (images), else the
             // local content hash — both stop A→B→A echoes
             let hash = match p.hash.as_deref() {
@@ -465,6 +499,86 @@ pub fn on_captured(
 
 fn connect_try(a: &std::net::SocketAddr) -> std::net::SocketAddr {
     *a
+}
+
+/// Typed message to a paired peer (direction 148): explicit user intent, so
+/// this bypasses the sync gate on both ends; `instance = None` fans out to
+/// every paired device. The message also lands in the LOCAL clipboard store
+/// so the sender can re-copy it later. Delivery runs on a background thread.
+pub fn send_message(
+    conn: &Arc<Mutex<Connection>>,
+    instance: Option<String>,
+    text: &str,
+) -> Result<(), String> {
+    let text = text.trim();
+    if text.is_empty() {
+        return Err("消息为空".into());
+    }
+    {
+        let mut h = Sha256::new();
+        h.update(text.as_bytes());
+        let hash = format!("t:{}", hex(&h.finalize()));
+        let c = conn.lock();
+        let item = InsertItem {
+            kind: "text",
+            content: text,
+            preview: &text.chars().take(120).collect::<String>(),
+            meta: "",
+            content_hash: &hash,
+            source_app: Some("💬"),
+            byte_size: text.len() as i64,
+            image_blob: None,
+            rich_html: None,
+            rich_rtf: None,
+        };
+        db::upsert_item(&c, item, true).map_err(|e| e.to_string())?;
+    }
+    let targets: Vec<(String, String, String)> = {
+        let c = conn.lock();
+        let mut stmt = c
+            .prepare("SELECT instance, addr, token FROM pairing")
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
+            .map(|rows| rows.filter_map(|x| x.ok()).collect::<Vec<_>>())
+            .map_err(|e| e.to_string())?;
+        rows.into_iter()
+            .filter(|(i, _, _)| instance.as_deref().map(|w| i == w).unwrap_or(true))
+            .collect()
+    };
+    if targets.is_empty() {
+        return Err("没有已配对设备".into());
+    }
+    let p = SyncPayload {
+        kind: "msg".into(),
+        content: text.to_string(),
+        ts: db::now_unix(),
+        image_b64: None,
+        hash: None,
+    };
+    let me = hostname_instance();
+    let conn = conn.clone();
+    std::thread::spawn(move || {
+        for (instance, addr, token) in targets {
+            let env = seal(&session_key(&token), &me, &p);
+            let Ok(sa) = std::net::SocketAddr::from_str(&addr) else {
+                log::warn!("msg: bad peer addr {addr}");
+                continue;
+            };
+            let Ok(mut stream) = TcpStream::connect_timeout(&sa, std::time::Duration::from_secs(3))
+            else {
+                push_event("fail", &instance, "unreachable".into());
+                continue;
+            };
+            let _ = stream.set_write_timeout(Some(std::time::Duration::from_secs(3)));
+            if send_frame(&mut stream, &env).is_ok() {
+                log::info!("msg out: {} chars to {}", p.content.len(), addr);
+                push_event("out", &instance, format!("💬 {} chars", p.content.len()));
+                touch_last_sync(&conn.lock(), &instance);
+            }
+        }
+    });
+    Ok(())
 }
 
 fn hex(b: &[u8]) -> String {
