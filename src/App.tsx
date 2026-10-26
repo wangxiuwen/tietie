@@ -1171,6 +1171,9 @@ function Card({
       />
       <div className="meta">
         <span className="src">{item.source_app || "—"}</span>
+        {item.use_count > 1 && (
+          <span className="use-count" title={t("card.useCount")}>×{item.use_count}</span>
+        )}
         {item.note && (
           <span className="note" title={item.note}>📝 {truncate(item.note, 24)}</span>
         )}
@@ -1282,6 +1285,9 @@ function CardRow({
       >
         {item.sensitive && "🔒 "}
         {item.source_app || "—"} · {relTime(item.used_at)}
+        {item.use_count > 1 && (
+          <span className="use-count" title={t("card.useCount")}> ×{item.use_count}</span>
+        )}
       </span>
       {item.pinned && (
         <span className="pin">
