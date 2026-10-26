@@ -616,6 +616,9 @@ const SYS_HOTKEY_CONFLICTS: Record<string, string> = {
   "Meta+KeyV": "clipboard history",
   "Meta+KeyQ": "quit app (macOS)",
   "Meta+Space": "input method switch",
+  // Win11 新版把它绑成了「声音输出」快速面板：RegisterHotKey 探测不到这种
+  // 占用（注册照常成功），只有真实按键才会被系统吃掉——真实事故，见迭代记录
+  "Control+Alt+KeyV": "sound output panel (Win11)",
 };
 
 function hotkeyWarning(pending: string, others: string[]): string | null {
