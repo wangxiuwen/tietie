@@ -780,6 +780,37 @@ button {
   background: rgba(0, 0, 0, 0.06);
 }
 
+/* tray popover in system dark mode (direction 110): the light-theme black
+   tints invert to subtle white tints so the panel doesn't show gray smears
+   on a dark surface */
+@media (prefers-color-scheme: dark) {
+  .po-search {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+  .po-search input {
+    background: rgba(255, 255, 255, 0.07);
+  }
+  .po-clear:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .po-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.22);
+  }
+  .po-row:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .kind-color {
+    color: #ffd60a;
+  }
+  .po-foot {
+    border-top-color: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.03);
+  }
+  .po-foot-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
+
 /* settings */
 .settings-overlay {
   position: absolute;
