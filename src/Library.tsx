@@ -341,7 +341,16 @@ export default function Library() {
                   (selected.has(it.id) ? "sel " : "") +
                   (idx === cursor ? " kcursor" : "")
                 }
-                onClick={() => toggle(it.id)}
+                onClick={(e) => {
+                  // Ctrl/⌘+click a link row opens it in the system browser
+                  // instead of toggling selection (direction 106)
+                  if ((e.ctrlKey || e.metaKey) && it.kind === "link") {
+                    e.stopPropagation();
+                    invoke("open_url", { url: it.content }).catch(() => {});
+                    return;
+                  }
+                  toggle(it.id);
+                }}
               >
                 <td className="w-check">
                   <input
