@@ -71,6 +71,8 @@ export default function Settings() {
   const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
   const [hks, setHks] = useState<HotkeysInfo | null>(null);
   const [autostart, setAutostart] = useState<boolean>(false);
+  // transient status line for export actions (direction 134)
+  const [diagMsg, setMsg] = useState<string | null>(null);
   // LAN peers over _tietie-sync._tcp mDNS (direction 127)
   const [peers, setPeers] = useState<{ instance: string; hostname: string; addr: string }[]>([]);
   const reloadPeers = useCallback(() => {
@@ -543,6 +545,28 @@ export default function Settings() {
               <button className="btn ghost" onClick={recheckHotkeys}>
                 {t("settings.hkRecheckBtn")}
               </button>
+            </span>
+          </div>
+
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.diag")}</span>
+            <span className="settings-value">
+              <button
+                className="btn ghost"
+                onClick={async () => {
+                  try {
+                    const path = await invoke<string>("export_diagnostics");
+                    setMsg(`已导出: ${path}`);
+                    invoke("reveal_path", { path }).catch(() => {});
+                  } catch (e) {
+                    setMsg(`导出失败: ${e}`);
+                  }
+                }}
+              >
+                {t("settings.diagBtn")}
+              </button>
+              <span className="settings-tag muted">{t("settings.diagHint")}</span>
+              {diagMsg && <span className="settings-tag ok">{diagMsg}</span>}
             </span>
           </div>
 

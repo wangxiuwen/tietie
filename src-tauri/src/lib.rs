@@ -725,6 +725,7 @@ pub fn run() {
             mdns_peers,
             pairing_begin,
             sync_state,
+            export_diagnostics,
             sync_set,
             pairing_complete,
             pairing_list,
@@ -2339,6 +2340,143 @@ fn pairing_list(state: tauri::State<'_, AppState>) -> Vec<PairedPeer> {
     })
     .map(|rows| rows.filter_map(|r| r.ok()).collect())
     .unwrap_or_default()
+}
+
+/// One-click diagnostics bundle (direction 134): version/OS, settings
+/// summary, hotkey registration state, data counts and the last 200 log
+/// lines — content-bearing log tails are redacted to their labels so no
+/// clipboard/memo text leaves the machine. Documents/diagnostics-<ts>.txt.
+#[tauri::command]
+fn export_diagnostics(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<String, String> {
+    let mut out = String::new();
+    out.push_str(
+        "贴贴诊断包
+====
+",
+    );
+    out.push_str(&format!(
+        "version: {}
+",
+        env!("CARGO_PKG_VERSION")
+    ));
+    out.push_str(&format!(
+        "os: {} {}
+",
+        std::env::consts::OS,
+        std::env::consts::ARCH
+    ));
+
+    // settings summary — keys and values only; no setting stores secrets
+    out.push_str(
+        "
+[settings]
+",
+    );
+    {
+        let conn = state.conn.lock();
+        let mut stmt = conn
+            .prepare("SELECT key, value FROM setting ORDER BY key")
+            .map_err(|e| e.to_string())?;
+        let rows: Vec<(String, String)> = stmt
+            .query_map([], |r| Ok((r.get(0)?, r.get(1)?)))
+            .map(|it| it.filter_map(|x| x.ok()).collect())
+            .map_err(|e| e.to_string())?;
+        for (k, v) in rows {
+            out.push_str(&format!(
+                "{k} = {v}
+"
+            ));
+        }
+        out.push_str(
+            "
+[counts]
+",
+        );
+        for (label, sql) in [
+            ("clip_item", "SELECT COUNT(*) FROM clip_item"),
+            ("memo", "SELECT COUNT(*) FROM memo"),
+            ("folder", "SELECT COUNT(*) FROM folder"),
+            ("pairing", "SELECT COUNT(*) FROM pairing"),
+            ("db_integrity", "PRAGMA integrity_check"),
+        ] {
+            let v: String = conn
+                .query_row(sql, [], |r| r.get::<_, i64>(0).map(|n| n.to_string()))
+                .or_else(|_| conn.query_row(sql, [], |r| r.get::<_, String>(0)))
+                .unwrap_or_else(|e| format!("err {e}"));
+            out.push_str(&format!(
+                "{label} = {v}
+"
+            ));
+        }
+    }
+
+    // hotkey registration state
+    out.push_str(
+        "
+[hotkeys]
+",
+    );
+    {
+        let hks = hotkeys_snapshot(&app);
+        out.push_str(&format!(
+            "drawer = {} (registered)
+screenshot = {} ({})
+clothesline = {} ({})
+",
+            hks.drawer,
+            hks.screenshot,
+            if hks.screenshot_registered {
+                "ok"
+            } else {
+                "FAIL"
+            },
+            hks.clothesline,
+            if hks.clothesline_registered {
+                "ok"
+            } else {
+                "FAIL"
+            },
+        ));
+    }
+
+    // last 200 log lines, redacting tails that carry user content
+    out.push_str(
+        "
+[log tail x200, content redacted]
+",
+    );
+    let log_path = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("tietie.log");
+    if let Ok(raw) = std::fs::read_to_string(&log_path) {
+        let tail: Vec<&str> = raw.lines().rev().take(200).collect();
+        for line in tail.into_iter().rev() {
+            let redacted = if let Some(i) = line.find("due notification fired: ") {
+                format!("{}due notification fired: [redacted]", &line[..i])
+            } else if let Some(i) = line.find("opened url: ") {
+                format!("{}opened url: [redacted]", &line[..i])
+            } else {
+                line.to_string()
+            };
+            out.push_str(&redacted);
+            out.push('\n');
+        }
+    } else {
+        out.push_str("(log unreadable)\n");
+    }
+
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("diagnostics-{}.txt", time_fmt(db::now_unix())));
+    std::fs::write(&path, out).map_err(|e| e.to_string())?;
+    log::info!("diagnostics exported");
+    Ok(path.to_string_lossy().into_owned())
 }
 
 /// Sync transport on/off + port for the settings page (direction 129).
