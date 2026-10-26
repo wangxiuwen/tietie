@@ -1855,6 +1855,21 @@ fn export_memos(
         };
         let body = if m.kind == "image" {
             format!("[图片 {}]", m.content)
+        } else if m.kind == "link" && !want_txt {
+            // markdown link: readable label + full URL target (direction 122);
+            // the link preview column is just a URL truncation, not a title
+            let stripped = m
+                .content
+                .trim_start_matches("https://")
+                .trim_start_matches("http://")
+                .trim_start_matches("www.")
+                .trim_end_matches('/');
+            let label = if stripped.is_empty() {
+                m.content.clone()
+            } else {
+                stripped.chars().take(60).collect::<String>()
+            };
+            format!("[{label}]({})", m.content)
         } else if want_txt {
             // plain text keeps the memo's own line breaks (direction 105)
             m.content.clone()
