@@ -289,6 +289,8 @@ export default function Clothesline() {
   // native window.prompt dialogs never open inside WebView2/WKWebView —
   // the composer is an inline card under the rope instead
   const [composing, setComposing] = useState(false);
+  // clothespin-color filter (direction 132): null = show every memo
+  const [colorFilter, setColorFilter] = useState<string | null>(null);
 
   // open the detail view already in edit mode (context-menu 编辑)
   const [editOnOpen, setEditOnOpen] = useState(false);
@@ -335,12 +337,17 @@ export default function Clothesline() {
       ) : (
         <>
           <div className="line-cards">
-            {memos.length === 0 && !previewing ? (
+            {(() => {
+            const visibleMemos = colorFilter == null
+              ? memos
+              : memos.filter((m) => m.color === colorFilter);
+            return visibleMemos.length === 0 && !previewing ? (
               <div className="line-empty">
-                {t("line.empty")}
+                {colorFilter ? t("line.emptyColor") : t("line.empty")}
               </div>
             ) : (
-              memos.map((m, i) => (
+              visibleMemos
+              .map((m, i) => (
                 <HangingCard
                   key={m.id}
                   memo={m}
@@ -353,7 +360,7 @@ export default function Clothesline() {
                   onEdit={() => openDetailEditing(m)}
                 />
               ))
-            )}
+            );})()}
             {previewing && (
               <>
                 <div className="line-insert-slot">{t("line.insertHere")}</div>
@@ -376,6 +383,22 @@ export default function Clothesline() {
                 }}
               />
             )}
+          </div>
+          <div className="line-color-filter" title={t("line.filterColor")}>
+            <button
+              className={"cfilter-dot all" + (colorFilter == null ? " active" : "")}
+              title={t("line.filterAll")}
+              onClick={() => setColorFilter(null)}
+            >∗</button>
+            {MEMO_COLORS.map((c) => (
+              <button
+                key={c}
+                className={"cfilter-dot" + (colorFilter === c ? " active" : "")}
+                style={{ background: c }}
+                title={c}
+                onClick={() => setColorFilter(colorFilter === c ? null : c)}
+              />
+            ))}
           </div>
           {memos.length > 15 && (
             <span className="line-cap" title={t("line.capHint")}>

@@ -2349,6 +2349,34 @@ select:focus-visible,
   padding: 2px 6px;
 }
 
+/* clothespin-color filter chips (direction 132) */
+.line-color-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 10px;
+}
+.cfilter-dot {
+  all: unset;
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(128, 128, 128, 0.4);
+}
+.cfilter-dot.all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(12px * var(--fs));
+  color: var(--text-3);
+}
+.cfilter-dot.active {
+  box-shadow:
+    inset 0 0 0 1px rgba(128, 128, 128, 0.4),
+    0 0 0 2px var(--accent);
+}
+
 /* Memo reminder (direction 53): flash for the first minute after due,
    then keep a breathing glow instead of a steady ring (direction 102) */
 @keyframes due-flash {
