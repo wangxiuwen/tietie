@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **123** [`13d2120`](https://github.com/wangxiuwen/tietie/commit/13d2120) Library 敏感行默认 ••••••••🔒 打码（title 同步防泄漏），点击显形 5 秒自动回码；行内复制/双击复制的状态提示对敏感行只显 🔒 不回显前 24 字 |
+
 - **122** [`7335536`](https://github.com/wangxiuwen/tietie/commit/7335536) 便签 Markdown 导出中链接便签改为 [去scheme可读标签](完整URL)，txt 格式不变 |
 
 - **121** [`ced56b0`](https://github.com/wangxiuwen/tietie/commit/ced56b0) 抽屉卡片/紧凑行相对时间悬停显示完整本地日期时间 tooltip |
