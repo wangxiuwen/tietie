@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **136** `—` 入池时已由既有实现覆盖（list_items 即 pinned/used_at DESC）——A→B→A 实测 A 居首，按已具备勾掉 |
+
 - **135** [`44546fc`](https://github.com/wangxiuwen/tietie/commit/44546fc) 详情正文内联解析 **粗体**/[链接](url)/`代码`（React 文本节点零注入面，链接交系统浏览器） |
 
 - **134** [`9272f29`](https://github.com/wangxiuwen/tietie/commit/9272f29) export_diagnostics：版本/OS+设置摘要+数据计数+热键态+末200行日志，通知正文与URL脱敏 |
