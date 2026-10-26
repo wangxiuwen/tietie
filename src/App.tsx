@@ -112,6 +112,25 @@ export default function App() {
     if (per != null) setCompactState(per === "1");
   }, [folderId]);
   const [query, setQuery] = useState("");
+  // sensitive-content reveal windows (direction 113): sensitive bodies stay
+  // masked until clicked, then show for 5s before re-masking automatically
+  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  const revealItem = useCallback((id: number) => {
+    setRevealed((prev) => {
+      if (prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+    window.setTimeout(() => {
+      setRevealed((prev) => {
+        if (!prev.has(id)) return prev;
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    }, 5000);
+  }, []);
   // the show-drawer listener is registered once, so it reads the live
   // query through this ref to commit it into search history (direction 90)
   const queryRef = useRef("");
@@ -648,6 +667,8 @@ export default function App() {
                     idx={idx}
                     selected={idx === selectedIdx}
                     query={query}
+                    revealed={revealed.has(it.id)}
+                    onReveal={() => revealItem(it.id)}
                     onContext={(x, y) => setCtxMenu({ x, y, itemId: it.id })}
                     onClick={() => {
                       setSelectedIdx(idx);
@@ -665,6 +686,8 @@ export default function App() {
                     beingDragged={draggingId === it.id}
                     multiSelected={multiSel.has(it.id)}
                     query={query}
+                    revealed={revealed.has(it.id)}
+                    onReveal={() => revealItem(it.id)}
                     onRichView={() => setRichView(it)}
                     onContext={(x, y) => setCtxMenu({ x, y, itemId: it.id })}
                     onClick={(e) => {
@@ -1030,6 +1053,8 @@ function Card({
   beingDragged,
   multiSelected,
   query,
+  revealed,
+  onReveal,
   onRichView,
   onContext,
   onClick,
@@ -1044,6 +1069,8 @@ function Card({
   selected: boolean;
   beingDragged: boolean;
   multiSelected: boolean;
+  revealed: boolean;
+  onReveal: () => void;
   query: string;
   onRichView: () => void;
   onContext: (x: number, y: number) => void;
@@ -1070,7 +1097,7 @@ function Card({
       }
       role="option"
       aria-selected={selected}
-      aria-label={`${kindLabel(item.kind)}：${cardAriaText(item)}`}
+      aria-label={`${kindLabel(item.kind)}：${item.sensitive && !revealed ? "🔒" : cardAriaText(item)}`}
       onClick={(e) => {
         if (clickSuppressed()) return;
         onClick(e);
@@ -1096,7 +1123,13 @@ function Card({
           <PinIcon />
         </span>
       )}
-      <CardBody item={item} query={query} onRich={onRichView} />
+      <CardBody
+        item={item}
+        query={query}
+        onRich={onRichView}
+        masked={item.sensitive && !revealed}
+        onReveal={onReveal}
+      />
       <div className="meta">
         <span className="src">{item.source_app || "—"}</span>
         {item.note && (
@@ -1151,6 +1184,8 @@ function CardRow({
   idx,
   selected,
   query,
+  revealed,
+  onReveal,
   onClick,
   onDoubleClick,
   onContext,
@@ -1159,17 +1194,20 @@ function CardRow({
   idx: number;
   selected: boolean;
   query: string;
+  revealed: boolean;
+  onReveal: () => void;
   onClick: () => void;
   onDoubleClick: () => void;
   onContext: (x: number, y: number) => void;
 }) {
   const text = item.kind === "image" ? `🖼 ${item.content}` : item.preview || item.content;
+  const masked = item.sensitive && !revealed;
   return (
     <div
       data-idx={idx}
       role="option"
       aria-selected={selected}
-      aria-label={`${kindLabel(item.kind)}：${cardAriaText(item)}`}
+      aria-label={`${kindLabel(item.kind)}：${masked ? "🔒" : cardAriaText(item)}`}
       className={"row-item" + (selected ? " selected" : "")}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
@@ -1180,8 +1218,22 @@ function CardRow({
       }}
     >
       <span className={"badge " + item.kind}>{kindLabel(item.kind)}</span>
-      <span className="row-text">
-        <HighlightText text={text} query={query} />
+      <span
+        className="row-text"
+        onClick={
+          masked
+            ? (e) => {
+                e.stopPropagation();
+                onReveal();
+              }
+            : undefined
+        }
+      >
+        {masked ? (
+          `•••••••• 🔒 ${t("card.tapReveal")}`
+        ) : (
+          <HighlightText text={text} query={query} />
+        )}
       </span>
       <span className="row-meta">
         {item.sensitive && "🔒 "}
@@ -1208,7 +1260,34 @@ function cardAriaText(item: ClipItem): string {
   return one.length > 60 ? one.slice(0, 60) + "…" : one;
 }
 
-function CardBody({ item, query, onRich }: { item: ClipItem; query: string; onRich: () => void }) {
+function CardBody({
+  item,
+  query,
+  onRich,
+  masked,
+  onReveal,
+}: {
+  item: ClipItem;
+  query: string;
+  onRich: () => void;
+  masked: boolean;
+  onReveal: () => void;
+}) {
+  // sensitive body stays masked until clicked (direction 113); the reveal
+  // click only unmasks — it does not select the card
+  if (masked) {
+    return (
+      <div
+        className="body masked"
+        onClick={(e) => {
+          e.stopPropagation();
+          onReveal();
+        }}
+      >
+        •••••••• <span className="masked-hint">🔒 {t("card.tapReveal")}</span>
+      </div>
+    );
+  }
   if (item.kind === "image") {
     return (
       <div

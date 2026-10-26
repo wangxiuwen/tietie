@@ -363,6 +363,16 @@ button {
   white-space: pre-wrap;
   word-break: break-word;
 }
+/* masked sensitive body (direction 113): dots + reveal hint, click to show */
+.body.masked {
+  cursor: pointer;
+  color: var(--text-3);
+  letter-spacing: 2px;
+}
+.masked-hint {
+  letter-spacing: 0;
+  font-size: calc(11px * var(--fs));
+}
 .body.mono {
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: calc(11.5px * var(--fs));
