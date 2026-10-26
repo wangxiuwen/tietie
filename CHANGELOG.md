@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **134** [`9272f29`](https://github.com/wangxiuwen/tietie/commit/9272f29) export_diagnostics：版本/OS+设置摘要+数据计数+热键态+末200行日志，通知正文与URL脱敏 |
+
 - **133** [`7d77bfd`](https://github.com/wangxiuwen/tietie/commit/7d77bfd) 卡片/紧凑行 meta 显示 ×N 累计使用徽章（use_count>1 才显示，强调色） |
 
 - **132** [`4de7af5`](https://github.com/wangxiuwen/tietie/commit/4de7af5) 晾衣架头部色点筛选条（全部∗+8色，点选/再点取消），空色显示专属提示 |
