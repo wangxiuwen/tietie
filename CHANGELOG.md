@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **115** [`d6defd8`](https://github.com/wangxiuwen/tietie/commit/d6defd8) 托盘行 title 挂备注，悬停即见，无备注行不出 tooltip |
+
 - **114** [`db571f5`](https://github.com/wangxiuwen/tietie/commit/db571f5) 挂卡右键新增「📝 添加/编辑备注…」，打开详情并自动聚焦备注输入框 |
 
 - **113** [`e9c5642`](https://github.com/wangxiuwen/tietie/commit/e9c5642) 敏感卡片正文默认 •••• 打码（aria 同步），点击显形 5 秒自动回码，卡片/紧凑行双视图 |
