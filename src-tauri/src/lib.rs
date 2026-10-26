@@ -1472,14 +1472,55 @@ fn get_item_image(state: tauri::State<'_, AppState>, id: i64) -> Result<Vec<u8>,
 // ─────────────────────── clothesline (晾衣架) commands ───────────────────────
 
 /// Card color per item kind, matching the drawer's category palette.
+/// The text fallback follows the OS accent color (direction 125).
 fn kind_color(kind: &str) -> &'static str {
     match kind {
         "link" => "#34c759",
         "image" => "#ff9500",
         "code" => "#5856d6",
         "color" => "#ff2d55",
-        _ => "#007aff",
+        _ => system_accent(),
     }
+}
+
+/// Default pin color = the OS accent (direction 125). Windows reads the DWM
+/// ColorizationColor via reg.exe (read-only, no new crates); other platforms
+/// keep the classic blue. Computed once per process.
+fn system_accent() -> &'static str {
+    static CACHED: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    CACHED.get_or_init(|| {
+        #[cfg(target_os = "windows")]
+        {
+            if let Ok(out) = std::process::Command::new("reg")
+                .args([
+                    "query",
+                    r"HKCU\Software\Microsoft\Windows\DWM",
+                    "/v",
+                    "ColorizationColor",
+                ])
+                .output()
+            {
+                if out.status.success() {
+                    let text = String::from_utf8_lossy(&out.stdout);
+                    // value line ends with the DWORD as 0xAARRGGBB
+                    if let Some(hex) = text.lines().find_map(|l| {
+                        let t = l.trim_start();
+                        if t.starts_with("ColorizationColor") {
+                            l.split_whitespace().next_back().map(|s| s.to_string())
+                        } else {
+                            None
+                        }
+                    }) {
+                        if let Ok(argb) = u32::from_str_radix(hex.trim_start_matches("0x"), 16) {
+                            // drop the alpha byte, keep RRGGBB
+                            return format!("#{:06x}", argb & 0x00ff_ffff);
+                        }
+                    }
+                }
+            }
+        }
+        "#007aff".to_string()
+    })
 }
 
 fn emit_memos_changed<R: Runtime>(app: &AppHandle<R>) {
@@ -1579,8 +1620,9 @@ fn add_memo_direct(
     if trimmed.is_empty() {
         return Err("内容为空".into());
     }
-    // caller-chosen clothespin color (direction 81); default keeps blue
-    let pin = color.unwrap_or_else(|| "#007aff".into());
+    // caller-chosen clothespin color (direction 81); default follows the OS
+    // accent (direction 125)
+    let pin = color.unwrap_or_else(|| system_accent().to_string());
     let memo_id = {
         let conn = state.conn.lock();
         conn.execute(
