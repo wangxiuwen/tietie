@@ -363,6 +363,21 @@ export default function Library() {
                   }
                   toggle(it.id);
                 }}
+                onDoubleClick={() => {
+                  // dblclick copies without needing the checkbox (direction 120):
+                  // text-ish rows copy content, image rows copy the image itself
+                  if (it.kind === "image") {
+                    invoke("copy_item_image", { id: it.id }).catch(() => {});
+                    setMsg(`${t("lib.copied")} ${oneLine(it.content).slice(0, 24)}`);
+                    return;
+                  }
+                  navigator.clipboard
+                    .writeText(it.content)
+                    .then(() => {
+                      setMsg(`${t("lib.copied")} ${oneLine(it.content).slice(0, 24)}`);
+                    })
+                    .catch(() => {});
+                }}
               >
                 <td className="w-check">
                   <input
