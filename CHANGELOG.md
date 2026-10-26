@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **113** [`e9c5642`](https://github.com/wangxiuwen/tietie/commit/e9c5642) 敏感卡片正文默认 •••• 打码（aria 同步），点击显形 5 秒自动回码，卡片/紧凑行双视图 |
+
 - **112** [`d5f6e33`](https://github.com/wangxiuwen/tietie/commit/d5f6e33) 新增 export_selected_csv（RFC4180 转义+BOM+原始 kind 列），Library 底栏并列「导出 CSV」按钮 |
 
 - **111** [`8065cb8`](https://github.com/wangxiuwen/tietie/commit/8065cb8) 紧凑行的 ⌘N 序号改为行内 chip 定位（原继承卡片绝对定位会错位），选中态同步强调色 |
