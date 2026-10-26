@@ -386,6 +386,20 @@ export default function Clothesline() {
             {t("line.exportNotes")}
           </button>
           <button
+            className="line-new"
+            title={t("line.exportNotesTxt")}
+            onClick={async () => {
+              try {
+                const path = await invoke<string>("export_memos", { format: "txt" });
+                invoke("reveal_path", { path }).catch(() => {});
+              } catch (e) {
+                console.warn("export_memos txt:", e);
+              }
+            }}
+          >
+            {t("line.exportNotesTxt")}
+          </button>
+          <button
             className="line-collapse"
             title={t("line.collapse")}
             onClick={collapse}

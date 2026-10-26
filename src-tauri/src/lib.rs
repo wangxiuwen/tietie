@@ -1629,7 +1629,12 @@ fn delete_items(
 /// Export every clothesline memo to Documents/notes-<ts>.md (direction 69):
 /// pinned first, reminders annotated. Image memos export as placeholders.
 #[tauri::command]
-fn export_memos(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<String, String> {
+fn export_memos(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    format: Option<String>,
+) -> Result<String, String> {
+    let want_txt = format.as_deref() == Some("txt");
     let memos = {
         let conn = state.conn.lock();
         db::list_memos(&conn).map_err(|e| e.to_string())?
@@ -1637,8 +1642,12 @@ fn export_memos(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<Str
     if memos.is_empty() {
         return Err("晾衣架上还没有便签".into());
     }
-    let mut md = format!("# 贴贴便签（{} 张）\n\n", memos.len());
-    for m in &memos {
+    let mut out = if want_txt {
+        format!("贴贴便签（{} 张）\n\n", memos.len())
+    } else {
+        format!("# 贴贴便签（{} 张）\n\n", memos.len())
+    };
+    for (i, m) in memos.iter().enumerate() {
         let pin = if m.pinned { "📌 " } else { "" };
         let remind = match m.remind_at {
             Some(at) if at > db::now_unix() => format!(" ⏰{}", at),
@@ -1647,10 +1656,24 @@ fn export_memos(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<Str
         };
         let body = if m.kind == "image" {
             format!("[图片 {}]", m.content)
+        } else if want_txt {
+            // plain text keeps the memo's own line breaks (direction 105)
+            m.content.clone()
         } else {
             m.content.replace('\n', " ")
         };
-        md.push_str(&format!("- {pin}{body}{remind}\n"));
+        if want_txt {
+            if i > 0 {
+                out.push_str("────────────────\n\n");
+            }
+            if m.pinned || m.remind_at.is_some() {
+                out.push_str(&format!("{pin}{remind}\n"));
+            }
+            out.push_str(&body);
+            out.push_str("\n\n");
+        } else {
+            out.push_str(&format!("- {pin}{body}{remind}\n"));
+        }
     }
     let dir = app
         .path()
@@ -1658,8 +1681,13 @@ fn export_memos(app: AppHandle, state: tauri::State<'_, AppState>) -> Result<Str
         .or_else(|_| app.path().app_local_data_dir())
         .map_err(|e| e.to_string())?;
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let path = dir.join(format!("notes-{}.md", time_fmt(db::now_unix())));
-    std::fs::write(&path, md).map_err(|e| e.to_string())?;
+    let ts = time_fmt(db::now_unix());
+    let path = dir.join(if want_txt {
+        format!("notes-{ts}.txt")
+    } else {
+        format!("notes-{ts}.md")
+    });
+    std::fs::write(&path, &out).map_err(|e| e.to_string())?;
     log::info!("exported {} memos to {}", memos.len(), path.display());
     Ok(path.to_string_lossy().into_owned())
 }
