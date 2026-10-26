@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **131** [`2adb3c9`](https://github.com/wangxiuwen/tietie/commit/2adb3c9) 扩池时与方向64重复——行尾 ⧉ 悬停复制已存在，复验悬停门控/行尾不出界/点击剪贴板精确一致后按已具备勾掉 |
+
 - **130** [`754b559`](https://github.com/wangxiuwen/tietie/commit/754b559) 同步设备管理：别名行内改+上次同步时间+托盘开关；冲突提示由哈希去重天然覆盖、图片同步留待后续 |
 
 - **129** [`d4362a5`](https://github.com/wangxiuwen/tietie/commit/d4362a5) 加密同步传输：AES-GCM 密封帧（会话密钥=SHA256(配对token‖v1标签)）双向 TCP 41784，回声抑制+入库去重，设置页开关（默认关） |
