@@ -78,6 +78,19 @@ export default function Clothesline() {
     }
     return s;
   }, [memos, nowSec]);
+  // one system notification per memo when it TRANSITIONS to due (direction
+  // 119); module-level so re-renders and window remounts never repeat it,
+  // and memos already due before we saw them are skipped (no catch-up spam)
+  useEffect(() => {
+    for (const id of dueSet) {
+      if (notifiedDue.has(id)) continue;
+      notifiedDue.add(id);
+      const m = memos.find((x) => x.id === id);
+      if (!m?.remind_at) continue;
+      if (nowSec - m.remind_at > 10) continue;
+      invoke("notify_due", { title: t("line.dueTitle"), body: m.content }).catch(() => {});
+    }
+  }, [dueSet, memos, nowSec]);
   const [previewing, setPreviewing] = useState(false);
   const [viewing, setViewing] = useState<Memo | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
@@ -690,6 +703,9 @@ function countdownLabel(at: number): string {
 
 // session-level memo body zoom (direction 78): ⌘+/-/0 inside the detail
 const detailZoom = { v: 1.0, subs: new Set<() => void>() };
+
+// memo ids whose due-moment notification already fired this session (119)
+const notifiedDue = new Set<number>();
 function useDetailZoom() {
   const [zoom, setZoom] = useState(detailZoom.v);
   useEffect(() => {

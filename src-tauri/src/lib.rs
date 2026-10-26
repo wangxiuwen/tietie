@@ -519,6 +519,7 @@ pub fn run() {
             export_selected_markdown,
             reveal_path,
             open_url,
+            notify_due,
             autostart_enabled,
             set_autostart,
             export_backup,
@@ -1846,6 +1847,58 @@ fn open_url(url: String) -> Result<(), String> {
             .map_err(|e| e.to_string())?;
     }
     log::info!("opened url: {url}");
+    Ok(())
+}
+
+/// Fire one system notification (direction 119): Action-Center toast via the
+/// PowerShell AppId on Windows, Notification Center via osascript on macOS,
+/// notify-send on Linux — the same spawn-per-OS pattern as open_url.
+#[tauri::command]
+fn notify_due(title: String, body: String) -> Result<(), String> {
+    fn one_line(s: &str, max: usize) -> String {
+        let flat: String = s.replace(['\n', '\r'], " ");
+        flat.chars().take(max).collect()
+    }
+    let title = one_line(&title, 60);
+    let body = one_line(&body, 120);
+    #[cfg(target_os = "windows")]
+    {
+        // PS single-quoted literals: double any inner quotes
+        let t = title.replace('\'', "''");
+        let b = body.replace('\'', "''");
+        let script = format!(
+            "$t=[Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);\
+             $x=$t.GetElementsByTagName('text');\
+             $x.Item(0).AppendChild($t.CreateTextNode('{t}'))|Out-Null;\
+             $x.Item(1).AppendChild($t.CreateTextNode('{b}'))|Out-Null;\
+             [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('{{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}}\\WindowsPowerShell\\v1.0\\powershell.exe').Show([Windows.UI.Notifications.ToastNotification]::new($t))"
+        );
+        std::process::Command::new("powershell")
+            .args(["-NoProfile", "-Command", &script])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("osascript")
+            .arg("-e")
+            .arg(format!(
+                "display notification \"{}\" with title \"{}\"",
+                body.replace('"', "'"),
+                title.replace('"', "'")
+            ))
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        std::process::Command::new("notify-send")
+            .arg(&title)
+            .arg(&body)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    log::info!("due notification fired: {title} / {body}");
     Ok(())
 }
 
