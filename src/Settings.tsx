@@ -69,6 +69,17 @@ export default function Settings() {
       .then(setPeers)
       .catch(() => {});
   }, []);
+  // pairing state machine (direction 128): a pending 6-digit code and the
+  // trusted-device list
+  const [pairCode, setPairCode] = useState<string | null>(null);
+  const [pairTarget, setPairTarget] = useState<string | null>(null);
+  const [pairInput, setPairInput] = useState("");
+  const [paired, setPaired] = useState<{ instance: string; addr: string; created_at: number }[]>([]);
+  const reloadPaired = useCallback(() => {
+    invoke<{ instance: string; addr: string; created_at: number }[]>("pairing_list")
+      .then(setPaired)
+      .catch(() => {});
+  }, []);
   const [langPref, setLangPref] = useState<LangPref>(() => getPref());
   const [fs, setFs] = useState<FontScale>(() => getFontScale());
   useEffect(() => onFontScaleChange(() => setFs(getFontScale())), []);
@@ -157,6 +168,7 @@ export default function Settings() {
     listen("settings-open", () => {
       reloadHotkeys();
       reloadPeers();
+      reloadPaired();
       invoke<boolean>("autostart_enabled").then(setAutostart);
       checkForUpdate();
     }).then((u) => unlistens.push(u));
@@ -370,6 +382,86 @@ export default function Settings() {
               <button className="btn ghost" onClick={reloadPeers}>
                 {t("settings.lanRefresh")}
               </button>
+            </span>
+          </div>
+
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.pairing")}</span>
+            <span className="settings-value lan-peers">
+              {peers.length === 0 && (
+                <span className="settings-tag muted">{t("settings.lanNone")}</span>
+              )}
+              {peers.map((p) => (
+                <span key={p.instance} className="lan-peer">
+                  {p.instance}
+                  <button
+                    className="btn ghost"
+                    onClick={() => {
+                      invoke<string>("pairing_begin", { instance: p.instance })
+                        .then((code) => {
+                          setPairCode(code);
+                          setPairTarget(p.instance);
+                          setPairInput("");
+                        })
+                        .catch(() => {});
+                    }}
+                  >
+                    {t("settings.pair")}
+                  </button>
+                </span>
+              ))}
+              {pairCode && (
+                <span className="settings-tag warn" title={t("settings.pairHint")}>
+                  {t("settings.pairCodeFor")} {pairTarget}: <b>{pairCode}</b>
+                  <input
+                    className="pair-input"
+                    inputMode="numeric"
+                    maxLength={6}
+                    placeholder={t("settings.pairEnter")}
+                    value={pairInput}
+                    onChange={(e) => setPairInput(e.target.value.replace(/\D/g, ""))}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      e.preventDefault();
+                      invoke("pairing_complete", {
+                        instance: pairTarget,
+                        code: pairInput,
+                      })
+                        .then(() => {
+                          setPairCode(null);
+                          setPairTarget(null);
+                          setPairInput("");
+                          reloadPaired();
+                        })
+                        .catch(() => {});
+                    }}
+                  />
+                </span>
+              )}
+            </span>
+          </div>
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.paired")}</span>
+            <span className="settings-value lan-peers">
+              {paired.length === 0 ? (
+                <span className="settings-tag muted">{t("settings.pairedNone")}</span>
+              ) : (
+                paired.map((p) => (
+                  <span key={p.instance} className="lan-peer" title={p.addr}>
+                    {p.instance} · {p.addr}
+                    <button
+                      className="btn ghost"
+                      onClick={() => {
+                        invoke("pairing_unpair", { instance: p.instance })
+                          .then(reloadPaired)
+                          .catch(() => {});
+                      }}
+                    >
+                      {t("settings.unpair")}
+                    </button>
+                  </span>
+                ))
+              )}
             </span>
           </div>
 

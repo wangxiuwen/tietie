@@ -981,6 +981,18 @@ button {
   font-size: calc(11px * var(--fs));
   color: var(--text-2);
 }
+/* 6-digit pairing entry inside the code chip (direction 128) */
+.pair-input {
+  all: unset;
+  width: 76px;
+  margin-left: 8px;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  background: rgba(0, 0, 0, 0.06);
+  font-size: calc(12px * var(--fs));
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--text);
+}
 /* non-blocking hotkey-conflict hint (direction 101) */
 .settings-tag.warn {
   background: rgba(255, 149, 0, 0.16);

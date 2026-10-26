@@ -14,6 +14,7 @@ mod paste_native;
 #[cfg(target_os = "macos")]
 mod richtext;
 
+use base64::Engine as _;
 use parking_lot::Mutex;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -718,6 +719,10 @@ pub fn run() {
             open_url,
             notify_due,
             mdns_peers,
+            pairing_begin,
+            pairing_complete,
+            pairing_list,
+            pairing_unpair,
             autostart_enabled,
             set_autostart,
             export_backup,
@@ -2165,6 +2170,126 @@ fn mdns_peers() -> Vec<mdns_sync::Peer> {
     mdns_sync::shared()
         .map(|d| d.snapshot())
         .unwrap_or_default()
+}
+
+// ─────────────────────── pairing (配对, direction 128) ───────────────────────
+
+#[derive(serde::Serialize)]
+struct PairedPeer {
+    instance: String,
+    addr: String,
+    created_at: i64,
+}
+
+/// One in-flight pairing attempt: a 6-digit code shown on this machine,
+/// valid for 5 minutes, tied to the peer it was generated for.
+struct PendingPairing {
+    instance: String,
+    addr: String,
+    code: String,
+    expires_at: i64,
+}
+
+fn pending_pairing() -> &'static Mutex<Option<PendingPairing>> {
+    static PENDING: std::sync::OnceLock<Mutex<Option<PendingPairing>>> = std::sync::OnceLock::new();
+    PENDING.get_or_init(|| Mutex::new(None))
+}
+
+/// Begin pairing with a discovered peer: returns the 6-digit code the user
+/// reads to the other end (direction 128; the wire exchange lands with the
+/// sync transport in direction 129). The peer must be in the current mDNS
+/// snapshot.
+#[tauri::command]
+fn pairing_begin(instance: String) -> Result<String, String> {
+    let peer = mdns_sync::shared()
+        .and_then(|d| d.snapshot().into_iter().find(|p| p.instance == instance))
+        .ok_or_else(|| "设备不在当前发现列表中".to_string())?;
+    let mut b = [0u8; 4];
+    getrandom::fill(&mut b).map_err(|e| e.to_string())?;
+    let n = u32::from_le_bytes(b) % 1_000_000;
+    let code = format!("{n:06}");
+    *pending_pairing().lock() = Some(PendingPairing {
+        instance: peer.instance.clone(),
+        addr: peer.addr,
+        code: code.clone(),
+        expires_at: db::now_unix() + 300,
+    });
+    log::info!("pairing started with {instance}");
+    Ok(code)
+}
+
+/// Complete pairing: the entered code must match the pending one for the
+/// same peer and be within its validity window. On success the peer becomes
+/// a long-term trusted device (random token stored for the future session
+/// handshake, direction 129).
+#[tauri::command]
+fn pairing_complete(
+    state: tauri::State<'_, AppState>,
+    instance: String,
+    code: String,
+) -> Result<PairedPeer, String> {
+    let pending = pending_pairing().lock().take();
+    let p = pending.ok_or("没有进行中的配对")?;
+    if p.instance != instance {
+        return Err("配对设备不匹配".into());
+    }
+    if db::now_unix() > p.expires_at {
+        return Err("配对码已过期，请重新生成".into());
+    }
+    if p.code != code.trim() {
+        return Err("配对码不正确".into());
+    }
+    let mut b = [0u8; 32];
+    getrandom::fill(&mut b).map_err(|e| e.to_string())?;
+    let token = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(b);
+    let created_at = db::now_unix();
+    {
+        let conn = state.conn.lock();
+        conn.execute(
+            "INSERT INTO pairing (instance, addr, token, created_at) VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(instance) DO UPDATE SET addr=?2, token=?3, created_at=?4",
+            rusqlite::params![instance, p.addr, token, created_at],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    log::info!("paired with {instance}");
+    Ok(PairedPeer {
+        instance,
+        addr: p.addr,
+        created_at,
+    })
+}
+
+/// Long-term trusted devices (direction 128).
+#[tauri::command]
+fn pairing_list(state: tauri::State<'_, AppState>) -> Vec<PairedPeer> {
+    let conn = state.conn.lock();
+    let mut stmt = match conn.prepare("SELECT instance, addr, created_at FROM pairing") {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+    stmt.query_map([], |r| {
+        Ok(PairedPeer {
+            instance: r.get(0)?,
+            addr: r.get(1)?,
+            created_at: r.get(2)?,
+        })
+    })
+    .map(|rows| rows.filter_map(|r| r.ok()).collect())
+    .unwrap_or_default()
+}
+
+/// Drop trust in a paired device.
+#[tauri::command]
+fn pairing_unpair(state: tauri::State<'_, AppState>, instance: String) -> Result<(), String> {
+    let conn = state.conn.lock();
+    conn.execute(
+        "DELETE FROM pairing WHERE instance = ?1",
+        rusqlite::params![instance],
+    )
+    .map_err(|e| e.to_string())?;
+    log::info!("unpaired {instance}");
+    Ok(())
 }
 
 /// Dump the selected items' text content to Documents/tietie-export-<ts>.txt.

@@ -106,6 +106,14 @@ pub fn open(path: &Path) -> SqlResult<Connection> {
             source_item_id INTEGER,
             created_at INTEGER NOT NULL
         );
+
+        -- trusted sync peers (direction 128): instance = mDNS instance label
+        CREATE TABLE IF NOT EXISTS pairing (
+            instance TEXT PRIMARY KEY,
+            addr TEXT NOT NULL,
+            token TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+        );
         "#,
     )?;
     // Idempotent migrations for older databases (created before rich-text support).
