@@ -1,7 +1,7 @@
 use crate::db;
 use arboard::{Clipboard, ImageData};
-use base64::Engine as _;
 use base64::engine::general_purpose;
+use base64::Engine as _;
 use parking_lot::Mutex;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;

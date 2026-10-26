@@ -558,7 +558,13 @@ export default function App() {
       // N opens the note editor for the selected card (direction 104);
       // while typing in the search box only ⌘/Ctrl+N fires so plain "n"
       // still types normally
-      if (e.key.toLowerCase() === "n" && (!typingInField(e) || isMod)) {
+      // N or B opens the note editor for the selected card (directions 104
+      // and 138); while typing in the search box only ⌘/Ctrl+N fires so
+      // plain "n"/"b" still type normally
+      if (
+        (e.key.toLowerCase() === "n" || e.key.toLowerCase() === "b") &&
+        (!typingInField(e) || (isMod && e.key.toLowerCase() === "n"))
+      ) {
         e.preventDefault();
         const it = filtered[selectedIdx];
         if (it) {
