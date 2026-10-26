@@ -5,6 +5,8 @@
 
 ## 2026-10-26
 
+- **116** [`cca7bb3`](https://github.com/wangxiuwen/tietie/commit/cca7bb3) 便签详情进编辑态（按钮/双击）自动全选正文，进入后点击仍正常落光标 |
+
 - **115** [`d6defd8`](https://github.com/wangxiuwen/tietie/commit/d6defd8) 托盘行 title 挂备注，悬停即见，无备注行不出 tooltip |
 
 - **114** [`db571f5`](https://github.com/wangxiuwen/tietie/commit/db571f5) 挂卡右键新增「📝 添加/编辑备注…」，打开详情并自动聚焦备注输入框 |
