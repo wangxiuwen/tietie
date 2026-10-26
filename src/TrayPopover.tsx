@@ -106,6 +106,13 @@ export default function TrayPopover() {
                   ? Math.min(i + 1, Math.max(0, shown.length - 1))
                   : Math.max(0, i - 1),
               );
+            } else if ((e.metaKey || e.ctrlKey) && /^[0-9]$/.test(e.key)) {
+              // ⌘N quick-copies the Nth visible row (direction 124); plain
+              // digits keep typing into the search box
+              e.preventDefault();
+              const i = e.key === "0" ? 9 : Number(e.key) - 1;
+              const it = shown[i];
+              if (it) copyBack(it);
             } else if (e.key === "Enter") {
               const it = shown[sel] ?? shown[0];
               if (it) copyBack(it);
@@ -275,6 +282,10 @@ function Row({
         />
       )}
       <span className="po-text"><HighlightText text={trimOne(rowText(item))} query={query} /></span>
+      {/* first 10 visible rows show their ⌘N quick-copy hint (direction 124) */}
+      {idx != null && idx < 10 && (
+        <span className="kbd">{MOD}{idx === 9 ? 0 : idx + 1}</span>
+      )}
     </button>
   );
 }
