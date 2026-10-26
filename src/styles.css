@@ -969,6 +969,22 @@ button {
   background: rgba(255, 45, 85, 0.15);
   color: var(--cat-image);
 }
+/* sync event log chips (direction 141) */
+.sync-log {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.sync-evin,
+.sync-evout,
+.sync-evfail {
+  font-size: calc(11px * var(--fs));
+  color: var(--text-2);
+}
+.sync-evfail {
+  color: var(--cat-code);
+}
+
 /* LAN peer chips (direction 127) */
 .lan-peers {
   flex-wrap: wrap;

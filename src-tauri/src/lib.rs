@@ -726,6 +726,7 @@ pub fn run() {
             pairing_begin,
             sync_state,
             export_diagnostics,
+            sync_events,
             sync_set,
             pairing_complete,
             pairing_list,
@@ -2340,6 +2341,12 @@ fn pairing_list(state: tauri::State<'_, AppState>) -> Vec<PairedPeer> {
     })
     .map(|rows| rows.filter_map(|r| r.ok()).collect())
     .unwrap_or_default()
+}
+
+/// Recent sync events for the settings page (direction 141).
+#[tauri::command]
+fn sync_events() -> Vec<sync::SyncEvent> {
+    sync::recent_events()
 }
 
 /// One-click diagnostics bundle (direction 134): version/OS, settings

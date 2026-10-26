@@ -71,6 +71,15 @@ export default function Settings() {
   const [upd, setUpd] = useState<UpdateStatus>({ kind: "idle" });
   const [hks, setHks] = useState<HotkeysInfo | null>(null);
   const [autostart, setAutostart] = useState<boolean>(false);
+  // recent sync events (direction 141)
+  const [syncLog, setSyncLog] = useState<
+    { ts: number; dir: string; peer: string; note: string }[]
+  >([]);
+  const reloadSyncLog = useCallback(() => {
+    invoke<{ ts: number; dir: string; peer: string; note: string }[]>("sync_events")
+      .then(setSyncLog)
+      .catch(() => {});
+  }, []);
   // transient status line for export actions (direction 134)
   const [diagMsg, setMsg] = useState<string | null>(null);
   // LAN peers over _tietie-sync._tcp mDNS (direction 127)
@@ -186,6 +195,7 @@ export default function Settings() {
       reloadPeers();
       reloadPaired();
       invoke<boolean>("sync_state").then(setSyncOn).catch(() => {});
+      reloadSyncLog();
       invoke<boolean>("autostart_enabled").then(setAutostart);
       checkForUpdate();
     }).then((u) => unlistens.push(u));
@@ -512,6 +522,25 @@ export default function Settings() {
                   </span>
                 ))
               )}
+            </span>
+          </div>
+
+          <div className="settings-row">
+            <span className="settings-label">{t("settings.syncLog")}</span>
+            <span className="settings-value sync-log">
+              {syncLog.length === 0 ? (
+                <span className="settings-tag muted">{t("settings.syncLogEmpty")}</span>
+              ) : (
+                [...syncLog].reverse().map((e, i) => (
+                  <span key={i} className={"sync-ev" + e.dir}>
+                    {new Date(e.ts * 1000).toLocaleTimeString()} {e.dir === "in" ? "⇦" : e.dir === "out" ? "⇨" : "⚠"}{" "}
+                    {e.peer} · {e.note}
+                  </span>
+                ))
+              )}
+              <button className="btn ghost" onClick={reloadSyncLog}>
+                {t("settings.lanRefresh")}
+              </button>
             </span>
           </div>
 

@@ -117,6 +117,40 @@ fn read_frame(stream: &mut TcpStream) -> Option<Envelope> {
     serde_json::from_slice(&body).ok()
 }
 
+/// Sync event ring for the settings page (direction 141): newest last,
+/// capped at 20; process-local (a restart clears it, matching the log).
+#[derive(Clone, serde::Serialize)]
+pub struct SyncEvent {
+    pub ts: i64,
+    pub dir: String,  // "in" | "out" | "fail"
+    pub peer: String, // instance label
+    pub note: String, // byte counts / reason
+}
+
+fn events() -> &'static Mutex<Vec<SyncEvent>> {
+    static E: std::sync::OnceLock<Mutex<Vec<SyncEvent>>> = std::sync::OnceLock::new();
+    E.get_or_init(|| Mutex::new(Vec::new()))
+}
+
+fn push_event(dir: &str, peer: &str, note: String) {
+    let mut g = events().lock();
+    g.push(SyncEvent {
+        ts: db::now_unix(),
+        dir: dir.to_string(),
+        peer: peer.to_string(),
+        note,
+    });
+    let n = g.len();
+    if n > 20 {
+        g.drain(0..n - 20);
+    }
+}
+
+/// Snapshot of the recent sync events (direction 141).
+pub fn recent_events() -> Vec<SyncEvent> {
+    events().lock().clone()
+}
+
 // last content hash we RECEIVED over sync — pushed-back-out suppression
 fn last_received() -> &'static Mutex<String> {
     static H: std::sync::OnceLock<Mutex<String>> = std::sync::OnceLock::new();
@@ -180,6 +214,7 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
             };
             let Some(p) = open(&session_key(&token), &env) else {
                 log::warn!("sync frame failed to decrypt (bad key/AAD)");
+                push_event("fail", &env.sender, "decrypt failed".into());
                 continue;
             };
             // dedupe on the sender's hash when present (images), else the
@@ -220,6 +255,7 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
             match db::upsert_item(&c, item, true) {
                 Ok(_) => {
                     log::info!("sync in: {} bytes from {}", p.content.len(), env.sender);
+                    push_event("in", &env.sender, format!("{}B", p.content.len()));
                     touch_last_sync(&c, &env.sender);
                 }
                 Err(e) => log::error!("sync insert: {e}"),
@@ -289,11 +325,13 @@ pub fn on_captured(
                 std::time::Duration::from_secs(2),
             ) else {
                 log::info!("sync: peer {addr} unreachable");
+                push_event("fail", &instance, "unreachable".into());
                 continue;
             };
             let _ = stream.set_write_timeout(Some(std::time::Duration::from_secs(2)));
             if send_frame(&mut stream, &env).is_ok() {
                 log::info!("sync out: {} bytes to {}", env.ct.len(), addr);
+                push_event("out", &instance, format!("{}B", env.ct.len()));
                 touch_last_sync(&conn.lock(), &instance);
             }
         }
