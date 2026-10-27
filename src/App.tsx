@@ -1,5 +1,4 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -26,9 +25,9 @@ type FilterTab = "all" | ItemKind;
 const cardDrag = {
   current: null as null | {
     itemId: number;
+    startX: number;
     startY: number;
     moved: boolean;
-    inZone: boolean;
     // multi-select group drag (direction 142): every selected id travels
     // together when the dragged card itself is part of the selection
     groupIds: number[] | null;
@@ -145,12 +144,6 @@ export default function App() {
   const [editing, setEditing] = useState<ClipItem | null>(null);
   const [editValue, setEditValue] = useState("");
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [dragGhost, setDragGhost] = useState<{
-    x: number;
-    y: number;
-    inZone: boolean;
-    count: number;
-  } | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   // folder chip under the pointer during a card drag (drop-to-file target)
   const [dropFolder, setDropFolder] = useState<string | null>(null);
@@ -160,16 +153,6 @@ export default function App() {
   const [zoomId, setZoomId] = useState<number | null>(null);
   // ⌘/Ctrl+click multi-select for batch delete / hang
   const [multiSel, setMultiSel] = useState<Set<number>>(new Set());
-  // two-step confirm on 批量挂绳 when the group is large (direction 153):
-  // first click arms the button, second click executes; timeout disarms
-  const HANG_CONFIRM_N = 5;
-  const [hangArmed, setHangArmed] = useState(false);
-  const hangArmTimer = useRef<number | null>(null);
-  useEffect(() => {
-    // selection changed (incl. Esc/clear) → drop the armed state
-    setHangArmed(false);
-    if (hangArmTimer.current) window.clearTimeout(hangArmTimer.current);
-  }, [multiSel]);
   // right-click context menu on cards
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   // ? cheatsheet overlay
@@ -251,6 +234,7 @@ export default function App() {
   }, [drawerVisible, items.length]);
 
   // One window-level drag tracker for every card (see cardDrag above).
+  // 挂绳手势已随晾衣架功能下线（2026-10-27）：拖拽仅保留文件夹归类。
   useEffect(() => {
     const lastPointer = { x: 0, y: 0 };
     const onMove = (e: PointerEvent) => {
@@ -259,28 +243,13 @@ export default function App() {
       const st = cardDrag.current;
       if (!st || (e.buttons & 1) === 0) return;
       if (!st.moved) {
-        if (Math.abs(st.startY - e.screenY) < 12) return;
+        if (Math.abs(st.startY - e.screenY) < 12 && Math.abs(st.startX - e.screenX) < 12) return;
         st.moved = true;
         setDraggingId(st.itemId);
         // grab the OS cursor so events keep flowing after leaving the window
         getCurrentWindow().setCursorGrab(true).catch(() => {});
         document.body.classList.add("dragging-hang");
       }
-      // Top zone = near the clothesline. WebView2 may clamp client coords
-      // at the window edge, so also accept "clearly dragged out the top".
-      const screenTop = e.screenY < 320;
-      const outTop = e.clientY <= 1 && st.startY - e.screenY > 140;
-      const inZone = screenTop || outTop;
-      if (inZone !== st.inZone) {
-        st.inZone = inZone;
-        invoke("hang_preview", { id: inZone ? st.itemId : null }).catch(() => {});
-      }
-      setDragGhost({
-        x: e.screenX - window.screenX,
-        y: e.screenY - window.screenY,
-        inZone,
-        count: st.groupIds?.length ?? 0,
-      });
       // drag-to-folder: highlight the chip under the pointer
       const el = document.elementFromPoint(e.clientX, e.clientY);
       const chip = el?.closest?.("[data-folder-id]");
@@ -288,13 +257,12 @@ export default function App() {
       // "pinned" is a filter, not a folder — not a drop target
       setDropFolder(fid && fid !== "pinned" ? fid : null);
     };
-    const onFinish = (hangIfZone: boolean) => {
+    const onFinish = () => {
       const st = cardDrag.current;
       if (!st) return;
       cardDrag.current = null;
       document.body.classList.remove("dragging-hang");
       getCurrentWindow().setCursorGrab(false).catch(() => {});
-      setDragGhost(null);
       setDraggingId(null);
       setDropFolder(null);
       if (st.moved) {
@@ -315,28 +283,11 @@ export default function App() {
             .catch(() => {});
           if (st.groupIds && st.groupIds.length > 1) setMultiSel(new Set());
           setDropFolder(null);
-          return;
-        }
-        if (hangIfZone && st.inZone) {
-          if (st.groupIds && st.groupIds.length > 1) {
-            // group drag into the hang zone hangs every selected card
-            const ids = st.groupIds;
-            setMultiSel(new Set());
-            invoke("hang_items", { ids })
-              .catch(() => {})
-              .finally(() => invoke("hang_preview", { id: null }).catch(() => {}));
-          } else {
-            invoke("hang_item", { id: st.itemId })
-              .catch(() => {})
-              .finally(() => invoke("hang_preview", { id: null }).catch(() => {}));
-          }
-        } else {
-          invoke("hang_preview", { id: null }).catch(() => {});
         }
       }
     };
-    const onUp = () => onFinish(true);
-    const onCancel = () => onFinish(false);
+    const onUp = () => onFinish();
+    const onCancel = () => onFinish();
     window.addEventListener("pointermove", onMove, true);
     window.addEventListener("pointerup", onUp, true);
     window.addEventListener("pointercancel", onCancel, true);
@@ -353,7 +304,13 @@ export default function App() {
     else if (typeof folderId === "number") xs = xs.filter((x) => x.folder_id === folderId);
     if (tab !== "all") xs = xs.filter((x) => x.kind === tab);
     if (query.trim()) {
-      xs = xs.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query, x.kind));
+      // masked sensitive cards stay out of search entirely (direction 183):
+      // matching them would leak content hints via highlight AND the count
+      xs = xs.filter(
+        (x) =>
+          !x.sensitive &&
+          matchQuery(x.content, x.preview + " " + (x.note ?? ""), query, x.kind),
+      );
     }
     return xs.slice().sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
@@ -436,17 +393,12 @@ export default function App() {
       // Arrow keys always switch selection — bail out of edit mode if needed.
       // ↑/↓ alias ←/→: the strip is a single horizontal row, but up-down
       // matches the muscle memory of vertical list navigation.
-      // MOD+↑ hangs the selection on the clothesline (drag-up is the mouse
-      // path); Shift+↑/↓ extends the multi-selection instead of moving.
+      // Shift+↑/↓ extends the multi-selection instead of moving; plain
+      // arrows move the selection.
       if (["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) {
         e.preventDefault();
         if (editing) setEditing(null);
         if (zoomId !== null) setZoomId(null);
-        if (isMod && e.key === "ArrowUp") {
-          const it = filtered[selectedIdx];
-          if (it) invoke("hang_item", { id: it.id }).catch(() => {});
-          return;
-        }
         const extend = e.shiftKey && (e.key === "ArrowDown" || e.key === "ArrowUp");
         if (extend) {
           const cur = filtered[selectedIdx];
@@ -816,26 +768,6 @@ export default function App() {
               )}
             </span>
             <button
-              className={"btn ghost" + (hangArmed ? " arm" : "")}
-              onClick={async () => {
-                if (multiSel.size > HANG_CONFIRM_N && !hangArmed) {
-                  // large group → require a second click within 3s
-                  setHangArmed(true);
-                  if (hangArmTimer.current) window.clearTimeout(hangArmTimer.current);
-                  hangArmTimer.current = window.setTimeout(() => setHangArmed(false), 3000);
-                  return;
-                }
-                if (hangArmTimer.current) window.clearTimeout(hangArmTimer.current);
-                const ids = [...multiSel];
-                setMultiSel(new Set());
-                await invoke("hang_items", { ids }).catch(() => {});
-              }}
-            >
-              {hangArmed && multiSel.size > HANG_CONFIRM_N
-                ? t("batch.hangConfirm")
-                : t("batch.hang")}
-            </button>
-            <button
               className="btn primary"
               onClick={async () => {
                 const ids = [...multiSel];
@@ -893,7 +825,6 @@ export default function App() {
                 await invoke("set_item_folder", { id, folderId });
                 refresh();
               },
-              onHang: (id) => invoke("hang_item", { id }).catch(() => {}),
               onNote: (it) => {
                 setCtxMenu(null);
                 setNoteEdit(it);
@@ -903,14 +834,6 @@ export default function App() {
             onClose={() => setCtxMenu(null)}
           />
         )}
-        {dragGhost &&
-          createPortal(
-            <div className="drag-ghost" style={{ left: dragGhost.x, top: dragGhost.y }}>
-              {dragGhost.count > 1 && <b className="drag-ghost-count">{dragGhost.count} </b>}
-              {dragGhost.inZone ? "松手挂上 ↩" : "拖到顶部挂上"}
-            </div>,
-            document.body,
-          )}
       </div>
     </div>
   );
@@ -925,7 +848,6 @@ function buildCtxItems({
   deleteItem,
   refresh,
   onFile,
-  onHang,
   onNote,
 }: {
   item?: ClipItem;
@@ -935,7 +857,6 @@ function buildCtxItems({
   deleteItem: (id: number) => void;
   refresh: () => void;
   onFile: (id: number, folderId: number | null) => void;
-  onHang: (id: number) => void;
   onNote: (it: ClipItem) => void;
 }): MenuItem[] {
   if (!item) return [];
@@ -943,7 +864,6 @@ function buildCtxItems({
     { label: t("ctx.copy"), onClick: () => navigator.clipboard.writeText(item.content).catch(() => {}) },
     { label: t("ctx.pasteBack"), onClick: () => paste(item) },
     { label: item.pinned ? t("ctx.unpin") : t("ctx.pin"), onClick: () => { togglePin(item.id); } },
-    { label: t("ctx.hang"), onClick: () => onHang(item.id) },
     {
       label: item.sensitive ? t("ctx.unmarkSensitive") : t("ctx.markSensitive"),
       onClick: () => {
@@ -1297,9 +1217,9 @@ function Card({
         if (e.button !== 0) return;
         cardDrag.current = {
           itemId: item.id,
+          startX: e.screenX,
           startY: e.screenY,
           moved: false,
-          inZone: false,
           groupIds: dragGroupIds,
         };
       }}
@@ -1749,7 +1669,6 @@ function Cheatsheet({ onClose }: { onClose: () => void }) {
     ["N", t("cs.note")],
     ["Tab", t("cs.tab")],
     [`${MOD}+点击 / ⇧↑↓`, t("cs.multi")],
-    [`${MOD}↑`, t("cs.hang")],
     ["拖卡片→文件夹", t("cs.file")],
     ["右键 / Menu ⇧F10", t("cs.menu")],
     ["空格", t("cs.zoom")],

@@ -245,7 +245,6 @@ export default function Settings() {
   }, []);
 
   const [backupMsg, setBackupMsg] = useState<string | null>(null);
-  const [lineOn, setLineOn] = useState(false);
   const [wayland, setWayland] = useState(false);
   const [dedupe, setDedupe] = useState(true);
   // stale-backup banner (direction 63): >7 days since the last export
@@ -291,13 +290,6 @@ export default function Settings() {
   }, [dedupe]);
   useEffect(() => {
     invoke<boolean>("wayland_session").then(setWayland);
-  }, []);
-  useEffect(() => {
-    invoke<boolean>("clothesline_visible").then(setLineOn);
-  }, []);
-  const toggleLine = useCallback(async () => {
-    const next = await invoke<boolean>("toggle_clothesline_cmd");
-    setLineOn(next);
   }, []);
   const doExportBackup = useCallback(async () => {
     setBackupMsg(t("settings.exporting"));
@@ -627,14 +619,6 @@ export default function Settings() {
             registered={hks?.screenshot_registered ?? true}
             onSaved={reloadHotkeys}
           />
-          <HotkeyRow
-            kind="clothesline"
-            label={t("settings.hk.clothesline")}
-            value={hks?.clothesline ?? ""}
-            others={[hks?.drawer ?? "", hks?.screenshot ?? ""]}
-            registered={hks?.clothesline_registered ?? true}
-            onSaved={reloadHotkeys}
-          />
           <div className="settings-row">
             <span className="settings-label">{t("settings.hkRecheck")}</span>
             <span className="settings-value">
@@ -686,17 +670,6 @@ export default function Settings() {
                 <option value="zh">中文</option>
                 <option value="en">English</option>
               </select>
-            </span>
-          </div>
-          <div className="settings-row">
-            <span className="settings-label">{t("settings.clothesline")}</span>
-            <span className="settings-value">
-              <button
-                className={"btn " + (lineOn ? "primary" : "ghost")}
-                onClick={toggleLine}
-              >
-                {lineOn ? t("settings.on") : t("settings.off")}
-              </button>
             </span>
           </div>
           <div className="settings-row">

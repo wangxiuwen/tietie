@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **下线** `TBD` 挂绳/晾衣架整体下线（用户决定「先不要了，有点乱套」）：conf 移除 clothesline 窗口+热键不注册+托盘删项+抽屉拖挂手势/MOD+↑/批量挂绳钮/右键挂绳项/速查行全移除；便签数据保留在库（导出/提醒 toast 不受影响），恢复=回滚本提交 |
+
 - **182** [`d0e7b93`](https://github.com/wangxiuwen/tietie/commit/d0e7b93) 颜色筛选 localStorage 持久（选色即存/全部即清，惰性初始化恢复），杀进程重启实测 active 色点跨会话恢复后还原
 
 - **181** [`2c33ad4`](https://github.com/wangxiuwen/tietie/commit/2c33ad4) ⌘N 徽章随自动翻页循环（badgeBase=(pageCount-1)*PAGE 经 Row 下传，⌘数字快取同步映射），实测 0-9 → 30-39 Ctrl1 重新起算

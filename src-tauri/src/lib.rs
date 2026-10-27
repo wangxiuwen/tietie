@@ -591,7 +591,9 @@ pub fn run() {
             {
                 let (drawer, effective_str) = register_drawer_with_fallback(app.handle());
                 let shot = register_simple_hotkey(app.handle(), "screenshot");
-                let line = register_simple_hotkey(app.handle(), "clothesline");
+                // 挂绳/晾衣架功能整体下线（用户决定，2026-10-27）：不注册热键、
+                // 不创建窗口，代码全部保留——恢复时撤销本次相关提交即可。
+                let line = None;
                 app.manage(HotkeyState {
                     drawer: Mutex::new(drawer),
                     screenshot: Mutex::new(shot),
@@ -606,17 +608,13 @@ pub fn run() {
                     hotkey_hook::start();
                 }
                 // startup self-check: any hotkey the OS refused?
-                let failed = [
-                    ("screenshot", shot.is_none()),
-                    ("clothesline", line.is_none()),
-                ]
-                .iter()
-                .filter(|(_, f)| *f)
-                .count();
+                let failed = [("screenshot", shot.is_none())]
+                    .iter()
+                    .filter(|(_, f)| *f)
+                    .count();
                 log::info!(
-                    "self-check: drawer hotkey {effective_str}, screenshot {}, clothesline {}",
+                    "self-check: drawer hotkey {effective_str}, screenshot {} (clothesline off)",
                     if shot.is_some() { "ok" } else { "FAILED" },
-                    if line.is_some() { "ok" } else { "FAILED" },
                 );
                 if failed > 0 {
                     log::warn!("self-check: {failed} hotkey(s) failed to register (combo taken)");
@@ -849,14 +847,7 @@ fn create_tray<R: Runtime>(
         true,
         None::<&str>,
     )?;
-    let line_cfg = load_setting(app, "clothesline_hotkey", DEFAULT_CLOTHESLINE_HOTKEY);
-    let line = MenuItem::with_id(
-        app,
-        "clothesline",
-        format!("晾衣架 ({})", hotkey_to_accel(&line_cfg)),
-        true,
-        None::<&str>,
-    )?;
+    // 挂绳/晾衣架下线：托盘不再提供入口（2026-10-27）
     let library = MenuItem::with_id(app, "library", "剪贴板库（管理窗）", true, None::<&str>)?;
     let sync_toggle = MenuItem::with_id(
         app,
@@ -897,7 +888,6 @@ fn create_tray<R: Runtime>(
                 &show,
                 &recent,
                 &shot,
-                &line,
                 &library,
                 &sync_toggle,
                 &pause,
@@ -915,7 +905,6 @@ fn create_tray<R: Runtime>(
                 &show,
                 &recent,
                 &shot,
-                &line,
                 &library,
                 &sync_toggle,
                 &pause,
@@ -933,7 +922,6 @@ fn create_tray<R: Runtime>(
             &show,
             &recent,
             &shot,
-            &line,
             &library,
             &sync_toggle,
             &pause,
@@ -945,9 +933,8 @@ fn create_tray<R: Runtime>(
     )?;
 
     let mut tooltip = format!(
-        "贴贴 — {} 唤起剪切板 · {} 晾衣架",
-        hotkey_to_accel(effective_drawer_hotkey),
-        hotkey_to_accel(&line_cfg)
+        "贴贴 — {} 唤起剪切板",
+        hotkey_to_accel(effective_drawer_hotkey)
     );
     if failed_hotkeys > 0 {
         tooltip.push_str(&format!(" ⚠ {failed_hotkeys} 个热键未注册(被占用)"));
@@ -3261,13 +3248,8 @@ fn set_hotkey(app: AppHandle, kind: String, value: String) -> Result<(), String>
     // keep the tray tooltip in sync with the combos that now actually fire
     if let Some(tray) = app.tray_by_id("main") {
         let _ = tray.set_tooltip(Some(format!(
-            "贴贴 — {} 唤起剪切板 · {} 晾衣架",
-            hotkey_to_accel(&load_setting(&app, "drawer_hotkey", DEFAULT_DRAWER_HOTKEY)),
-            hotkey_to_accel(&load_setting(
-                &app,
-                "clothesline_hotkey",
-                DEFAULT_CLOTHESLINE_HOTKEY,
-            ))
+            "贴贴 — {} 唤起剪切板",
+            hotkey_to_accel(&load_setting(&app, "drawer_hotkey", DEFAULT_DRAWER_HOTKEY))
         )));
     }
     #[cfg(target_os = "windows")]
