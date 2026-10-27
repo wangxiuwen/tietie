@@ -26,6 +26,9 @@ export default function TrayPopover() {
   const [pinExpanded, setPinExpanded] = useState(false);
   // row context menu (direction 140)
   const [rowMenu, setRowMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
+  // inline note editor for a row (direction 176): opened from the context
+  // menu's 备注 item, lives under the search box
+  const [noteEdit, setNoteEdit] = useState<{ id: number; draft: string } | null>(null);
   // progressive list (direction 77): start at 30 rows; pressing ↓ on the
   // last visible row appends another page so long histories stay light.
   const PAGE = 30;
@@ -161,6 +164,29 @@ export default function TrayPopover() {
         </div>
       </div>
 
+      {noteEdit && (
+        <div className="po-note-edit">
+          <input
+            autoFocus
+            maxLength={200}
+            placeholder={t("tray.notePlaceholder")}
+            value={noteEdit.draft}
+            onChange={(e) => setNoteEdit((n) => (n ? { ...n, draft: e.target.value } : n))}
+            onKeyDown={(e) => {
+              if (e.key === "Escape") {
+                e.preventDefault();
+                setNoteEdit(null);
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                const { id, draft } = noteEdit;
+                setNoteEdit(null);
+                invoke("set_item_note", { id, note: draft }).then(refresh).catch(() => {});
+              }
+            }}
+          />
+        </div>
+      )}
+
       <div
         className="po-scroll"
         ref={scrollRef}
@@ -281,6 +307,15 @@ export default function TrayPopover() {
             { label: items.find((x) => x.id === rowMenu.itemId)?.pinned
                 ? t("tray.mUnpin") : t("tray.mPin"),
               onClick: () => { invoke("toggle_pin", { id: rowMenu.itemId }).then(refresh).catch(() => {}); } },
+            // quick note entry (direction 176): swaps the menu for the
+            // inline editor under the search box
+            { label: t("tray.mNote"),
+              onClick: () => {
+                setNoteEdit({
+                  id: rowMenu.itemId,
+                  draft: items.find((x) => x.id === rowMenu.itemId)?.note ?? "",
+                });
+              } },
             { label: t("tray.mDel"), danger: true, separatorBefore: true,
               onClick: () => { invoke("delete_item", { id: rowMenu.itemId }).then(refresh).catch(() => {}); } },
           ]}
