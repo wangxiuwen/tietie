@@ -335,6 +335,21 @@ button {
   outline-offset: -2px;
   background: var(--card-hover);
   box-shadow: 0 8px 24px rgba(0, 122, 255, 0.18);
+  /* gentle emphasis while keyboard-selected (direction 148) */
+  animation: card-breathe 2.2s ease-in-out infinite;
+}
+@keyframes card-breathe {
+  0%, 100% {
+    box-shadow: 0 8px 24px rgba(0, 122, 255, 0.18);
+  }
+  50% {
+    box-shadow: 0 8px 24px rgba(0, 122, 255, 0.42);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card.selected {
+    animation: none;
+  }
 }
 
 .badge {
