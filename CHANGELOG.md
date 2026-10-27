@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **165** [`420f268`](https://github.com/wangxiuwen/tietie/commit/420f268) 搜索无结果空态 💡 轮换五条使用技巧（模块级游标每次进空态 +1，文案全部来自真实功能），真机两 miss 轮换不同条、有结果无空态实测
+
 - **164** [`7253748`](https://github.com/wangxiuwen/tietie/commit/7253748) export_memos md 按衣夹色分节（## 色名 N 张，首现序置顶带头；color_name 8 色板中文名+hex 兜底），txt 平铺不变；双色 fixtures 真机实测橙/绿各一节
 
 - **163** [`5055fa9`](https://github.com/wangxiuwen/tietie/commit/5055fa9) 已具备收口：settings-open 监听自 141 起即刷同步日志；msg_send→WSL 对端 unreachable ⚠ 事件，藏/开设置窗（不点手动刷新）实测事件自动呈现后清理探针
