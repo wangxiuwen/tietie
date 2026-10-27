@@ -755,6 +755,10 @@ export default function App() {
                       else setZoomId(null);
                     }}
                     onDoubleClick={() => dblAct(it)}
+                    onSearchTerm={(term) => {
+                      setQuery(term);
+                      searchRef.current?.focus();
+                    }}
                     onPin={() => togglePin(it.id)}
                     onEdit={() => startEdit(it)}
                     onDelete={() => deleteItem(it.id)}
@@ -1174,6 +1178,7 @@ function Card({
   onContext,
   onClick,
   onDoubleClick,
+  onSearchTerm,
   onPin,
   onEdit,
   onDelete,
@@ -1193,6 +1198,8 @@ function Card({
   onContext: (x: number, y: number) => void;
   onClick: (e: React.MouseEvent) => void;
   onDoubleClick: () => void;
+  /** domain badge on link cards taps this to filter (direction 166) */
+  onSearchTerm: (term: string) => void;
   onPin: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -1260,6 +1267,7 @@ function Card({
         onRich={onRichView}
         masked={item.sensitive && !revealed}
         onReveal={onReveal}
+        onSearchTerm={onSearchTerm}
       />
       <div className="meta">
         <span className="src">{item.source_app || "—"}</span>
@@ -1417,12 +1425,14 @@ function CardBody({
   onRich,
   masked,
   onReveal,
+  onSearchTerm,
 }: {
   item: ClipItem;
   query: string;
   onRich: () => void;
   masked: boolean;
   onReveal: () => void;
+  onSearchTerm: (term: string) => void;
 }) {
   // sensitive body stays masked until clicked (direction 113); the reveal
   // click only unmasks — it does not select the card
@@ -1508,8 +1518,21 @@ function CardBody({
           <HighlightText text={item.preview || item.content} query={query} />
         </div>
         <div className="link-url">
-          {/* registrable host as a glanceable badge (direction 118) */}
-          {domain && <span className="link-domain">{domain}</span>}
+          {/* registrable host as a glanceable badge (direction 118); click
+              filters the list down to this domain (direction 166) */}
+          {domain && (
+            <button
+              className="link-domain"
+              title={t("card.filterDomain")}
+              aria-label={t("card.filterDomain")}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSearchTerm(domain);
+              }}
+            >
+              {domain}
+            </button>
+          )}
           <HighlightText text={item.content} query={query} />
         </div>
       </div>

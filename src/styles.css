@@ -448,6 +448,8 @@ button {
 }
 /* glanceable site-host badge on link cards (direction 118) */
 .link-domain {
+  /* now a <button> (direction 166): neutralize UA chrome, keep badge look */
+  all: unset;
   display: inline-block;
   margin-right: 6px;
   padding: 1px 6px;
@@ -456,6 +458,7 @@ button {
   color: var(--accent);
   font-size: calc(10px * var(--fs));
   font-weight: 600;
+  cursor: pointer;
   line-height: 1.5;
   vertical-align: 1px;
 }
