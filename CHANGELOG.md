@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **170** [`c9c3f53`](https://github.com/wangxiuwen/tietie/commit/c9c3f53) 已具备收口：Library 行 title 全文自方向123 即在（含遮蔽抑制）；实证 143 行中长行显示 80 字、title 承载 1106 字全文、遮罩行 title 抑制
+
 - **169** [`6fbdae6`](https://github.com/wangxiuwen/tietie/commit/6fbdae6) 批量栏所选含敏感项时显示 ⚠ N 🔒 橙色警示（title 说明批量操作绕过遮蔽），取消敏感项即隐；真机标记敏感+Ctrl双选断言后全还原
 
 - **168** [`18b1627`](https://github.com/wangxiuwen/tietie/commit/18b1627) 托盘行 title 补 fmtBytes 字节数（备注行「备注 · 大小」无备注纯大小），与桥 byte_size 逐行对照 5/5 通过
