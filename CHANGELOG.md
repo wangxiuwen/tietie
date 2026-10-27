@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **164** [`7253748`](https://github.com/wangxiuwen/tietie/commit/7253748) export_memos md 按衣夹色分节（## 色名 N 张，首现序置顶带头；color_name 8 色板中文名+hex 兜底），txt 平铺不变；双色 fixtures 真机实测橙/绿各一节
+
 - **163** [`5055fa9`](https://github.com/wangxiuwen/tietie/commit/5055fa9) 已具备收口：settings-open 监听自 141 起即刷同步日志；msg_send→WSL 对端 unreachable ⚠ 事件，藏/开设置窗（不点手动刷新）实测事件自动呈现后清理探针
 
 - **162** [`89ebfbc`](https://github.com/wangxiuwen/tietie/commit/89ebfbc) 抽屉卡 onMouseDown button=1 直接 onPin（防自动滚动），与右键菜单/托盘同路径；中键两击 pinned 翻转实测（抽屉窗可信中键被 WebView2 吞，合成输入验证）
