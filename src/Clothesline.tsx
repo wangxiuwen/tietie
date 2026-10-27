@@ -323,7 +323,10 @@ export default function Clothesline() {
       <Rope hot={previewing || !!viewing || composing} pathRef={ropePathRef} />
       {viewing ? (
         <MemoDetail
-          memo={viewing}
+          /* re-derive from the fresh list so color/note edits made inside
+             the detail (number keys, palette clicks) reflect immediately —
+             `viewing` alone is the open-time snapshot */
+          memo={memos.find((m) => m.id === viewing.id) ?? viewing}
           recentColors={recentPinColors(memos)}
           initialEditing={editOnOpen}
           autoFocusNote={noteFocusId === viewing.id}
@@ -889,8 +892,9 @@ function MemoDetail({
     if (editing) editRef.current?.select();
   }, [editing]);
   const { zoom, onZoomKey } = useDetailZoom();
-  // palette hovered: number keys 1..N pick the matching pin color (direction 99)
-  const [paletteHot, setPaletteHot] = useState(false);
+  // palette hovered — drives the dot number badges' visibility only
+  // (the keys themselves now work anywhere in the detail, direction 167)
+  const [, setPaletteHot] = useState(false);
   // per-second re-render while a reminder is pending so the head countdown
   // ticks live (direction 102); the label reads the clock at render time
   const [, setRemindTick] = useState(0);
@@ -914,8 +918,12 @@ function MemoDetail({
     ...MEMO_COLORS.filter((c) => !recentColors.includes(c)),
   ];
   useEffect(() => {
-    if (!paletteHot) return;
+    // number keys 1..N pick the matching pin color (direction 99 gated this
+    // behind palette hover; direction 167 lifts the gate so the keys work
+    // anywhere in the detail view — except while typing in a field)
     const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el?.closest?.("input, textarea, select")) return;
       const n = Number(e.key);
       if (!Number.isInteger(n) || n < 1 || n > paletteColors.length) return;
       e.preventDefault();
@@ -923,7 +931,7 @@ function MemoDetail({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [paletteHot, memo.id, recentColors]);
+  }, [memo.id, recentColors]);
 
   const canEdit = memo.kind !== "image"; // image memos carry no editable text
 
