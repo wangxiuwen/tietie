@@ -219,6 +219,15 @@ export default function Library() {
             ? Math.min(c + 1, filtered.length - 1)
             : Math.max(c - 1, 0),
         );
+      } else if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A")) {
+        // Ctrl+A selects the current filter results (direction 180) — same
+        // toggle semantics as the header checkbox (all-on → clears)
+        e.preventDefault();
+        setSelected((prev) =>
+          filtered.every((x) => prev.has(x.id))
+            ? new Set()
+            : new Set(filtered.map((x) => x.id)),
+        );
       } else if (e.key === "Enter" && cursor >= 0 && cursor < filtered.length) {
         e.preventDefault();
         const it = filtered[cursor];
