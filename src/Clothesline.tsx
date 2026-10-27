@@ -66,6 +66,21 @@ export default function Clothesline() {
     }
     return s;
   }, [memos, nowSec]);
+  // tray badge shows how many reminders just fired (direction 172): a memo
+  // counts as due-unread for 10 minutes after its reminder time — same
+  // no-catch-up philosophy as the notification (119), so a relaunch with old
+  // due memos never paints a badge
+  const dueUnread = useMemo(
+    () =>
+      memos.filter(
+        (m) =>
+          m.remind_at != null && nowSec >= m.remind_at && nowSec < m.remind_at + 600,
+      ).length,
+    [memos, nowSec],
+  );
+  useEffect(() => {
+    invoke("set_tray_badge", { n: dueUnread }).catch(() => {});
+  }, [dueUnread]);
   const flashSet = useMemo(() => {
     const s = new Set<number>();
     for (const m of memos) {

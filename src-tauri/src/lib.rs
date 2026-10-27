@@ -756,6 +756,7 @@ pub fn run() {
             get_hotkeys,
             recheck_hotkeys,
             hotkey_defaults,
+            set_tray_badge,
             set_hotkey,
             begin_hotkey_capture,
             cancel_hotkey_capture,
@@ -1066,14 +1067,12 @@ fn tray_stroke() -> [u8; 4] {
     [255, 255, 255, 255]
 }
 
-fn tray_icon_image() -> Image<'static> {
+fn tray_icon_buffer() -> Vec<u8> {
     // 32x32 line-art clipboard on transparent — one outlined shape in a
     // stroke color that contrasts the taskbar (macOS: template auto-adapts;
     // Windows: registry light/dark theme; the old 16x16 hairline glyph was
     // near-invisible on hi-DPI taskbars).
-    const W: i32 = 32;
-    const H: i32 = 32;
-    let mut buf = vec![0u8; (W * H * 4) as usize];
+    let mut buf = vec![0u8; 32 * 32 * 4];
     let on = tray_stroke();
     log::info!(
         "tray icon stroke rgba({},{},{},{})",
@@ -1124,7 +1123,87 @@ fn tray_icon_image() -> Image<'static> {
         set(&mut buf, 19, y);
         set(&mut buf, 20, y);
     }
-    Image::new_owned(buf, W as u32, H as u32)
+    buf
+}
+
+fn tray_icon_image() -> Image<'static> {
+    Image::new_owned(tray_icon_buffer(), 32, 32)
+}
+
+/// Due-memo count badge on the tray icon (direction 172): a red disc in the
+/// bottom-right corner carrying the count in a 3×5 pixel digit font
+/// ("9+" for ten or more). n >= 1 — zero clears back to the plain icon.
+fn tray_icon_image_badged(n: u32) -> Image<'static> {
+    let mut buf = tray_icon_buffer();
+    // glyph rows are 3 bits wide, MSB = leftmost column
+    const G: [[u8; 5]; 11] = [
+        [0b111, 0b101, 0b101, 0b101, 0b111], // 0
+        [0b010, 0b110, 0b010, 0b010, 0b111], // 1
+        [0b111, 0b001, 0b111, 0b100, 0b111], // 2
+        [0b111, 0b001, 0b111, 0b001, 0b111], // 3
+        [0b101, 0b101, 0b111, 0b001, 0b001], // 4
+        [0b111, 0b100, 0b111, 0b001, 0b111], // 5
+        [0b111, 0b100, 0b111, 0b101, 0b111], // 6
+        [0b111, 0b001, 0b001, 0b010, 0b010], // 7
+        [0b111, 0b101, 0b111, 0b101, 0b111], // 8
+        [0b111, 0b101, 0b111, 0b001, 0b111], // 9
+        [0b000, 0b010, 0b111, 0b010, 0b000], // +
+    ];
+    const R: i32 = 7;
+    const CX: i32 = 24;
+    const CY: i32 = 24;
+    let put = |buf: &mut [u8], x: i32, y: i32, c: [u8; 4]| {
+        if (0..32).contains(&x) && (0..32).contains(&y) {
+            let i = ((y * 32 + x) * 4) as usize;
+            buf[i..i + 4].copy_from_slice(&c);
+        }
+    };
+    for dy in -R..=R {
+        for dx in -R..=R {
+            if dx * dx + dy * dy <= R * R {
+                put(&mut buf, CX + dx, CY + dy, [255, 59, 48, 255]);
+            }
+        }
+    }
+    let text: Vec<usize> = if n >= 10 {
+        vec![9, 10]
+    } else {
+        vec![(n as usize) % 10]
+    };
+    let w = (text.len() as i32 * 4) - 1; // 3px glyphs joined by 1px gaps
+    let x0 = CX - w / 2;
+    let y0 = CY - 2;
+    for (gi, g) in text.iter().enumerate() {
+        for (row, bits) in G[*g].iter().enumerate() {
+            for col in 0..3 {
+                if bits & (1 << (2 - col)) != 0 {
+                    put(
+                        &mut buf,
+                        x0 + gi as i32 * 4 + col,
+                        y0 + row as i32,
+                        [255, 255, 255, 255],
+                    );
+                }
+            }
+        }
+    }
+    Image::new_owned(buf, 32, 32)
+}
+
+/// Swap the tray icon to the due-count badge (direction 172); n = 0 restores
+/// the plain clipboard glyph.
+#[tauri::command]
+fn set_tray_badge(app: AppHandle, n: u32) -> Result<(), String> {
+    let Some(tray) = app.tray_by_id("main") else {
+        return Ok(()); // tray not built yet — the next tick re-retries
+    };
+    log::info!("tray badge -> {n}");
+    let img = if n == 0 {
+        tray_icon_image()
+    } else {
+        tray_icon_image_badged(n)
+    };
+    tray.set_icon(Some(img)).map_err(|e| e.to_string())
 }
 
 /// Logical-pt margin between the drawer's bottom edge and the dock /
