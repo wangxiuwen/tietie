@@ -226,6 +226,14 @@ export default function Clothesline() {
     [],
   );
 
+  // full-text copy with rendering markers stripped (direction 178): the
+  // plain-clipboard twin of the detail's paste-back 复制 button
+  const copyPlain = useCallback((m: Memo) => {
+    navigator.clipboard.writeText(plainTextOf(m.content)).catch(() => {});
+    setCopiedId(m.id);
+    setTimeout(() => setCopiedId((cur) => (cur === m.id ? null : cur)), 1200);
+  }, []);
+
   const remove = useCallback(async (id: number) => {
     setViewing((v) => (v?.id === id ? null : v));
     await invoke("remove_memo", { id });
@@ -347,6 +355,7 @@ export default function Clothesline() {
           autoFocusNote={noteFocusId === viewing.id}
           copied={copiedId === viewing.id}
           onCopy={() => copy(viewing)}
+          onCopyPlain={() => copyPlain(viewing)}
           onClose={() => { setEditOnOpen(false); setNoteFocusId(null); setViewing(null); }}
           onRemove={() => remove(viewing.id)}
           onSave={(content) => saveMemo(viewing.id, content)}
@@ -896,6 +905,7 @@ function MemoDetail({
   autoFocusNote = false,
   copied,
   onCopy,
+  onCopyPlain,
   onClose,
   onRemove,
   onSave,
@@ -907,6 +917,8 @@ function MemoDetail({
   autoFocusNote?: boolean;
   copied: boolean;
   onCopy: () => void;
+  /** copies the full text without the markdown rendering (direction 178) */
+  onCopyPlain: () => void;
   onClose: () => void;
   onRemove: () => void;
   onSave: (content: string) => void;
@@ -1052,6 +1064,9 @@ function MemoDetail({
               </button>
               <button className="btn primary" onClick={onCopy}>
                 {copied ? t("line.copied") : t("line.copy")}
+              </button>
+              <button className="btn ghost" onClick={onCopyPlain}>
+                {t("line.copyPlain")}
               </button>
               <button className="btn ghost" onClick={onRemove}>
                 {t("line.takeOff")}
