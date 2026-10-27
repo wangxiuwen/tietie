@@ -154,6 +154,16 @@ export default function App() {
   const [zoomId, setZoomId] = useState<number | null>(null);
   // ⌘/Ctrl+click multi-select for batch delete / hang
   const [multiSel, setMultiSel] = useState<Set<number>>(new Set());
+  // two-step confirm on 批量挂绳 when the group is large (direction 153):
+  // first click arms the button, second click executes; timeout disarms
+  const HANG_CONFIRM_N = 5;
+  const [hangArmed, setHangArmed] = useState(false);
+  const hangArmTimer = useRef<number | null>(null);
+  useEffect(() => {
+    // selection changed (incl. Esc/clear) → drop the armed state
+    setHangArmed(false);
+    if (hangArmTimer.current) window.clearTimeout(hangArmTimer.current);
+  }, [multiSel]);
   // right-click context menu on cards
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   // ? cheatsheet overlay
@@ -761,14 +771,24 @@ export default function App() {
               {t("batch.selected")} {multiSel.size}
             </span>
             <button
-              className="btn ghost"
+              className={"btn ghost" + (hangArmed ? " arm" : "")}
               onClick={async () => {
+                if (multiSel.size > HANG_CONFIRM_N && !hangArmed) {
+                  // large group → require a second click within 3s
+                  setHangArmed(true);
+                  if (hangArmTimer.current) window.clearTimeout(hangArmTimer.current);
+                  hangArmTimer.current = window.setTimeout(() => setHangArmed(false), 3000);
+                  return;
+                }
+                if (hangArmTimer.current) window.clearTimeout(hangArmTimer.current);
                 const ids = [...multiSel];
                 setMultiSel(new Set());
                 await invoke("hang_items", { ids }).catch(() => {});
               }}
             >
-              {t("batch.hang")}
+              {hangArmed && multiSel.size > HANG_CONFIRM_N
+                ? t("batch.hangConfirm")
+                : t("batch.hang")}
             </button>
             <button
               className="btn primary"
