@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **162** [`89ebfbc`](https://github.com/wangxiuwen/tietie/commit/89ebfbc) 抽屉卡 onMouseDown button=1 直接 onPin（防自动滚动），与右键菜单/托盘同路径；中键两击 pinned 翻转实测（抽屉窗可信中键被 WebView2 吞，合成输入验证）
+
 - **161** [`86c068e`](https://github.com/wangxiuwen/tietie/commit/86c068e) 抽屉搜索框 × 清空钮（流内插入避让 ⌘F kbd，mousedown preventDefault 保焦点+点击清空复焦），真机三态实测含 img: 前缀顺带回归
 
 - **159** [`dafeee1`](https://github.com/wangxiuwen/tietie/commit/dafeee1) 模板 chip 按使用计数稳定降序（bumpTemplate+addTemplate 双处排序不变式），常用前置/0使用不插队/追平不跳位真机实测；连点同 chip 的 React bailout 用 render tick 兜住

@@ -203,7 +203,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-27 | 162 | TBD | 抽屉卡 onMouseDown button=1 直接 onPin（防自动滚动），与右键菜单/托盘同路径；中键两击 pinned 翻转实测（抽屉窗可信中键被 WebView2 吞，合成输入验证）
+2026-10-27 | 162 | 89ebfbc | 抽屉卡 onMouseDown button=1 直接 onPin（防自动滚动），与右键菜单/托盘同路径；中键两击 pinned 翻转实测（抽屉窗可信中键被 WebView2 吞，合成输入验证）
 2026-10-27 | 161 | 86c068e | 抽屉搜索框 × 清空钮（流内插入避让 ⌘F kbd，mousedown preventDefault 保焦点+点击清空复焦），真机三态实测含 img: 前缀顺带回归
 2026-10-27 | 159 | dafeee1 | 模板 chip 按使用计数稳定降序（bumpTemplate+addTemplate 双处排序不变式），常用前置/0使用不插队/追平不跳位真机实测；连点同 chip 的 React bailout 用 render tick 兜住
 2026-10-27 | 158 | 752f969 | 设置页一键恢复出厂热键（新 hotkey_defaults 命令+恢复默认钮，逐键容错占用保现役），真机实测 clothesline/screenshot 回出厂+面板刷新；本轮池<3 先扩池 161-165
