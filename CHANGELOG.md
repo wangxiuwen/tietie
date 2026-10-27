@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **148** [`5e43ca0`](https://github.com/wangxiuwen/tietie/commit/5e43ca0) 选中卡 box-shadow 呼吸（card-breathe 2.2s 无限循环），prefers-reduced-motion 自动关 |
+
 - **147** [`3740236`](https://github.com/wangxiuwen/tietie/commit/3740236) Library 表格新增文件夹归属列（名称/—，悬停 title），folders 随 refresh 重载修后建文件夹不显 |
 
 - **144** [`c34285c`](https://github.com/wangxiuwen/tietie/commit/c34285c) 图片卡缩略图加 img-fade-in 0.28s ease-out 渐显动画（keyframes opacity 0→1） |

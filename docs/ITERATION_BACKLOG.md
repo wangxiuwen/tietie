@@ -191,7 +191,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-27 | 148 | TBD | 选中卡 box-shadow 呼吸（card-breathe 2.2s 无限循环），prefers-reduced-motion 自动关 |
+2026-10-27 | 148 | 5e43ca0 | 选中卡 box-shadow 呼吸（card-breathe 2.2s 无限循环），prefers-reduced-motion 自动关 |
 2026-10-27 | 147 | 3740236 | Library 表格新增文件夹归属列（名称/—，悬停 title），folders 随 refresh 重载修后建文件夹不显 |
 2026-10-27 | 144 | c34285c | 图片卡缩略图加 img-fade-in 0.28s ease-out 渐显动画（keyframes opacity 0→1） |
 2026-10-27 | 142 | c18d149 | 实现随 148a 提交一并落库（groupIds 全链路：捕获/幽灵计数/整组入夹/整组挂绳）——本轮真机实证双选整组拖入后 folder_id 齐变，按已具备勾掉 |
