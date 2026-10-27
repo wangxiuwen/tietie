@@ -54,6 +54,9 @@ function commitSearchHistory(q: string) {
   if (i >= 0) searchHist.splice(i, 1);
   searchHist.push(v);
   if (searchHist.length > 5) searchHist.shift();
+  // mirror for the tray window (direction 171): module state can't cross
+  // windows, same-origin localStorage can
+  localStorage.setItem("tietie.searchHist", JSON.stringify(searchHist));
 }
 
 /** True when a keydown originates inside a text field (search box / editor). */

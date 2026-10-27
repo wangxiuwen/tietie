@@ -20,6 +20,8 @@ export default function TrayPopover() {
   const [sel, setSel] = useState(0); // arrow-key selection into `filtered`
   // search input handle: the × clear button (direction 92) returns focus here
   const poSearchRef = useRef<HTMLInputElement>(null);
+  // cursor walking the drawer-shared search history on ↑ (direction 171)
+  const [trayHistIdx, setTrayHistIdx] = useState(-1);
   // pinned-section expansion (direction 103): collapsed again per session
   const [pinExpanded, setPinExpanded] = useState(false);
   // row context menu (direction 140)
@@ -97,10 +99,25 @@ export default function TrayPopover() {
           onChange={(e) => {
             setQuery(e.target.value);
             setSel(0);
+            setTrayHistIdx(-1); // typing leaves history recall (direction 171)
           }}
           onKeyDown={(e) => {
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              // ↑ on an empty query recalls the drawer's search history
+              // (direction 171, mirrors 126); repeated ↑ walks older — typing
+              // resets. Otherwise the arrows keep selecting rows as before.
+              if (e.key === "ArrowUp" && (!query || trayHistIdx >= 0)) {
+                const hist = JSON.parse(localStorage.getItem("tietie.searchHist") || "[]") as string[];
+                if (hist.length) {
+                  e.preventDefault();
+                  const n = Math.min(trayHistIdx + 1, hist.length - 1);
+                  setTrayHistIdx(n);
+                  setQuery(hist[hist.length - 1 - n]);
+                  return;
+                }
+              }
               e.preventDefault();
+              if (e.key === "ArrowDown") setTrayHistIdx(-1); // leaves recall
               if (e.key === "ArrowDown" && sel === shown.length - 1 && sel < matched.length - 1) {
                 // hit the bottom of the visible page → auto-load more
                 setPageCount((p) => p + 1);
