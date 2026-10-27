@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **182** [`d0e7b93`](https://github.com/wangxiuwen/tietie/commit/d0e7b93) 颜色筛选 localStorage 持久（选色即存/全部即清，惰性初始化恢复），杀进程重启实测 active 色点跨会话恢复后还原
+
 - **181** [`2c33ad4`](https://github.com/wangxiuwen/tietie/commit/2c33ad4) ⌘N 徽章随自动翻页循环（badgeBase=(pageCount-1)*PAGE 经 Row 下传，⌘数字快取同步映射），实测 0-9 → 30-39 Ctrl1 重新起算
 
 - **180** [`9532d72`](https://github.com/wangxiuwen/tietie/commit/9532d72) Library 表格 Ctrl+A 全选当前过滤集（复用头部全选框 toggle 语义：全选态再按即清），146 行实测全选/全清/表头同步
