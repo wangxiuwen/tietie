@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **173** [`c055834`](https://github.com/wangxiuwen/tietie/commit/c055834) 文件夹 chip 双击折叠为纯色点（title 保留名），折叠态 data-folder-id 仍在故拖放照常收入；可信指针拖拽实测拖到 16px 宽折叠 chip → 条目 folder_id 精确落夹后全还原
+
 - **172** [`7a44567`](https://github.com/wangxiuwen/tietie/commit/7a44567) 到点便签托盘角标（运行时像素画红圆+3x5 数字，set_tray_badge 命令，10 分钟未读窗口），日志链路实测 badge→1/→0
 
 - **171** [`767094f`](https://github.com/wangxiuwen/tietie/commit/767094f) 抽屉提交历史镜像 localStorage、托盘空查询 ↑ 召回（连按走更旧，打字/↓ 退出），跨窗共享实测 甲乙两连召回后快照还原
