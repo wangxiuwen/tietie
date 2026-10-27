@@ -106,7 +106,7 @@ export const zh: Dict = {
   "settings.wayland": "Wayland 会话", "settings.waylandHint": "回车仅复制，不自动粘贴（Wayland 安全限制）",
   "settings.accHint": "粘贴功能需要「辅助功能」权限。点击「去授权」打开系统设置 → 隐私与安全 → 辅助功能，把 Tietie 打开即可，授权后状态自动刷新。",
   // clothesline
-  "line.empty": "晾衣架空着 — 从下面的抽屉按住一张卡片往上拖，松手就挂上",
+  "line.empty": "晾衣架空着 — 从下面的抽屉按住一张卡片往上拖，松手就挂上", "line.emptyNew": "或点这里新建一张",
   "line.hang": "松手挂上 ↩", "line.takeoff": "拖出绳区摘下", "line.takeoffNow": "松手摘下 ✕", "line.reorder": "松手换位 ⇄", "line.insertHere": "↳ 挂到这里",
   "line.cap": "晾衣架已挂", "line.capHint": "卡片较多，建议摘下不用的便签保持整洁",
   "line.toTop": "拖到顶部挂上", "line.collapse": "收起",
@@ -264,7 +264,7 @@ export const en: Dict = {
   "settings.regFail": "Register failed (combo taken) — change it",
   "settings.wayland": "Wayland session", "settings.waylandHint": "Enter copies only — no auto-paste (Wayland security)",
   "settings.accHint": "Paste needs Accessibility permission. Click Grant, open System Settings → Privacy & Security → Accessibility and enable Tietie; status refreshes automatically.",
-  "line.empty": "The line is empty — drag a drawer card up here and release to hang it",
+  "line.empty": "The line is empty — drag a drawer card up here and release to hang it", "line.emptyNew": "or tap here to create one",
   "line.hang": "Release to hang ↩", "line.takeoff": "Drag past the rope to take off", "line.takeoffNow": "Release to take off ✕", "line.reorder": "Release to reorder ⇄", "line.insertHere": "↳ hangs here",
   "line.cap": "on the line:", "line.capHint": "Quite crowded — take unused notes off to keep it tidy",
   "line.toTop": "Drag to the top to hang", "line.collapse": "Collapse",

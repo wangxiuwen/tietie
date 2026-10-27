@@ -361,7 +361,21 @@ export default function Clothesline() {
               : memos.filter((m) => m.color === colorFilter);
             return visibleMemos.length === 0 && !previewing ? (
               <div className="line-empty">
-                {colorFilter ? t("line.emptyColor") : t("line.empty")}
+                {colorFilter ? (
+                  t("line.emptyColor")
+                ) : (
+                  <>
+                    {t("line.empty")}{" "}
+                    {/* in-line create entry (direction 175): the drag hint
+                        alone hides the composer path */}
+                    <button
+                      className="line-empty-new"
+                      onClick={() => setComposing(true)}
+                    >
+                      {t("line.emptyNew")}
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               visibleMemos

@@ -2769,3 +2769,12 @@ select:focus-visible,
   padding: 5px 4px;
   gap: 0;
 }
+
+/* in-line create entry inside the clothesline empty state (direction 175) */
+.line-empty-new {
+  all: unset;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: inherit;
+  text-decoration: underline;
+}
