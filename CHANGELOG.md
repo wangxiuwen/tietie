@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **156** [`a295b19`](https://github.com/wangxiuwen/tietie/commit/a295b19) 新便签默认沿用上次提交颜色（会话级 lastMemoColor，null 语义保持默认蓝），composer B 选中态+落库色值双证
+
 - **155** [`8b42457`](https://github.com/wangxiuwen/tietie/commit/8b42457) 托盘行中键直接置顶/取消（onMouseDown button=1 拦截防自动滚动），三处 Row 全接线；可信中键两连击实测 pinned 翻转且置顶分区随之出现/消失
 
 - **160** [`fa0ad86`](https://github.com/wangxiuwen/tietie/commit/fa0ad86) 类型筛选行去彩点：dot-sm/TYPE_TABS.dot 移除（用户反馈彩点乱），标签+数量+激活高亮保留 |
