@@ -99,6 +99,8 @@ export default function Settings() {
   >([]);
   // typed-message flow (direction 148): which paired peer is being messaged
   const [msgTo, setMsgTo] = useState<string | null>(null);
+  // file-transfer feedback (direction 148b)
+  const [fileMsg, setFileMsg] = useState<string | null>(null);
   const [msgText, setMsgText] = useState("");
   const [syncOn, setSyncOn] = useState(false);
   const reloadPaired = useCallback(() => {
@@ -523,6 +525,18 @@ export default function Settings() {
                     </button>
                     <button
                       className="btn ghost"
+                      title={t("settings.sendFile")}
+                      onClick={() => {
+                        invoke<string>("file_pick_and_send", { instance: p.instance })
+                          .then((r) => setFileMsg(r))
+                          .catch((e) => setFileMsg(String(e)));
+                        window.setTimeout(() => setFileMsg(null), 4000);
+                      }}
+                    >
+                      📎
+                    </button>
+                    <button
+                      className="btn ghost"
                       onClick={() => {
                         invoke("pairing_unpair", { instance: p.instance })
                           .then(reloadPaired)
@@ -533,6 +547,9 @@ export default function Settings() {
                     </button>
                   </span>
                 ))
+              )}
+              {fileMsg && (
+                <span className="settings-tag ok">{fileMsg}</span>
               )}
               {msgTo && (
                 <span className="lan-peer msg-row">

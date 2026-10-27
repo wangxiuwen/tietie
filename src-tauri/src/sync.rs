@@ -22,6 +22,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::db::{self, InsertItem};
+use tauri::Manager;
 
 pub const PORT: u16 = 41784;
 const LABEL: &[u8] = b"tietie-sync-v1";
@@ -227,7 +228,7 @@ pub fn set_enabled(conn: &Connection, on: bool) {
 }
 
 /// Accept loop for inbound sealed frames. One thread for the process.
-pub fn start_server(conn: Arc<Mutex<Connection>>) {
+pub fn start_server(app: tauri::AppHandle, conn: Arc<Mutex<Connection>>) {
     std::thread::spawn(move || {
         let listener = match TcpListener::bind(("0.0.0.0", PORT)) {
             Ok(l) => l,
@@ -245,6 +246,13 @@ pub fn start_server(conn: Arc<Mutex<Connection>>) {
             let Some(raw) = read_frame_raw(&mut s) else {
                 continue;
             };
+            // file transfer (direction 148b): a FileEnvelope carries a
+            // `chunk` field; consume every chunk on this connection, then
+            // write the reassembled file. One connection = one file.
+            if serde_json::from_slice::<FileEnvelope>(&raw).is_ok() {
+                handle_file_connection(&app, &conn, &mut s, raw);
+                continue;
+            }
             // pairing handshake first: a `pair-req` frame is answered inline
             // (and may mint a token) before any sync traffic can flow
             if let Ok(req) = serde_json::from_slice::<PairMsg>(&raw) {
@@ -429,6 +437,284 @@ fn touch_last_sync(conn: &Connection, instance: &str) {
         "UPDATE pairing SET last_sync_at = ?2 WHERE instance = ?1",
         rusqlite::params![instance, db::now_unix()],
     );
+}
+
+// ─────────────────── file transfer (direction 148b) ───────────────────
+
+/// One chunk of a sealed file transfer. Chunks of the same id arrive in
+/// order; the receiver reassembles and writes the complete file.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct FileChunk {
+    pub id: String, // transfer uuid-ish tag
+    pub seq: u64,   // 1-based chunk index
+    pub total: u64,
+    pub name: String,     // sanitized file name
+    pub data_b64: String, // ≤ 512 KiB raw per chunk
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct FileEnvelope {
+    sender: String,
+    nonce: String,
+    ct: String,
+    chunk: FileChunk, // sealed INSIDE ct as well; this outer copy lets the
+                      // receiver route/assemble without extra framing
+}
+
+fn sanitize_name(name: &str) -> String {
+    let base = name.rsplit(['/', '\\']).next().unwrap_or(name);
+    let clean: String = base
+        .chars()
+        .filter(|c| !c.is_control() && *c != '/' && *c != '\\')
+        .collect();
+    if clean.is_empty() {
+        "file.bin".into()
+    } else {
+        clean
+    }
+}
+
+fn recv_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
+    let dir = app
+        .path()
+        .document_dir()
+        .or_else(|_| app.path().app_local_data_dir())
+        .map_err(|e| e.to_string())?
+        .join("tietie-收到的文件");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    Ok(dir)
+}
+
+/// Consume every FileEnvelope on this connection, verify each chunk, write
+/// the complete file into Documents/tietie-收到的文件/ and toast (148b).
+fn handle_file_connection(
+    app: &tauri::AppHandle,
+    conn: &Arc<Mutex<Connection>>,
+    stream: &mut TcpStream,
+    first_raw: Vec<u8>,
+) {
+    let b64 = &base64::engine::general_purpose::STANDARD;
+    let mut chunks: Vec<(u64, Vec<u8>)> = Vec::new();
+    let mut meta: Option<(String, String, u64)> = None; // id, name, total
+    let mut sender = String::new();
+    let mut raw = first_raw;
+    while let Ok(env) = serde_json::from_slice::<FileEnvelope>(&raw) {
+        sender = env.sender.clone();
+        let token = {
+            let c = conn.lock();
+            c.query_row(
+                "SELECT token FROM pairing WHERE instance = ?1",
+                rusqlite::params![env.sender],
+                |r| r.get::<_, String>(0),
+            )
+            .ok()
+        };
+        let Some(token) = token else {
+            log::warn!("file frame from unpaired {}", env.sender);
+            return;
+        };
+        let Some(chunk) = open_file(&session_key(&token), &env) else {
+            log::warn!("file chunk failed to decrypt");
+            push_event("fail", &env.sender, "file decrypt failed".into());
+            return;
+        };
+        match &meta {
+            None => meta = Some((chunk.id.clone(), chunk.name.clone(), chunk.total)),
+            Some((id, name, total)) => {
+                if chunk.id != *id || chunk.name != *name || chunk.total != *total {
+                    log::warn!("file chunk metadata mismatch mid-transfer");
+                    return;
+                }
+            }
+        }
+        let Ok(data) = b64.decode(&chunk.data_b64) else {
+            return;
+        };
+        chunks.push((chunk.seq, data));
+        if chunks.len() as u64 == chunk.total {
+            break; // complete
+        }
+        // read-timeout keeps a dead peer from pinning the thread forever
+        let Ok(_) = stream.set_read_timeout(Some(std::time::Duration::from_secs(60))) else {
+            return;
+        };
+        match read_frame_raw(stream) {
+            Some(next) => raw = next,
+            None => break,
+        }
+    }
+    let Some((id, name, total)) = meta else {
+        return;
+    };
+    if (chunks.len() as u64) < total {
+        log::warn!("file transfer {id} incomplete ({}/{total})", chunks.len());
+        push_event("fail", &sender, format!("📎 {name} incomplete"));
+        return;
+    }
+    chunks.sort_by_key(|(seq, _)| *seq);
+    let mut bytes = Vec::new();
+    for (_, data) in &chunks {
+        bytes.extend_from_slice(data);
+    }
+    let dir = match recv_dir(app) {
+        Ok(d) => d,
+        Err(e) => {
+            log::error!("recv dir: {e}");
+            return;
+        }
+    };
+    // never overwrite: suffix (1), (2)… when the name exists
+    let mut target = dir.join(&name);
+    let mut n = 1;
+    while target.exists() {
+        let stem = std::path::Path::new(&name)
+            .file_stem()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default();
+        let ext = std::path::Path::new(&name)
+            .extension()
+            .map(|s| s.to_string_lossy().into_owned());
+        target = dir.join(format!(
+            "{stem} ({n}){}",
+            ext.map(|e| format!(".{e}")).unwrap_or_default()
+        ));
+        n += 1;
+    }
+    if let Err(e) = std::fs::write(&target, &bytes) {
+        log::error!("file write: {e}");
+        return;
+    }
+    log::info!("file in: {name} ({}B) from {sender}", bytes.len());
+    push_event("in", &sender, format!("📎 {name} {}B", bytes.len()));
+    let _ = crate::notify_due(format!("贴贴 · 收到文件来自 {sender}"), name.clone());
+    let _ = crate::reveal_path(target.to_string_lossy().into_owned());
+}
+
+/// Push a local file to paired devices in sealed chunks (direction 148b).
+pub fn send_file(
+    app: &tauri::AppHandle,
+    conn: &Arc<Mutex<Connection>>,
+    instance: &str,
+    path: &str,
+) -> Result<String, String> {
+    let bytes = std::fs::read(path).map_err(|e| e.to_string())?;
+    let name = sanitize_name(
+        std::path::Path::new(path)
+            .file_name()
+            .map(|s| s.to_string_lossy().into_owned())
+            .unwrap_or_default()
+            .as_str(),
+    );
+    if bytes.len() > 64 * 1024 * 1024 {
+        return Err("文件超过 64 MiB 上限".into());
+    }
+    let token = {
+        let c = conn.lock();
+        c.query_row(
+            "SELECT token FROM pairing WHERE instance = ?1",
+            rusqlite::params![instance],
+            |r| r.get::<_, String>(0),
+        )
+        .map_err(|e| e.to_string())?
+    };
+    let addr = {
+        let c = conn.lock();
+        c.query_row(
+            "SELECT addr FROM pairing WHERE instance = ?1",
+            rusqlite::params![instance],
+            |r| r.get::<_, String>(0),
+        )
+        .map_err(|e| e.to_string())?
+    };
+    let sa = std::net::SocketAddr::from_str(&addr).map_err(|e| e.to_string())?;
+    let me = hostname_instance();
+    let id = format!(
+        "{}-{}",
+        db::now_unix(),
+        hex(&{
+            let mut b = [0u8; 4];
+            _ = getrandom::fill(&mut b);
+            b
+        })
+    );
+    const CHUNK: usize = 512 * 1024;
+    let total = bytes.len().div_ceil(CHUNK) as u64;
+    let b64 = &base64::engine::general_purpose::STANDARD;
+    let key = session_key(&token);
+    let mut stream = TcpStream::connect_timeout(&sa, std::time::Duration::from_secs(3))
+        .map_err(|e| e.to_string())?;
+    let _ = stream.set_write_timeout(Some(std::time::Duration::from_secs(20)));
+    for seq in 1..=total {
+        let start = ((seq - 1) as usize) * CHUNK;
+        let end = usize::min(start + CHUNK, bytes.len());
+        let chunk = FileChunk {
+            id: id.clone(),
+            seq,
+            total,
+            name: name.clone(),
+            data_b64: b64.encode(&bytes[start..end]),
+        };
+        let env = seal_file(&key, &me, &chunk);
+        send_file_frame(&mut stream, &env).map_err(|e| e.to_string())?;
+    }
+    push_event("out", instance, format!("📎 {name} {}B", bytes.len()));
+    touch_last_sync(&conn.lock(), instance);
+    let _ = app; // reserved for progress events
+    log::info!(
+        "file out: {name} ({}B, {total} chunks) to {instance}",
+        bytes.len()
+    );
+    Ok(format!("{name}（{} 字节）已发送", bytes.len()))
+}
+
+fn seal_file(key: &[u8; 32], sender: &str, chunk: &FileChunk) -> FileEnvelope {
+    let pt = serde_json::to_vec(chunk).unwrap_or_default();
+    let mut nb = [0u8; 12];
+    _ = getrandom::fill(&mut nb);
+    let cipher = Aes256Gcm::new(key.into());
+    let ct = cipher
+        .encrypt(
+            Nonce::from_slice(&nb),
+            Payload {
+                msg: &pt,
+                aad: sender.as_bytes(),
+            },
+        )
+        .unwrap_or_default();
+    let b64 = &base64::engine::general_purpose::STANDARD;
+    FileEnvelope {
+        sender: sender.to_string(),
+        nonce: b64.encode(nb),
+        ct: b64.encode(ct),
+        chunk: chunk.clone(),
+    }
+}
+
+fn open_file(key: &[u8; 32], env: &FileEnvelope) -> Option<FileChunk> {
+    let b64 = &base64::engine::general_purpose::STANDARD;
+    let nb: Vec<u8> = b64.decode(&env.nonce).ok()?;
+    let ct: Vec<u8> = b64.decode(&env.ct).ok()?;
+    if nb.len() != 12 {
+        return None;
+    }
+    let cipher = Aes256Gcm::new(key.into());
+    let pt = cipher
+        .decrypt(
+            Nonce::from_slice(&nb),
+            Payload {
+                msg: &ct,
+                aad: env.sender.as_bytes(),
+            },
+        )
+        .ok()?;
+    serde_json::from_slice(&pt).ok()
+}
+
+fn send_file_frame(stream: &mut TcpStream, env: &FileEnvelope) -> std::io::Result<()> {
+    let body = serde_json::to_vec(env).map_err(std::io::Error::other)?;
+    stream.write_all(&(body.len() as u32).to_be_bytes())?;
+    stream.write_all(&body)?;
+    stream.flush()
 }
 
 /// Outbound fan-out after a local capture. Never blocks the poll loop:

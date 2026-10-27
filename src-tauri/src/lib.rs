@@ -51,6 +51,7 @@ const DEFAULT_CLOTHESLINE_HOTKEY: &str = "Control+Alt+KeyH";
 /// A hotkey kind the user can rebind: drawer / screenshot / clothesline.
 pub const HOTKEY_KINDS: [&str; 3] = ["drawer", "screenshot", "clothesline"];
 
+#[derive(Clone)]
 pub struct AppState {
     pub conn: Arc<Mutex<rusqlite::Connection>>,
     /// merge-history preference (re-copy bumps instead of adding rows)
@@ -419,6 +420,7 @@ pub fn run() {
             None,
         ))
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_process::init());
 
     #[cfg(desktop)]
@@ -554,7 +556,7 @@ pub fn run() {
             });
 
             // encrypted sync server for paired devices (direction 129)
-            sync::start_server(conn.clone());
+            sync::start_server(app.handle().clone(), conn.clone());
 
             // start clipboard polling (retention: 0=forever, else days;
             // history cap: 200/500/1000/3000 rows before trimming)
@@ -726,6 +728,8 @@ pub fn run() {
             sync_state,
             export_diagnostics,
             sync_events,
+            file_send,
+            file_pick_and_send,
             export_memo_one,
             sync_set,
             pairing_join,
@@ -2345,6 +2349,44 @@ fn pairing_list(state: tauri::State<'_, AppState>) -> Vec<PairedPeer> {
     })
     .map(|rows| rows.filter_map(|r| r.ok()).collect())
     .unwrap_or_default()
+}
+
+#[tauri::command]
+async fn file_pick_and_send(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    instance: String,
+) -> Result<String, String> {
+    use tauri_plugin_dialog::DialogExt;
+    // native pick on this thread's dialog runtime, then blocking TCP loop on
+    // a worker thread
+    let file = app.dialog().file().blocking_pick_file();
+    let Some(file) = file else {
+        return Ok("已取消".into());
+    };
+    let path = file
+        .into_path()
+        .map_err(|e| format!("选文件失败: {e:?}"))?
+        .to_string_lossy()
+        .into_owned();
+    let app = app.clone();
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        sync::send_file(&app, &state.conn, &instance, &path)
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Send a file to one paired device (direction 148b).
+#[tauri::command]
+fn file_send(
+    app: AppHandle,
+    state: tauri::State<'_, AppState>,
+    instance: String,
+    path: String,
+) -> Result<String, String> {
+    sync::send_file(&app, &state.conn, &instance, &path)
 }
 
 /// Recent sync events for the settings page (direction 141).
