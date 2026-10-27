@@ -88,6 +88,9 @@ export default function TrayPopover() {
   useEffect(() => {
     setPageCount(1);
   }, [query]);
+  // ⌘N badges cycle with the auto-loaded page (direction 181): the numbered
+  // window sits at the newest page's first ten rows (0 before any paging)
+  const pageBase = (pageCount - 1) * PAGE;
 
 
   return (
@@ -137,7 +140,9 @@ export default function TrayPopover() {
               // digits keep typing into the search box
               e.preventDefault();
               const i = e.key === "0" ? 9 : Number(e.key) - 1;
-              const it = shown[i];
+              // badges cycle with the auto-loaded page (direction 181):
+              // ⌘1..⌘0 target the newest page's first ten rows
+              const it = shown[(pageCount - 1) * PAGE + i];
               if (it) copyBack(it);
             } else if (e.key === "Enter") {
               const it = shown[sel] ?? shown[0];
@@ -219,6 +224,7 @@ export default function TrayPopover() {
                     query={query}
                     onClick={() => copyBack(it)}
                     onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
+                    badgeBase={pageBase}
                     onMiddle={() => {
                       invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
                     }}
@@ -249,6 +255,7 @@ export default function TrayPopover() {
                       query={query}
                       onClick={() => copyBack(it)}
                       onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
+                      badgeBase={pageBase}
                     onMiddle={() => {
                       invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
                     }}
@@ -283,6 +290,7 @@ export default function TrayPopover() {
                       query={query}
                       onClick={() => copyBack(it)}
                       onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
+                      badgeBase={pageBase}
                     onMiddle={() => {
                       invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
                     }}
@@ -364,6 +372,7 @@ function Row({
   onClick,
   onContext,
   onMiddle,
+  badgeBase = 0,
 }: {
   item: ClipItem;
   active: boolean;
@@ -373,6 +382,8 @@ function Row({
   onContext: (x: number, y: number) => void;
   /** middle-click toggles pin (direction 155) */
   onMiddle?: () => void;
+  /** first row index carrying the ⌘N badges (direction 181) */
+  badgeBase?: number;
 }) {
   return (
     <button
@@ -407,9 +418,10 @@ function Row({
         />
       )}
       <span className="po-text"><HighlightText text={trimOne(rowText(item))} query={query} /></span>
-      {/* first 10 visible rows show their ⌘N quick-copy hint (direction 124) */}
-      {idx != null && idx < 10 && (
-        <span className="kbd">{MOD}{idx === 9 ? 0 : idx + 1}</span>
+      {/* ⌘N quick-copy hint (direction 124); the numbered window follows the
+          auto-loaded page so the keys stay useful after paging (181) */}
+      {idx != null && idx - badgeBase >= 0 && idx - badgeBase < 10 && (
+        <span className="kbd">{MOD}{idx - badgeBase === 9 ? 0 : idx - badgeBase + 1}</span>
       )}
     </button>
   );
