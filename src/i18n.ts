@@ -133,6 +133,7 @@ export const zh: Dict = {
   "line.templates": "常用短语模板（点击填入）", "line.tplAdd": "存为模板", "line.filterAll": "全部颜色", "line.emptyColor": "这个颜色下还没有便签",
   // library
   "lib.title": "剪贴板库", "lib.kind": "类型", "lib.content": "内容",
+  "lib.folder": "文件夹",
   "lib.source": "来源", "lib.size": "大小", "lib.time": "时间",
   "lib.total": "共", "lib.items": "条", "lib.selected": "已选",
   "lib.export": "导出所选文本", "lib.exportMd": "导出 Markdown", "lib.exportCsv": "导出 CSV", "lib.delete": "删除所选",
@@ -287,6 +288,7 @@ export const en: Dict = {
   "line.filterColor": "Filter by pin color",
   "line.templates": "Phrase templates (click to fill)", "line.tplAdd": "Save template", "line.filterAll": "All colors", "line.emptyColor": "No memos in this color yet",
   "lib.title": "Clipboard Library", "lib.kind": "Kind", "lib.content": "Content",
+  "lib.folder": "Folder",
   "lib.source": "Source", "lib.size": "Size", "lib.time": "Time",
   "lib.total": "Total", "lib.items": "items", "lib.selected": "Selected",
   "lib.export": "Export selected text", "lib.exportMd": "Export Markdown", "lib.exportCsv": "Export CSV", "lib.delete": "Delete selected",

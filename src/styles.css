@@ -1767,6 +1767,7 @@ body.dragging-hang * {
 }
 
 .w-check { width: 34px; }
+.w-folder { width: 90px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .w-kind { width: 60px; }
 .w-src { width: 110px; }
 .w-size { width: 70px; }

@@ -19,6 +19,8 @@ export default function Library() {
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  // folder names for the ownership column (direction 147)
+  const [folders, setFolders] = useState<{ id: number; name: string }[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [stats, setStats] = useState<ClipStats | null>(null);
   type SortKey = "time" | "kind" | "size" | "source";
@@ -52,6 +54,8 @@ export default function Library() {
   const refresh = useCallback(async () => {
     setItems(await invoke<ClipItem[]>("list_items", { limit: 500 }));
     setStats(await invoke<ClipStats>("clip_stats"));
+    // folder names ride the same refresh so later-created folders appear
+    invoke<{ id: number; name: string }[]>("list_folders").then(setFolders).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -352,6 +356,7 @@ export default function Library() {
                   {t("lib.source")}{sort.key === "source" ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
                 </button>
               </th>
+              <th className="w-folder">{t("lib.folder")}</th>
               <th className="w-size">
                 <button className={"th-sort" + (sort.key === "size" ? " on" : "")} onClick={() => sortBy("size")}>
                   {t("lib.size")}{sort.key === "size" ? (sort.dir === 1 ? " ↑" : " ↓") : ""}
@@ -449,6 +454,9 @@ export default function Library() {
                   )}
                 </td>
                 <td className="w-src">{it.source_app || "—"}</td>
+                <td className="w-folder" title={it.folder_id == null ? "" : folders.find((f) => f.id === it.folder_id)?.name}>
+                  {it.folder_id == null ? "—" : (folders.find((f) => f.id === it.folder_id)?.name ?? "?")}
+                </td>
                 <td className="w-size">{fmtBytes(it.byte_size)}</td>
                 <td className="w-time">{relTime(it.used_at)}</td>
               </tr>
