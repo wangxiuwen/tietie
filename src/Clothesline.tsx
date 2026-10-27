@@ -654,6 +654,11 @@ function buildMemoCtxItems({
   if (!memo) return [];
   return [
     { label: t("line.copy"), onClick: () => onCopy(memo) },
+    { label: t("line.copyPlain"), onClick: () => {
+      navigator.clipboard
+        .writeText(plainTextOf(memo.content))
+        .catch(() => {});
+    } },
     { label: memo.pinned ? t("line.unpin") : t("line.pin"), onClick: () => onPin(memo.id) },
     { label: t("line.edit"), onClick: () => onEdit(memo) },
     { label: memo.note ? t("ctx.editNote") : t("ctx.addNote"), onClick: () => onNote(memo) },
@@ -1113,6 +1118,15 @@ function DetailBody({ memo }: { memo: Memo }) {
       </pre>
     </div>
   );
+}
+
+/** Strip the inline-Markdown markers MiniMarkdown renders (direction 150):
+ * **bold**, `code` and [label](url) collapse to their visible text. */
+function plainTextOf(text: string): string {
+  return text
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, "$2");
 }
 
 /**
