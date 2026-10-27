@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **176** [`7beab9a`](https://github.com/wangxiuwen/tietie/commit/7beab9a) 托盘行右键菜单加「备注…」→ 搜索框下行内编辑器（Enter 存/Esc 取消，复用 set_item_note），右键-注入-回车-落库-清空全链实测
+
 - **175** [`b8fe04e`](https://github.com/wangxiuwen/tietie/commit/b8fe04e) 空态在拖卡引导后补行内「或点这里新建一张」链接（点击即开 composer，颜色筛选时空态保持原样），合成点击实测开/关零残留
 
 - **174** [`a3bc0f7`](https://github.com/wangxiuwen/tietie/commit/a3bc0f7) 已具备收口：版本号点击复制自方向96 即在（含 ✓ 反馈）；可信点击实测剪贴板精确等于 app_version 全串，快照还原；本轮池<3 先扩池 176-180
