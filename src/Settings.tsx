@@ -164,6 +164,18 @@ export default function Settings() {
     setHks(await invoke<HotkeysInfo>("recheck_hotkeys"));
   }, []);
 
+  // restore all three combos to factory values (direction 158); a factory
+  // combo already taken (e.g. a stray registration) keeps the working combo
+  // for that kind — the rest still restore, and the panel always refreshes
+  const resetHotkeys = useCallback(async () => {
+    const defs = await invoke<Record<string, string>>("hotkey_defaults");
+    for (const [kind, value] of Object.entries(defs)) {
+      await invoke("set_hotkey", { kind, value }).catch((e) =>
+        console.warn(`reset ${kind} kept current combo:`, e));
+    }
+    setHks(await invoke<HotkeysInfo>("get_hotkeys"));
+  }, []);
+
   const recheck = useCallback(async () => {
     const ok = await invoke<boolean>("check_accessibility");
     setAcc(ok);
@@ -628,6 +640,9 @@ export default function Settings() {
             <span className="settings-value">
               <button className="btn ghost" onClick={recheckHotkeys}>
                 {t("settings.hkRecheckBtn")}
+              </button>
+              <button className="btn ghost" onClick={resetHotkeys}>
+                {t("settings.hkResetBtn")}
               </button>
             </span>
           </div>

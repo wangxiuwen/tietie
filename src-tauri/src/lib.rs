@@ -755,6 +755,7 @@ pub fn run() {
             app_version,
             get_hotkeys,
             recheck_hotkeys,
+            hotkey_defaults,
             set_hotkey,
             begin_hotkey_capture,
             cancel_hotkey_capture,
@@ -3037,6 +3038,16 @@ fn get_hotkeys(app: AppHandle) -> Hotkeys {
 /// combo we do NOT currently own, probe-register it once more — success
 /// means the other app released it (we keep the registration), failure
 /// means it is still taken. Returns the fresh status for the settings page.
+/// Factory combos for all three kinds (direction 158) — the settings page
+/// offers a one-click restore that feeds these back through set_hotkey.
+#[tauri::command]
+fn hotkey_defaults() -> std::collections::HashMap<String, String> {
+    HOTKEY_KINDS
+        .iter()
+        .map(|k| (k.to_string(), hotkey_default(k).to_string()))
+        .collect()
+}
+
 #[tauri::command]
 fn recheck_hotkeys(app: AppHandle) -> Hotkeys {
     if let Some(state) = app.try_state::<HotkeyState>() {
