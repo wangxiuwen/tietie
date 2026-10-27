@@ -176,6 +176,9 @@ export default function TrayPopover() {
                     query={query}
                     onClick={() => copyBack(it)}
                     onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
+                    onMiddle={() => {
+                      invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
+                    }}
                   />
                 ))}
               </div>
@@ -203,6 +206,9 @@ export default function TrayPopover() {
                       query={query}
                       onClick={() => copyBack(it)}
                       onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
+                    onMiddle={() => {
+                      invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
+                    }}
                     />
                   ))}
                 </div>
@@ -234,6 +240,9 @@ export default function TrayPopover() {
                       query={query}
                       onClick={() => copyBack(it)}
                       onContext={(x, y) => setRowMenu({ x, y, itemId: it.id })}
+                    onMiddle={() => {
+                      invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
+                    }}
                     />
                   ))}
                 </div>
@@ -302,6 +311,7 @@ function Row({
   "data-idx": idx,
   onClick,
   onContext,
+  onMiddle,
 }: {
   item: ClipItem;
   active: boolean;
@@ -309,6 +319,8 @@ function Row({
   "data-idx"?: number;
   onClick: () => void;
   onContext: (x: number, y: number) => void;
+  /** middle-click toggles pin (direction 155) */
+  onMiddle?: () => void;
 }) {
   return (
     <button
@@ -316,6 +328,13 @@ function Row({
       data-idx={idx}
       // annotated items surface their note on hover (direction 115)
       title={item.note ?? undefined}
+      onMouseDown={(e) => {
+        if (e.button === 1) {
+          // preventDefault keeps the WebView out of autoscroll mode
+          e.preventDefault();
+          onMiddle?.();
+        }
+      }}
       onClick={onClick}
       onContextMenu={(e) => {
         // row context menu (direction 140): copy / pin / delete
