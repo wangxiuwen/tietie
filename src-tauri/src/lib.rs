@@ -1936,6 +1936,22 @@ fn delete_items(
     Ok(n)
 }
 
+/// Chinese name for the 8 clothespin palette colors (frontend MEMO_COLORS);
+/// custom/system-accent colors fall back to the hex itself (direction 164).
+fn color_name(c: &str) -> &str {
+    match c {
+        "#007aff" | "#0078d4" => "蓝",
+        "#34c759" => "绿",
+        "#ff9500" => "橙",
+        "#ff2d55" => "红",
+        "#af52de" => "紫",
+        "#5856d6" => "靛",
+        "#8e8e93" => "灰",
+        "#ffcc00" => "黄",
+        other => other,
+    }
+}
+
 /// Export every clothesline memo to Documents/notes-<ts>.md (direction 69):
 /// pinned first, reminders annotated. Image memos export as placeholders.
 #[tauri::command]
@@ -1957,29 +1973,36 @@ fn export_memos(
     } else {
         format!("# 贴贴便签（{} 张）\n\n", memos.len())
     };
-    for (i, m) in memos.iter().enumerate() {
-        let pin = if m.pinned { "📌 " } else { "" };
-        let remind = match m.remind_at {
+    // per-memo parts shared by both formats (154 notes, 122 links)
+    let pin_of = |m: &db::Memo| if m.pinned { "📌 " } else { "" };
+    let remind_of = |m: &db::Memo| -> String {
+        match m.remind_at {
             Some(at) if at > db::now_unix() => format!(" ⏰{}", at),
             Some(_) => " ⏰已到期".to_string(),
             None => String::new(),
-        };
-        // 备注 column joins the export (direction 154); single line so the
-        // markdown bullet stays one bullet
-        let note_text = m
+        }
+    };
+    // 备注 column joins the export (direction 154); single line so the
+    // markdown bullet stays one bullet
+    let note_of = |m: &db::Memo| -> (Option<String>, String) {
+        let text = m
             .note
             .as_deref()
             .map(str::trim)
             .filter(|n| !n.is_empty())
             .map(|n| n.replace('\n', " "));
-        let note_line = note_text
+        let line = text
             .as_deref()
             .map(|n| format!(" 📝{n}"))
             .unwrap_or_default();
-        let body = if m.kind == "image" {
+        (text, line)
+    };
+    // markdown body: images as placeholders, links as label(url) (122),
+    // text flattened to one line
+    let body_of = |m: &db::Memo| -> String {
+        if m.kind == "image" {
             format!("[图片 {}]", m.content)
-        } else if m.kind == "link" && !want_txt {
-            // markdown link: readable label + full URL target (direction 122);
+        } else if m.kind == "link" {
             // the link preview column is just a URL truncation, not a title
             let stripped = m
                 .content
@@ -1993,13 +2016,21 @@ fn export_memos(
                 stripped.chars().take(60).collect::<String>()
             };
             format!("[{label}]({})", m.content)
-        } else if want_txt {
-            // plain text keeps the memo's own line breaks (direction 105)
-            m.content.clone()
         } else {
             m.content.replace('\n', " ")
-        };
-        if want_txt {
+        }
+    };
+    if want_txt {
+        for (i, m) in memos.iter().enumerate() {
+            let pin = pin_of(m);
+            let remind = remind_of(m);
+            let (note_text, _note_line) = note_of(m);
+            let body = if m.kind == "image" {
+                body_of(m)
+            } else {
+                // links and plain text keep the memo's own line breaks (105)
+                m.content.clone()
+            };
             if i > 0 {
                 out.push_str("────────────────\n\n");
             }
@@ -2011,8 +2042,35 @@ fn export_memos(
                 out.push_str(&format!("\n备注：{nt}"));
             }
             out.push_str("\n\n");
-        } else {
-            out.push_str(&format!("- {pin}{body}{remind}{note_line}\n"));
+        }
+    } else {
+        // group by clothespin color (direction 164): one `## 色名` section per
+        // color, first-appearance order so pinned memos lead their section
+        let mut order: Vec<String> = Vec::new();
+        let mut groups: std::collections::HashMap<String, Vec<&db::Memo>> =
+            std::collections::HashMap::new();
+        for m in &memos {
+            if !groups.contains_key(&m.color) {
+                order.push(m.color.clone());
+            }
+            groups.entry(m.color.clone()).or_default().push(m);
+        }
+        for color in &order {
+            let group = &groups[color];
+            out.push_str(&format!(
+                "\n## {}（{} 张）\n\n",
+                color_name(color),
+                group.len()
+            ));
+            for m in group {
+                out.push_str(&format!(
+                    "- {}{}{}{}\n",
+                    pin_of(m),
+                    body_of(m),
+                    remind_of(m),
+                    note_of(m).1
+                ));
+            }
         }
     }
     let dir = app
