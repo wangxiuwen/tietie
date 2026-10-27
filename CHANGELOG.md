@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **163** [`5055fa9`](https://github.com/wangxiuwen/tietie/commit/5055fa9) 已具备收口：settings-open 监听自 141 起即刷同步日志；msg_send→WSL 对端 unreachable ⚠ 事件，藏/开设置窗（不点手动刷新）实测事件自动呈现后清理探针
+
 - **162** [`89ebfbc`](https://github.com/wangxiuwen/tietie/commit/89ebfbc) 抽屉卡 onMouseDown button=1 直接 onPin（防自动滚动），与右键菜单/托盘同路径；中键两击 pinned 翻转实测（抽屉窗可信中键被 WebView2 吞，合成输入验证）
 
 - **161** [`86c068e`](https://github.com/wangxiuwen/tietie/commit/86c068e) 抽屉搜索框 × 清空钮（流内插入避让 ⌘F kbd，mousedown preventDefault 保焦点+点击清空复焦），真机三态实测含 img: 前缀顺带回归
