@@ -1219,6 +1219,14 @@ function Card({
         if (clickSuppressed()) return;
         onClick(e);
       }}
+      onMouseDown={(e) => {
+        if (e.button === 1) {
+          // middle-click toggles pin (direction 162, mirrors the tray rows);
+          // preventDefault keeps the WebView out of autoscroll mode
+          e.preventDefault();
+          onPin();
+        }
+      }}
       onDoubleClick={() => {
         if (!clickSuppressed()) onDoubleClick();
       }}
