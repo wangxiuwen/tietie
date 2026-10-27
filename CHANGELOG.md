@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **167** [`c7c057a`](https://github.com/wangxiuwen/tietie/commit/c7c057a) 详情数字键换色解除色板悬停门槛（输入框打字守卫保留），顺手修 viewing 陈旧快照（详情即时反映换色）；真机 key3 换绿+active 同步+输入框内 key5 不换色实测
+
 - **166** [`c87c3b8`](https://github.com/wangxiuwen/tietie/commit/c87c3b8) 域名徽章 span→button（onSearchTerm 三层下传，stopPropagation 不触发选中），点击=填域名入搜索框+聚焦；真机实测 open.rokid.com 徽章点击后仅剩该域链接卡
 
 - **165** [`420f268`](https://github.com/wangxiuwen/tietie/commit/420f268) 搜索无结果空态 💡 轮换五条使用技巧（模块级游标每次进空态 +1，文案全部来自真实功能），真机两 miss 轮换不同条、有结果无空态实测
