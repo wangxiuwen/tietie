@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **154** [`a3ba8cf`](https://github.com/wangxiuwen/tietie/commit/a3ba8cf) 导出便签附备注列：md 行内 📝+备注、txt 加「备注：」行（空备注不输出），产品路径挂签写备注双格式实测后清理还原
+
 - **153** [`4da8813`](https://github.com/wangxiuwen/tietie/commit/4da8813) 批量挂绳 >5 条两段式确认（首点变红「确认挂绳？」、3s 超时解除、复选变化即重置），armed 不执行/超时解除/确认 +6 全链真机实测
 
 - **152** [`17366a1`](https://github.com/wangxiuwen/tietie/commit/17366a1) 热键行保存系统占用组合后行上持久红标（复用 settings-tag.err，101 的录制中黄警不回归），改键→红标→还原全链真机实测 |
