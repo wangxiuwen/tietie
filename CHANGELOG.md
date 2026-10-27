@@ -5,6 +5,10 @@
 
 ## 2026-10-27
 
+- **152** [`17366a1`](https://github.com/wangxiuwen/tietie/commit/17366a1) 热键行保存系统占用组合后行上持久红标（复用 settings-tag.err，101 的录制中黄警不回归），改键→红标→还原全链真机实测 |
+
+- **151** `零改动` 已具备收口：置顶区标题随 pinnedAll.length>0 条件渲染（方向103），真机 pinned=0 实测置顶标题/分区不渲染、最近区正常 |
+
 - **150** [`db5aa4e`](https://github.com/wangxiuwen/tietie/commit/db5aa4e) 挂卡右键新增「复制（去格式）」：剥 **粗**/`码`/[标签](url) 标记留纯文本（链接保留 URL 本身） |
 
 - **148b** [`bc776a4`](https://github.com/wangxiuwen/tietie/commit/bc776a4) FileChunk 密封分块协议（512KiB/块≤64MiB）+ 接收端重组落盘 Documents/tietie-收到的文件/（重名自动 (n)）+📎回环全链路实测 |
