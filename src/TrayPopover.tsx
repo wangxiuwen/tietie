@@ -326,8 +326,8 @@ function Row({
     <button
       className={"po-row" + (active ? " active" : "")}
       data-idx={idx}
-      // annotated items surface their note on hover (direction 115)
-      title={item.note ?? undefined}
+      // hover hint: note (direction 115) + entry byte size (direction 168)
+      title={[item.note, fmtBytes(item.byte_size)].filter(Boolean).join(" · ") || undefined}
       onMouseDown={(e) => {
         if (e.button === 1) {
           // preventDefault keeps the WebView out of autoscroll mode
@@ -371,4 +371,12 @@ function rowText(item: ClipItem): string {
 function trimOne(s: string): string {
   const oneline = s.replace(/\s+/g, " ").trim();
   return oneline.length > 60 ? oneline.slice(0, 60) + "…" : oneline;
+}
+
+/** "1.2 KB" / "3.4 MB" / "567 B" — hover size hint (direction 168) */
+function fmtBytes(n: number): string {
+  if (!n || n <= 0) return "";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
