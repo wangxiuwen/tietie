@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **160** [`fa0ad86`](https://github.com/wangxiuwen/tietie/commit/fa0ad86) 类型筛选行去彩点：dot-sm/TYPE_TABS.dot 移除（用户反馈彩点乱），标签+数量+激活高亮保留 |
+
 - **154** [`a3ba8cf`](https://github.com/wangxiuwen/tietie/commit/a3ba8cf) 导出便签附备注列：md 行内 📝+备注、txt 加「备注：」行（空备注不输出），产品路径挂签写备注双格式实测后清理还原
 
 - **153** [`4da8813`](https://github.com/wangxiuwen/tietie/commit/4da8813) 批量挂绳 >5 条两段式确认（首点变红「确认挂绳？」、3s 超时解除、复选变化即重置），armed 不执行/超时解除/确认 +6 全链真机实测
