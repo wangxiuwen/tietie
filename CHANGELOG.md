@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **179** [`75f2521`](https://github.com/wangxiuwen/tietie/commit/75f2521) 已具备收口：诊断导出后 reveal 自方向134 即在；命令级实证产物落盘+reveal_path Ok，产物已删；本轮池<3 先扩池 181-185
+
 - **178** [`b01980b`](https://github.com/wangxiuwen/tietie/commit/b01980b) 详情按钮组加「复制（去格式）」（复用 plainTextOf+✓ 反馈通道，i18n 键复用 150），可信点击实测剪贴板=剥标记全文且 URL 保留
 
 - **177** [`3b52e30`](https://github.com/wangxiuwen/tietie/commit/3b52e30) 抽屉卡片列表按本地日插 .day-sep 分隔行（今天/昨天/M/D，Fragment 不扰选择序），144 卡实测 6 条分隔数量文案顺序位置全对
