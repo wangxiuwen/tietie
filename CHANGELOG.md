@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **166** [`c87c3b8`](https://github.com/wangxiuwen/tietie/commit/c87c3b8) 域名徽章 span→button（onSearchTerm 三层下传，stopPropagation 不触发选中），点击=填域名入搜索框+聚焦；真机实测 open.rokid.com 徽章点击后仅剩该域链接卡
+
 - **165** [`420f268`](https://github.com/wangxiuwen/tietie/commit/420f268) 搜索无结果空态 💡 轮换五条使用技巧（模块级游标每次进空态 +1，文案全部来自真实功能），真机两 miss 轮换不同条、有结果无空态实测
 
 - **164** [`7253748`](https://github.com/wangxiuwen/tietie/commit/7253748) export_memos md 按衣夹色分节（## 色名 N 张，首现序置顶带头；color_name 8 色板中文名+hex 兜底），txt 平铺不变；双色 fixtures 真机实测橙/绿各一节
