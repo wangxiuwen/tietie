@@ -154,6 +154,9 @@ export default function App() {
   const [draggingId, setDraggingId] = useState<number | null>(null);
   // folder chip under the pointer during a card drag (drop-to-file target)
   const [dropFolder, setDropFolder] = useState<string | null>(null);
+  // folders folded to a swatch-only chip (direction 173): double-click a chip
+  // to fold/unfold — a folded folder stays a drop target
+  const [foldedFolders, setFoldedFolders] = useState<Set<number>>(new Set());
   const [zoomId, setZoomId] = useState<number | null>(null);
   // ⌘/Ctrl+click multi-select for batch delete / hang
   const [multiSel, setMultiSel] = useState<Set<number>>(new Set());
@@ -689,6 +692,15 @@ export default function App() {
         />
         <FolderChips
           dropFolder={dropFolder}
+          foldedFolders={foldedFolders}
+          onToggleFold={(id) =>
+            setFoldedFolders((s) => {
+              const n = new Set(s);
+              if (n.has(id)) n.delete(id);
+              else n.add(id);
+              return n;
+            })
+          }
           folders={folders}
           folderId={folderId}
           setFolderId={(f) => {
@@ -1098,12 +1110,16 @@ function FolderChips({
   folderId,
   setFolderId,
   counts,
+  foldedFolders,
+  onToggleFold,
 }: {
   dropFolder: string | null;
   folders: Folder[];
   folderId: number | "pinned" | null;
   setFolderId: (id: number | "pinned" | null) => void;
   counts: { pinned: number };
+  foldedFolders: Set<number>;
+  onToggleFold: (id: number) => void;
 }) {
   // native prompt() dialogs never open inside WebView2 — inline input instead
   const [adding, setAdding] = useState(false);
@@ -1131,21 +1147,32 @@ function FolderChips({
       >
         <PinIcon size={11} /> {t("tab.pinned")} <span className="dim">{counts.pinned}</span>
       </button>
-      {folders.map((f) => (
-        <button
-          key={f.id}
-          className={
-            "chip" +
-            (folderId === f.id ? " active" : "") +
-            (dropFolder === String(f.id) ? " drop-hot" : "")
-          }
-          data-folder-id={f.id}
-          onClick={() => setFolderId(f.id)}
-        >
-          <span className="swatch" style={{ background: f.color }} />
-          {f.name}
-        </button>
-      ))}
+      {folders.map((f) => {
+        // folded to a bare swatch (direction 173): double-click toggles;
+        // the data-folder-id stays so card drops still file into it
+        const folded = foldedFolders.has(f.id);
+        return (
+          <button
+            key={f.id}
+            className={
+              "chip" +
+              (folderId === f.id ? " active" : "") +
+              (dropFolder === String(f.id) ? " drop-hot" : "") +
+              (folded ? " folded" : "")
+            }
+            data-folder-id={f.id}
+            title={folded ? f.name : undefined}
+            onClick={() => setFolderId(f.id)}
+            onDoubleClick={(e) => {
+              e.preventDefault();
+              onToggleFold(f.id);
+            }}
+          >
+            <span className="swatch" style={{ background: f.color }} />
+            {!folded && f.name}
+          </button>
+        );
+      })}
       {adding ? (
         <input
           className="chip-input"

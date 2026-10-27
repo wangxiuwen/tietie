@@ -2763,3 +2763,9 @@ select:focus-visible,
   font-size: calc(11px * var(--fs));
   font-weight: 600;
 }
+
+/* folder chip folded to a bare swatch (direction 173) — still a drop target */
+.chip.folded {
+  padding: 5px 4px;
+  gap: 0;
+}
