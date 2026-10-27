@@ -1793,6 +1793,18 @@ function fmtBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// rotating usage tip under the search-miss empty state (direction 165): the
+// cursor advances each time the empty state is entered, so consecutive misses
+// surface different capabilities
+const EMPTY_TIP_KEYS = [
+  "empty.tip1",
+  "empty.tip2",
+  "empty.tip3",
+  "empty.tip4",
+  "empty.tip5",
+];
+let emptyTipCursor = 0;
+
 function Empty({
   hasItems,
   query,
@@ -1805,11 +1817,14 @@ function Empty({
   // filtered to nothing while history exists (search miss / empty folder) —
   // a compact hint, not the first-run guidance (direction 107)
   if (hasItems) {
+    const tip = t(EMPTY_TIP_KEYS[emptyTipCursor % EMPTY_TIP_KEYS.length]);
+    emptyTipCursor += 1;
     return (
       <div className="empty">
         <div className="empty-icon">{query ? "🔍" : "🗂"}</div>
         <h3>{query ? t("empty.noMatch") : inFolder ? t("empty.emptyFolder") : t("empty.title")}</h3>
         {query && <p>{t("empty.noMatchDesc")}</p>}
+        {query && <p className="empty-tip">💡 {tip}</p>}
       </div>
     );
   }

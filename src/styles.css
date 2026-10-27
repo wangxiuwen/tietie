@@ -2743,3 +2743,9 @@ select:focus-visible,
   margin-right: 8px;
   white-space: nowrap;
 }
+
+/* rotating usage tip on the search-miss empty state (direction 165) */
+.empty-tip {
+  margin-top: 4px;
+  color: var(--text-3);
+}
