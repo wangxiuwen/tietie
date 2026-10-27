@@ -1025,6 +1025,13 @@ function HotkeyRow({
         ) : (
           <>
             <span className="hotkey-badge">{value ? formatHotkey(value) : "..."}</span>
+            {/* saved combo sits on a system-claimed combination → standing
+                red mark on the row (direction 152; 101 only warned mid-capture) */}
+            {SYS_HOTKEY_CONFLICTS[value] && (
+              <span className="settings-tag err" title={SYS_HOTKEY_CONFLICTS[value]}>
+                {t("settings.hkSys")}
+              </span>
+            )}
             {!registered && (
               <span className="settings-tag err">{t("settings.regFail")}</span>
             )}
