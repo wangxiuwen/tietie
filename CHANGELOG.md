@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **159** [`dafeee1`](https://github.com/wangxiuwen/tietie/commit/dafeee1) 模板 chip 按使用计数稳定降序（bumpTemplate+addTemplate 双处排序不变式），常用前置/0使用不插队/追平不跳位真机实测；连点同 chip 的 React bailout 用 render tick 兜住
+
 - **158** [`752f969`](https://github.com/wangxiuwen/tietie/commit/752f969) 设置页一键恢复出厂热键（新 hotkey_defaults 命令+恢复默认钮，逐键容错占用保现役），真机实测 clothesline/screenshot 回出厂+面板刷新；本轮池<3 先扩池 161-165
 
 - **157** [`c63d34d`](https://github.com/wangxiuwen/tietie/commit/c63d34d) 搜索 text:/img:/link: 类型前缀（matchQuery 加 kind 参数，抽屉+托盘双接线），前缀+词 AND 组合，vitest +14 断言 + 真机五组过滤实测
