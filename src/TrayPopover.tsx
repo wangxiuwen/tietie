@@ -65,7 +65,7 @@ export default function TrayPopover() {
   };
 
   const matched = query
-    ? items.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query))
+    ? items.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query, x.kind))
     : items; // full history, no cap
   const filtered = matched.slice(0, pageCount * PAGE);
   // pinned section collapse (direction 103): without a query the pinned rows

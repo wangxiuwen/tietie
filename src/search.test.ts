@@ -48,4 +48,19 @@ describe("matchQuery", () => {
   it("bare minus is ignored", () => {
     expect(matchQuery("hello world", "", "- hello")).toBe(true);
   });
+  it("kind prefix filters by type (direction 157)", () => {
+    expect(matchQuery("hello", "", "text:", "text")).toBe(true);
+    expect(matchQuery("hello", "", "text:", "link")).toBe(false);
+    expect(matchQuery("1100x760", "", "img:", "image")).toBe(true);
+    expect(matchQuery("1100x760", "", "img:", "text")).toBe(false);
+    expect(matchQuery("https://a.com", "", "link:", "link")).toBe(true);
+    expect(matchQuery("plain text", "", "link:", "text")).toBe(false);
+    // prefix + term AND-combines, and kind prefix mixes with other tokens
+    expect(matchQuery("api endpoint doc", "", "text:api", "text")).toBe(true);
+    expect(matchQuery("api endpoint doc", "", "text:zzz", "text")).toBe(false);
+    expect(matchQuery("glass spec v2", "", "text:glass v2", "text")).toBe(true);
+    expect(matchQuery("glass spec v2", "", "text:glass v3", "text")).toBe(false);
+    // unknown kind caller (no kind passed): prefix filters still constrain
+    expect(matchQuery("hello", "", "text:")).toBe(false);
+  });
 });

@@ -55,11 +55,26 @@ function matchOne(content: string, preview: string, q: string): boolean {
  * entries containing both words, like Everything-style AND search.
  * A token prefixed with "-" (direction 97) is a negation: entries matching
  * that term are excluded — "glass -next" keeps glass entries without next.
+ * A token starting with "text:" / "img:" / "link:" (direction 157) is a kind
+ * filter: "img:" keeps images only, "link:api" keeps links matching api.
  */
-export function matchQuery(content: string, preview: string, query: string): boolean {
+export function matchQuery(
+  content: string,
+  preview: string,
+  query: string,
+  kind?: string,
+): boolean {
   const qs = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if (qs.length === 0) return true;
   for (const q of qs) {
+    // kind prefix (direction 157): img→image, text/link as-is
+    const kf = ["text:", "img:", "link:"].find((p) => q.startsWith(p));
+    if (kf) {
+      if (kind !== (kf === "img:" ? "image" : kf.slice(0, -1))) return false;
+      const term = q.slice(kf.length);
+      if (term && !matchOne(content, preview, term)) return false;
+      continue;
+    }
     if (q.startsWith("-")) {
       // bare "-" is ignored; "-term" excludes anything matching term
       const term = q.slice(1);

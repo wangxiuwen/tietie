@@ -347,7 +347,7 @@ export default function App() {
     else if (typeof folderId === "number") xs = xs.filter((x) => x.folder_id === folderId);
     if (tab !== "all") xs = xs.filter((x) => x.kind === tab);
     if (query.trim()) {
-      xs = xs.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query));
+      xs = xs.filter((x) => matchQuery(x.content, x.preview + " " + (x.note ?? ""), query, x.kind));
     }
     return xs.slice().sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
