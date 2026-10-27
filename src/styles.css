@@ -221,12 +221,6 @@ button {
   background: rgba(0, 0, 0, 0.08);
   color: var(--text);
 }
-.tab .dot-sm {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
 .header-right {
   display: flex;
   align-items: center;

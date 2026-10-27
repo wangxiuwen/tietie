@@ -64,13 +64,13 @@ function typingInField(e: KeyboardEvent): boolean {
   );
 }
 
-const TYPE_TABS: { id: FilterTab; labelKey: string; dot: string }[] = [
-  { id: "all", labelKey: "tab.all", dot: "var(--accent)" },
-  { id: "text", labelKey: "kind.text", dot: "var(--cat-text)" },
-  { id: "link", labelKey: "kind.link", dot: "var(--cat-link)" },
-  { id: "image", labelKey: "kind.image", dot: "var(--cat-image)" },
-  { id: "code", labelKey: "kind.code", dot: "var(--cat-code)" },
-  { id: "color", labelKey: "kind.color", dot: "var(--cat-color)" },
+const TYPE_TABS: { id: FilterTab; labelKey: string }[] = [
+  { id: "all", labelKey: "tab.all", },
+  { id: "text", labelKey: "kind.text", },
+  { id: "link", labelKey: "kind.link", },
+  { id: "image", labelKey: "kind.image", },
+  { id: "code", labelKey: "kind.code", },
+  { id: "color", labelKey: "kind.color", },
 ];
 
 export default function App() {
@@ -1037,7 +1037,6 @@ function Header({
             className={"tab" + (tab === tb.id ? " active" : "")}
             onClick={() => setTab(tb.id)}
           >
-            <span className="dot-sm" style={{ background: tb.dot }} />
             {t(tb.labelKey)}
             <span className="count">{counts[tb.id] ?? 0}</span>
           </button>
