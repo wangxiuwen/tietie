@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **153** [`4da8813`](https://github.com/wangxiuwen/tietie/commit/4da8813) 批量挂绳 >5 条两段式确认（首点变红「确认挂绳？」、3s 超时解除、复选变化即重置），armed 不执行/超时解除/确认 +6 全链真机实测
+
 - **152** [`17366a1`](https://github.com/wangxiuwen/tietie/commit/17366a1) 热键行保存系统占用组合后行上持久红标（复用 settings-tag.err，101 的录制中黄警不回归），改键→红标→还原全链真机实测 |
 
 - **151** `零改动` 已具备收口：置顶区标题随 pinnedAll.length>0 条件渲染（方向103），真机 pinned=0 实测置顶标题/分区不渲染、最近区正常 |
