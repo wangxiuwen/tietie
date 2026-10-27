@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **168** [`18b1627`](https://github.com/wangxiuwen/tietie/commit/18b1627) 托盘行 title 补 fmtBytes 字节数（备注行「备注 · 大小」无备注纯大小），与桥 byte_size 逐行对照 5/5 通过
+
 - **167** [`c7c057a`](https://github.com/wangxiuwen/tietie/commit/c7c057a) 详情数字键换色解除色板悬停门槛（输入框打字守卫保留），顺手修 viewing 陈旧快照（详情即时反映换色）；真机 key3 换绿+active 同步+输入框内 key5 不换色实测
 
 - **166** [`c87c3b8`](https://github.com/wangxiuwen/tietie/commit/c87c3b8) 域名徽章 span→button（onSearchTerm 三层下传，stopPropagation 不触发选中），点击=填域名入搜索框+聚焦；真机实测 open.rokid.com 徽章点击后仅剩该域链接卡
