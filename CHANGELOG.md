@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **185** [`bcbef8a`](https://github.com/wangxiuwen/tietie/commit/bcbef8a) 语言切换跨窗即时（storage 事件广播 LS_KEY 变更，各窗 useLang 重解析 current），设置窗+托盘窗实测 zh↔en 双窗同步翻越后 auto 还原
+
 - **184** [`b5dd0ab`](https://github.com/wangxiuwen/tietie/commit/b5dd0ab) 同步日志行改可点按钮（logPeer 过滤态，再点同对端取消，.on 描边高亮），msg_send 造事件实测过滤/高亮/恢复全链
 
 - **183** `001581a*` 搜索过滤排除遮蔽敏感卡（!x.sensitive 前置于 matchQuery，零结果零计数），敏感词查询实测 0 卡+空态、对照词正常、浏览态遮蔽在位；*代码随并行下线轮提交进 main
