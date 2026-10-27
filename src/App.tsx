@@ -611,6 +611,16 @@ export default function App() {
         }
         return;
       }
+      // ⌘/Ctrl+J opens the selected link card in the system browser
+      // (direction 149); non-link cards ignore the chord
+      if (isMod && e.key.toLowerCase() === "j") {
+        const it = filtered[selectedIdx];
+        if (it && it.kind === "link") {
+          e.preventDefault();
+          invoke("open_url", { url: it.content }).catch(() => {});
+        }
+        return;
+      }
     }
     // Capture phase — runs before the search input's own keydown handling,
     // so preventDefault actually stops ⌘D / ⌘P / etc. from typing into search.
@@ -1621,6 +1631,7 @@ function Cheatsheet({ onClose }: { onClose: () => void }) {
     ["右键 / Menu ⇧F10", t("cs.menu")],
     ["空格", t("cs.zoom")],
     [`${MOD}R`, t("cs.rgb")],
+    [`${MOD}J`, t("cs.link")],
     ["Esc", t("cs.close")],
   ];
   return (
