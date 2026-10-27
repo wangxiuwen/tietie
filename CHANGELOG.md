@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **171** [`767094f`](https://github.com/wangxiuwen/tietie/commit/767094f) 抽屉提交历史镜像 localStorage、托盘空查询 ↑ 召回（连按走更旧，打字/↓ 退出），跨窗共享实测 甲乙两连召回后快照还原
+
 - **170** [`c9c3f53`](https://github.com/wangxiuwen/tietie/commit/c9c3f53) 已具备收口：Library 行 title 全文自方向123 即在（含遮蔽抑制）；实证 143 行中长行显示 80 字、title 承载 1106 字全文、遮罩行 title 抑制
 
 - **169** [`6fbdae6`](https://github.com/wangxiuwen/tietie/commit/6fbdae6) 批量栏所选含敏感项时显示 ⚠ N 🔒 橙色警示（title 说明批量操作绕过遮蔽），取消敏感项即隐；真机标记敏感+Ctrl双选断言后全还原
