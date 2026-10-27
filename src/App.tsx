@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -714,7 +714,18 @@ export default function App() {
             <Empty hasItems={items.length > 0} query={query} inFolder={folderId != null} />
           ) : (
             <div className="cards" ref={cardsRef} role="listbox" aria-label={t("a11y.cards")}>
-              {filtered.map((it, idx) =>
+              {filtered.map((it, idx) => {
+              // day separator before the first card of each new local day
+              // (direction 177) — pinned-first order just yields more groups
+              const dayOf = (ts: number) => {
+                const d = new Date(ts * 1000);
+                return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+              };
+              const sep =
+                idx > 0 && dayOf(it.used_at) !== dayOf(filtered[idx - 1].used_at)
+                  ? dayLabel(it.used_at)
+                  : null;
+              const node =
                 editing && editing.id === it.id ? (
                   <EditCard
                     key={it.id}
@@ -783,8 +794,14 @@ export default function App() {
                     onDelete={() => deleteItem(it.id)}
                     onPaste={() => paste(it)}
                   />
-                ),
-              )}
+                );
+              return (
+                <Fragment key={it.id}>
+                  {sep && <div className="day-sep" role="presentation">{sep}</div>}
+                  {node}
+                </Fragment>
+              );
+              })}
             </div>
           )}
         </div>
@@ -1958,6 +1975,18 @@ function PinIcon({ size = 16 }: { size?: number }) {
 
 function truncate(s: string, n: number): string {
   return s.length > n ? s.slice(0, n) + "…" : s;
+}
+
+/** Day label for the list separators (direction 177): 今天 / 昨天 / M/D. */
+function dayLabel(unixSec: number): string {
+  const d = new Date(unixSec * 1000);
+  const now = new Date();
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (sameDay(d, now)) return t("day.today");
+  const yd = new Date(now.getTime() - 86400_000);
+  if (sameDay(d, yd)) return t("day.yesterday");
+  return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
 function relTime(unixSec: number): string {

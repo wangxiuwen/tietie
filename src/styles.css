@@ -2794,3 +2794,13 @@ select:focus-visible,
   background: rgba(0, 0, 0, 0.04);
   color: var(--text);
 }
+
+/* day separator row in the drawer card list (direction 177) */
+.day-sep {
+  grid-column: 1 / -1;
+  padding: 10px 4px 2px;
+  font-size: calc(11px * var(--fs));
+  font-weight: 600;
+  color: var(--text-3);
+  user-select: none;
+}
