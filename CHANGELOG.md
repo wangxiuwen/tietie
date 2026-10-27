@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **181** [`2c33ad4`](https://github.com/wangxiuwen/tietie/commit/2c33ad4) ⌘N 徽章随自动翻页循环（badgeBase=(pageCount-1)*PAGE 经 Row 下传，⌘数字快取同步映射），实测 0-9 → 30-39 Ctrl1 重新起算
+
 - **180** [`9532d72`](https://github.com/wangxiuwen/tietie/commit/9532d72) Library 表格 Ctrl+A 全选当前过滤集（复用头部全选框 toggle 语义：全选态再按即清），146 行实测全选/全清/表头同步
 
 - **179** [`75f2521`](https://github.com/wangxiuwen/tietie/commit/75f2521) 已具备收口：诊断导出后 reveal 自方向134 即在；命令级实证产物落盘+reveal_path Ok，产物已删；本轮池<3 先扩池 181-185
