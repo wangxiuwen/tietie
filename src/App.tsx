@@ -1389,8 +1389,12 @@ function CardBody({
     return (
       <div
         className="img"
+        // fade the decoded thumbnail in (direction 144): large base64
+        // backgrounds pop in with a flash once decoded; the opacity
+        // transition turns that pop into a gentle reveal
         style={{
           backgroundImage: `url(data:image/png;base64,${item.preview})`,
+          animation: "img-fade-in 0.28s ease-out",
         }}
       />
     );

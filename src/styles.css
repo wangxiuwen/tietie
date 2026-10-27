@@ -459,6 +459,15 @@ button {
   background-position: center;
   background-color: rgba(0, 0, 0, 0.05);
 }
+/* gentle reveal once the base64 thumbnail decodes (direction 144) */
+@keyframes img-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
 .swatch-big {
   margin-top: 10px;
   flex: 1;
