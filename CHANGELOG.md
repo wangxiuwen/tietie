@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **150** [`db5aa4e`](https://github.com/wangxiuwen/tietie/commit/db5aa4e) 挂卡右键新增「复制（去格式）」：剥 **粗**/`码`/[标签](url) 标记留纯文本（链接保留 URL 本身） |
+
 - **148b** [`bc776a4`](https://github.com/wangxiuwen/tietie/commit/bc776a4) FileChunk 密封分块协议（512KiB/块≤64MiB）+ 接收端重组落盘 Documents/tietie-收到的文件/（重名自动 (n)）+📎回环全链路实测 |
 
 - **149** [`f361f41`](https://github.com/wangxiuwen/tietie/commit/f361f41) MOD+J 弦：选中链接卡 open_url 系统浏览器打开（非链接卡忽略），速查表补 ⌘J；真机 CDP 实测链接卡打开浏览器进程、非链接控制组忽略、净零 |
