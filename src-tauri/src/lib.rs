@@ -1963,6 +1963,18 @@ fn export_memos(
             Some(_) => " ⏰已到期".to_string(),
             None => String::new(),
         };
+        // 备注 column joins the export (direction 154); single line so the
+        // markdown bullet stays one bullet
+        let note_text = m
+            .note
+            .as_deref()
+            .map(str::trim)
+            .filter(|n| !n.is_empty())
+            .map(|n| n.replace('\n', " "));
+        let note_line = note_text
+            .as_deref()
+            .map(|n| format!(" 📝{n}"))
+            .unwrap_or_default();
         let body = if m.kind == "image" {
             format!("[图片 {}]", m.content)
         } else if m.kind == "link" && !want_txt {
@@ -1994,9 +2006,12 @@ fn export_memos(
                 out.push_str(&format!("{pin}{remind}\n"));
             }
             out.push_str(&body);
+            if let Some(nt) = &note_text {
+                out.push_str(&format!("\n备注：{nt}"));
+            }
             out.push_str("\n\n");
         } else {
-            out.push_str(&format!("- {pin}{body}{remind}\n"));
+            out.push_str(&format!("- {pin}{body}{remind}{note_line}\n"));
         }
     }
     let dir = app
