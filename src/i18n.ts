@@ -361,6 +361,18 @@ export function setPref(pref: LangPref) {
   subs.forEach((f) => f());
 }
 
+// Cross-window propagation (direction 185): each window holds its own module
+// instance, so a switch in the settings window can't reach the other windows'
+// subscriber sets — the same-origin storage event broadcasts it to them, and
+// every window re-resolves `current` from the persisted preference.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== LS_KEY) return;
+    current = resolvePref() === "auto" ? systemLang() : (resolvePref() as Lang);
+    subs.forEach((f) => f());
+  });
+}
+
 /** Mount in each top-level view so t() re-evaluates after a switch. */
 export function useLang() {
   const [, force] = useState(0);
