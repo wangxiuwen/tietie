@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **161** [`86c068e`](https://github.com/wangxiuwen/tietie/commit/86c068e) 抽屉搜索框 × 清空钮（流内插入避让 ⌘F kbd，mousedown preventDefault 保焦点+点击清空复焦），真机三态实测含 img: 前缀顺带回归
+
 - **159** [`dafeee1`](https://github.com/wangxiuwen/tietie/commit/dafeee1) 模板 chip 按使用计数稳定降序（bumpTemplate+addTemplate 双处排序不变式），常用前置/0使用不插队/追平不跳位真机实测；连点同 chip 的 React bailout 用 render tick 兜住
 
 - **158** [`752f969`](https://github.com/wangxiuwen/tietie/commit/752f969) 设置页一键恢复出厂热键（新 hotkey_defaults 命令+恢复默认钮，逐键容错占用保现役），真机实测 clothesline/screenshot 回出厂+面板刷新；本轮池<3 先扩池 161-165
