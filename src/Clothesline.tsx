@@ -373,6 +373,7 @@ export default function Clothesline() {
                 recentColors={recentPinColors(memos)}
                 onCommit={async (content, remindIn, color) => {
                   setComposing(false);
+                  lastMemoColor = color;
                   const remindAt =
                     remindIn != null
                       ? Math.floor(Date.now() / 1000) + remindIn * 60
@@ -496,6 +497,10 @@ function recentPinColors(memos: Memo[]): string[] {
   return seen;
 }
 
+// last color committed from the composer (direction 156) — a new note
+// opens with it instead of the default blue; session-scoped like searchHist
+let lastMemoColor: string | null = null;
+
 /** Inline sticky-note composer pinned under the rope. */
 function NoteComposer({
   onCommit,
@@ -508,8 +513,9 @@ function NoteComposer({
 }) {
   const [text, setText] = useState("");
   const [remindMin, setRemindMin] = useState("0");
-  // quick-pick clothespin color (direction 81): null = default blue
-  const [pin, setPin] = useState<string | null>(null);
+  // quick-pick clothespin color (direction 81): null = default blue;
+  // opens on the last committed color (direction 156)
+  const [pin, setPin] = useState<string | null>(lastMemoColor);
   const submit = () => {
     if (text.trim()) {
       const m =
