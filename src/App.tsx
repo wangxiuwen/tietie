@@ -360,6 +360,10 @@ export default function App() {
     });
   }, [items, folderId, tab, query]);
 
+  // 🔒 entries inside the active multi-select (direction 169): batch actions
+  // (paste-back / hang) would bypass their masking, so the bar warns
+  const multiSelSensitive = items.filter((x) => multiSel.has(x.id) && x.sensitive).length;
+
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: items.length, pinned: 0 };
     for (const k of ["text", "link", "image", "code", "color"]) c[k] = 0;
@@ -773,6 +777,11 @@ export default function App() {
           <div className="batch-bar">
             <span>
               {t("batch.selected")} {multiSel.size}
+              {multiSelSensitive > 0 && (
+                <span className="batch-sens" title={t("batch.sensitiveHint")}>
+                  ⚠ {multiSelSensitive} 🔒
+                </span>
+              )}
             </span>
             <button
               className={"btn ghost" + (hangArmed ? " arm" : "")}

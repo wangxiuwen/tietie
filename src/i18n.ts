@@ -153,7 +153,7 @@ export const zh: Dict = {
   "tray.viewAll": "查看全部 →", "tray.noMatch": "没找到匹配项", "tray.none": "暂无内容",
   "tray.full": "唤起完整面板", "tray.quit": "退出",
   // batch
-  "batch.selected": "已选", "batch.hang": "批量挂绳", "batch.hangConfirm": "确认挂绳？",
+  "batch.selected": "已选", "batch.hang": "批量挂绳", "batch.sensitiveHint": "所选含敏感条目，批量操作会绕过遮蔽", "batch.hangConfirm": "确认挂绳？",
   "batch.delete": "批量删除", "batch.clear": "取消选择",
   // stats
   "st.total": "总条目", "st.today": "今日", "st.pinned": "置顶",
@@ -308,7 +308,7 @@ export const en: Dict = {
   "tray.clearSearch": "Clear search",
   "tray.viewAll": "View all →", "tray.noMatch": "No matches", "tray.none": "Nothing yet",
   "tray.full": "Open full panel", "tray.quit": "Quit",
-  "batch.selected": "Selected", "batch.hang": "Hang all", "batch.hangConfirm": "Confirm hang?",
+  "batch.selected": "Selected", "batch.hang": "Hang all", "batch.sensitiveHint": "Selection includes masked items; batch actions bypass masking", "batch.hangConfirm": "Confirm hang?",
   "batch.delete": "Delete all", "batch.clear": "Clear selection",
   "st.total": "Total", "st.today": "Today", "st.pinned": "Pinned",
   "rich.preview": "View rendered rich text", "rich.hint": "Rendered rich-text preview",

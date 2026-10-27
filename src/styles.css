@@ -2752,3 +2752,14 @@ select:focus-visible,
   margin-top: 4px;
   color: var(--text-3);
 }
+
+/* 🔒-in-selection warning chip on the batch bar (direction 169) */
+.batch-sens {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  background: rgba(255, 149, 0, 0.16);
+  color: var(--cat-code);
+  font-size: calc(11px * var(--fs));
+  font-weight: 600;
+}
