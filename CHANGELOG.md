@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **157** [`c63d34d`](https://github.com/wangxiuwen/tietie/commit/c63d34d) 搜索 text:/img:/link: 类型前缀（matchQuery 加 kind 参数，抽屉+托盘双接线），前缀+词 AND 组合，vitest +14 断言 + 真机五组过滤实测
+
 - **156** [`a295b19`](https://github.com/wangxiuwen/tietie/commit/a295b19) 新便签默认沿用上次提交颜色（会话级 lastMemoColor，null 语义保持默认蓝），composer B 选中态+落库色值双证
 
 - **155** [`8b42457`](https://github.com/wangxiuwen/tietie/commit/8b42457) 托盘行中键直接置顶/取消（onMouseDown button=1 拦截防自动滚动），三处 Row 全接线；可信中键两连击实测 pinned 翻转且置顶分区随之出现/消失
