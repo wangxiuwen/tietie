@@ -191,7 +191,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-27 | 148b | TBD | FileChunk 密封分块协议（512KiB/块≤64MiB）+ 接收端重组落盘 Documents/tietie-收到的文件/（重名自动 (n)）+📎回环全链路实测 |
+2026-10-27 | 148b | bc776a4 | FileChunk 密封分块协议（512KiB/块≤64MiB）+ 接收端重组落盘 Documents/tietie-收到的文件/（重名自动 (n)）+📎回环全链路实测 |
 2026-10-27 | 149 | f361f41 | MOD+J 弦：选中链接卡 open_url 系统浏览器打开（非链接卡忽略），速查表补 ⌘J；真机 CDP 实测链接卡打开浏览器进程、非链接控制组忽略、净零 |
 2026-10-27 | 148 | 5e43ca0 | 选中卡 box-shadow 呼吸（card-breathe 2.2s 无限循环），prefers-reduced-motion 自动关 |
 2026-10-27 | 147 | 3740236 | Library 表格新增文件夹归属列（名称/—，悬停 title），folders 随 refresh 重载修后建文件夹不显 |
