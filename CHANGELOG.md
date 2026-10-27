@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **177** [`3b52e30`](https://github.com/wangxiuwen/tietie/commit/3b52e30) 抽屉卡片列表按本地日插 .day-sep 分隔行（今天/昨天/M/D，Fragment 不扰选择序），144 卡实测 6 条分隔数量文案顺序位置全对
+
 - **176** [`7beab9a`](https://github.com/wangxiuwen/tietie/commit/7beab9a) 托盘行右键菜单加「备注…」→ 搜索框下行内编辑器（Enter 存/Esc 取消，复用 set_item_note），右键-注入-回车-落库-清空全链实测
 
 - **175** [`b8fe04e`](https://github.com/wangxiuwen/tietie/commit/b8fe04e) 空态在拖卡引导后补行内「或点这里新建一张」链接（点击即开 composer，颜色筛选时空态保持原样），合成点击实测开/关零残留
