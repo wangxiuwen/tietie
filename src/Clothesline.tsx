@@ -313,7 +313,25 @@ export default function Clothesline() {
   // the composer is an inline card under the rope instead
   const [composing, setComposing] = useState(false);
   // clothespin-color filter (direction 132): null = show every memo
-  const [colorFilter, setColorFilter] = useState<string | null>(null);
+  // color filter persists across sessions (direction 182) — the clothesline
+  // window remounts on every show, localStorage carries the choice between
+  const [colorFilter, setColorFilterState] = useState<string | null>(() => {
+    try {
+      const v = localStorage.getItem("tietie.memoColorFilter");
+      return v === null ? null : v;
+    } catch {
+      return null;
+    }
+  });
+  const setColorFilter = (c: string | null) => {
+    setColorFilterState(c);
+    try {
+      if (c === null) localStorage.removeItem("tietie.memoColorFilter");
+      else localStorage.setItem("tietie.memoColorFilter", c);
+    } catch {
+      /* storage unavailable — filter still works per-session */
+    }
+  };
 
   // open the detail view already in edit mode (context-menu 编辑)
   const [editOnOpen, setEditOnOpen] = useState(false);
