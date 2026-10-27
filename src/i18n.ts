@@ -22,7 +22,7 @@ export const zh: Dict = {
   "kind.code": "代码", "kind.color": "颜色",
   "tab.all": "全部", "tab.pinned": "置顶",
   // drawer
-  "search.placeholder": "搜索剪切板历史 …",
+  "search.placeholder": "搜索剪切板历史 …", "search.clear": "清空搜索",
   "search.tray": "搜索 …",
   "search.histTitle": "最近搜索",
   "search.library": "搜索（支持拼音首字母，如 nz 找「内存」）…",
@@ -182,7 +182,7 @@ export const en: Dict = {
   "kind.text": "Text", "kind.link": "Link", "kind.image": "Image",
   "kind.code": "Code", "kind.color": "Color",
   "tab.all": "All", "tab.pinned": "Pinned",
-  "search.placeholder": "Search clipboard history …",
+  "search.placeholder": "Search clipboard history …", "search.clear": "Clear search",
   "search.tray": "Search …",
   "search.histTitle": "Recent searches",
   "search.library": "Search (pinyin initials work, e.g. nz for 内存) …",

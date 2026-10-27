@@ -1008,6 +1008,23 @@ function Header({
             }
           }}
         />
+        {query && (
+          <button
+            type="button"
+            className="search-clear"
+            aria-label={t("search.clear")}
+            title={t("search.clear")}
+            // keep the input focused through the press; mousedown beats blur
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              setQuery("");
+              setHistIdx(-1);
+              searchRef.current?.focus();
+            }}
+          >
+            ×
+          </button>
+        )}
         <span className="kbd">{MOD}F</span>
         {histOpen && !query && histItems.length > 0 && (
           <div className="search-hist" aria-label={t("search.histTitle")}>

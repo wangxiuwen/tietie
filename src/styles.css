@@ -714,6 +714,25 @@ button {
 .po-search-box input {
   padding-right: 28px;
 }
+/* in-flow × inside the drawer search box (direction 161); absolute
+   positioning would collide with the ⌘F kbd hint on the right */
+.search-clear {
+  all: unset;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  line-height: 15px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-3);
+  flex: 0 0 auto;
+}
+.search-clear:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+}
+
 .po-clear {
   all: unset;
   position: absolute;
