@@ -513,6 +513,10 @@ function NoteComposer({
 }) {
   const [text, setText] = useState("");
   const [remindMin, setRemindMin] = useState("0");
+  // chip taps re-sort memoTemplates (direction 159); always tick a re-render
+  // so the row reflects the new order even when setText keeps the same value
+  // (React bails out on identical state)
+  const [, setTick] = useState(0);
   // quick-pick clothespin color (direction 81): null = default blue;
   // opens on the last committed color (direction 156)
   const [pin, setPin] = useState<string | null>(lastMemoColor);
@@ -537,6 +541,8 @@ function NoteComposer({
               className="tpl-chip"
               title={tp.text}
               onClick={() => {
+                bumpTemplate(tp.label);
+                setTick((t) => t + 1);
                 setText(tp.text);
                 setRemindMin("0");
               }}
@@ -796,17 +802,32 @@ const notifiedDue = new Set<number>();
 
 // one-tap hanging templates (direction 139): frequent short phrases stored
 // per-session; "add" pushes {label: text} so the row both fills the textarea
-// and hangs immediately
+// and hangs immediately. Chips sort by use count (direction 159), recency
+// breaks ties (JS sort is stable).
 interface Template {
   label: string;
   text: string;
+  uses: number;
 }
 const memoTemplates: Template[] = [];
 function addTemplate(label: string, text: string) {
+  const found = memoTemplates.find((x) => x.label === label);
+  const uses = found?.uses ?? 0;
   const i = memoTemplates.findIndex((x) => x.label === label);
   if (i >= 0) memoTemplates.splice(i, 1);
-  memoTemplates.unshift({ label, text });
+  memoTemplates.unshift({ label, text, uses });
+  // keep the sorted invariant: a fresh zero-use chip lands behind the
+  // frequently-used ones, not in front of them
+  memoTemplates.sort((a, b) => b.uses - a.uses);
   if (memoTemplates.length > 8) memoTemplates.pop();
+}
+/** a chip was tapped to fill the composer — count it and float the
+ * frequently-used chips to the front */
+function bumpTemplate(label: string) {
+  const i = memoTemplates.findIndex((x) => x.label === label);
+  if (i < 0) return;
+  memoTemplates[i].uses += 1;
+  memoTemplates.sort((a, b) => b.uses - a.uses);
 }
 function useDetailZoom() {
   const [zoom, setZoom] = useState(detailZoom.v);
