@@ -5,6 +5,10 @@
 
 ## 2026-10-27
 
+- **184** [`b5dd0ab`](https://github.com/wangxiuwen/tietie/commit/b5dd0ab) 同步日志行改可点按钮（logPeer 过滤态，再点同对端取消，.on 描边高亮），msg_send 造事件实测过滤/高亮/恢复全链
+
+- **183** `001581a*` 搜索过滤排除遮蔽敏感卡（!x.sensitive 前置于 matchQuery，零结果零计数），敏感词查询实测 0 卡+空态、对照词正常、浏览态遮蔽在位；*代码随并行下线轮提交进 main
+
 - **下线** [`001581a`](https://github.com/wangxiuwen/tietie/commit/001581a) 挂绳/晾衣架整体下线（用户决定「先不要了，有点乱套」）：conf 移除 clothesline 窗口+热键不注册+托盘删项+抽屉拖挂手势/MOD+↑/批量挂绳钮/右键挂绳项/速查行全移除；便签数据保留在库（导出/提醒 toast 不受影响），恢复=回滚本提交 |
 
 - **182** [`d0e7b93`](https://github.com/wangxiuwen/tietie/commit/d0e7b93) 颜色筛选 localStorage 持久（选色即存/全部即清，惰性初始化恢复），杀进程重启实测 active 色点跨会话恢复后还原
