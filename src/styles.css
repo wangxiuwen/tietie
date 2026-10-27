@@ -2804,3 +2804,19 @@ select:focus-visible,
   color: var(--text-3);
   user-select: none;
 }
+
+/* clickable sync-log rows (direction 184); .on marks the active peer filter.
+   Only neutralize the button UA chrome — the .sync-ev* color classes keep
+   their look (all:unset would out-specify them) */
+button.sync-ev {
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* active peer-filter row (direction 184) */
+.sync-ev.on {
+  outline: 1.5px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: var(--r-xs);
+}

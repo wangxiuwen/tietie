@@ -72,6 +72,8 @@ export default function Settings() {
   const [hks, setHks] = useState<HotkeysInfo | null>(null);
   const [autostart, setAutostart] = useState<boolean>(false);
   // recent sync events (direction 141)
+  // peer filter over the sync log (direction 184): null shows everything
+  const [logPeer, setLogPeer] = useState<string | null>(null);
   const [syncLog, setSyncLog] = useState<
     { ts: number; dir: string; peer: string; note: string }[]
   >([]);
@@ -590,11 +592,19 @@ export default function Settings() {
               {syncLog.length === 0 ? (
                 <span className="settings-tag muted">{t("settings.syncLogEmpty")}</span>
               ) : (
-                [...syncLog].reverse().map((e, i) => (
-                  <span key={i} className={"sync-ev" + e.dir}>
+                [...syncLog]
+                .filter((e) => logPeer === null || e.peer === logPeer)
+                .reverse()
+                .map((e, i) => (
+                  <button
+                    key={i}
+                    className={"sync-ev sync-ev" + e.dir + (logPeer === e.peer ? " on" : "")}
+                    title={t("settings.logFilter")}
+                    onClick={() => setLogPeer((p) => (p === e.peer ? null : e.peer))}
+                  >
                     {new Date(e.ts * 1000).toLocaleTimeString()} {e.dir === "in" ? "⇦" : e.dir === "out" ? "⇨" : "⚠"}{" "}
                     {e.peer} · {e.note}
-                  </span>
+                  </button>
                 ))
               )}
               <button className="btn ghost" onClick={reloadSyncLog}>
