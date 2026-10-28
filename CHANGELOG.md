@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **212** [`2d7c98b`](https://github.com/wangxiuwen/tietie/commit/2d7c98b) 行尾 hover 显现 ×（display:none→hover block，stopPropagation 防行点击），可信点删实测隐藏/显现/删行删库三段
+
 - **211** [`b2fc6a1`](https://github.com/wangxiuwen/tietie/commit/b2fc6a1) dblAct 前置色卡分支：双击=复制 hex 无视 paste/copy/edit 偏好（色卡的本体就是色值），OS 剪贴板 #34c759 实测
 
 - **210** [`8202457`](https://github.com/wangxiuwen/tietie/commit/8202457) 日志行 title 两行化=过滤提示+toLocaleString 完整日期（184 过滤语义保留），实测 title 含 2026/10/28 22:47:23 且与行内时间同源

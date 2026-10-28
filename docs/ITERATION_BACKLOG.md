@@ -253,7 +253,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-28 | 212 | TBD | 行尾 hover 显现 ×（display:none→hover block，stopPropagation 防行点击），可信点删实测隐藏/显现/删行删库三段
+2026-10-28 | 212 | 2d7c98b | 行尾 hover 显现 ×（display:none→hover block，stopPropagation 防行点击），可信点删实测隐藏/显现/删行删库三段
 2026-10-28 | 211 | b2fc6a1 | dblAct 前置色卡分支：双击=复制 hex 无视 paste/copy/edit 偏好（色卡的本体就是色值），OS 剪贴板 #34c759 实测
 2026-10-28 | 210 | 8202457 | 日志行 title 两行化=过滤提示+toLocaleString 完整日期（184 过滤语义保留），实测 title 含 2026/10/28 22:47:23 且与行内时间同源
 2026-10-28 | 209 | 2e67bd7 | 已具备收口：行 hover 高亮自方向7 即在；可信 mouseMoved 移入 rgba(0,122,255,.18) 显色、移出回透明实测；本轮池<3 先扩池 211-215
