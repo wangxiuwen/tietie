@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **196** [`a237f70`](https://github.com/wangxiuwen/tietie/commit/a237f70) 截断行（… 结尾）title 追加完整原文（备注·大小·全文），未截断行结构不变，7/7 截断行桥对照实测
+
 - **195** [`42ce3e0`](https://github.com/wangxiuwen/tietie/commit/42ce3e0) Library 行 onMouseDown button=1 直接 delete_items（防自动滚动，与托盘/抽屉中键习惯一致），可信中键实测探针行删除+行消失
 
 - **194** [`09dfdfa`](https://github.com/wangxiuwen/tietie/commit/09dfdfa) 托盘窗 resizable+Resized 逻辑尺寸持久化（240-900/240-1200 钳制），图标点击与菜单两开窗路径都恢复（persisted_tray_size 助手），480 宽实测重启恢复后还原 320
