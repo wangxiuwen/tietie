@@ -1618,6 +1618,8 @@ function ZoomOverlay({ item, onClose }: { item?: ClipItem; onClose: () => void }
   // the image never leaves a usable range; resets when the item changes
   const [scale, setScale] = useState(1);
   useEffect(() => setScale(1), [item?.id]);
+  // 1.2s ✓ flash after the right-click copy (direction 192)
+  const [copiedFlash, setCopiedFlash] = useState(false);
 
   useEffect(() => {
     let revoke: string | null = null;
@@ -1658,6 +1660,15 @@ function ZoomOverlay({ item, onClose }: { item?: ClipItem; onClose: () => void }
               e.preventDefault();
               setScale((k) => Math.min(4, Math.max(0.25, k * (e.deltaY < 0 ? 1.15 : 1 / 1.15))));
             }}
+            // right-click copies the image straight to the clipboard
+            // (direction 192) — no context menu over the enlarged view
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              invoke("copy_item_image", { id: item.id }).catch(() => {});
+              setCopiedFlash(true);
+              window.setTimeout(() => setCopiedFlash(false), 1200);
+            }}
           />
         ) : (
           <div className="zoom-loading">原图加载中…</div>
@@ -1665,7 +1676,8 @@ function ZoomOverlay({ item, onClose }: { item?: ClipItem; onClose: () => void }
         <div className="zoom-meta">
           <span>{item.content}</span>
           <span>
-            {full ? "原图" : "缩略图"} · {fmtBytes(item.byte_size)} · Esc 关闭
+            {full ? "原图" : "缩略图"} · {fmtBytes(item.byte_size)} ·{" "}
+            {copiedFlash ? "✓ 已复制" : "右键复制 · Esc 关闭"}
           </span>
         </div>
       </div>
