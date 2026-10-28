@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **189** [`f62def6`](https://github.com/wangxiuwen/tietie/commit/f62def6) 方向110 后新增 po 元素暗色补全（note-edit 白味/po-top 深影，尾置块过级联），★★顺带修回 110 块丢失的闭合括号——885 行起全部规则被吞进 dark 媒体块（亮色模式全失效），真机暗色直证+模拟亮色对照双过
+
 - **188** [`d9da090`](https://github.com/wangxiuwen/tietie/commit/d9da090) 设置页三分区加 id（sec-lan/hotkeys/general），hash 滚动定位且 settings-open 重触发（窗口 URL 终生不变），hotkeys=0px/general=78px（末区滚尽）实测
 
 - **187** [`7004afe`](https://github.com/wangxiuwen/tietie/commit/7004afe) 图片卡缩略图右下角 WxH 徽章（content 列即尺寸串，半透明黑底白字 pointer-events:none），32/32 全覆盖且与库一致、非图片卡零徽章实测
