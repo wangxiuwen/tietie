@@ -47,7 +47,7 @@ export const zh: Dict = {
   "edit.chars": "字符", "edit.lines": "行",
   // settings
   "settings.title": "设置",
-  "backup.banner": "已超过 7 天未导出备份，建议保存一份", "backup.exportNow": "立即导出",
+  "backup.banner": "已超过 7 天未导出备份，建议保存一份", "backup.exportNow": "立即导出", "backup.pathTip": "导出到：文档目录\\tietie-backup-日期-时间.json（如 tietie-backup-20261029-023000.json）",
   "db.badBanner": "数据库完整性自检未通过——建议立即导出备份并重启应用",
   "settings.version": "版本", "settings.checking": "检查中…", "settings.uptodate": "已是最新",
   "settings.copyVersion": "点击复制版本号",
@@ -206,7 +206,7 @@ export const en: Dict = {
   "edit.cancel": "Esc Cancel", "edit.savePaste": "⌘↵ Save & Paste",
   "edit.chars": "chars", "edit.lines": "lines",
   "settings.title": "Settings",
-  "backup.banner": "No backup exported in over 7 days — save one now", "backup.exportNow": "Export now",
+  "backup.banner": "No backup exported in over 7 days — save one now", "backup.exportNow": "Export now", "backup.pathTip": "Saves to: Documents\\tietie-backup-date-time.json (e.g. tietie-backup-20261029-023000.json)",
   "db.badBanner": "Database integrity check FAILED — export a backup now and restart the app",
   "settings.version": "Version", "settings.checking": "Checking…", "settings.uptodate": "Up to date",
   "settings.copyVersion": "Click to copy version",

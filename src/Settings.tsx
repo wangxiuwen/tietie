@@ -365,7 +365,7 @@ export default function Settings() {
       {dbBad && (
         <div className="backup-banner db-bad" role="alert">
           <span>🚨 {t("db.badBanner")}</span>
-          <button className="btn ghost" onClick={exportNow}>
+          <button className="btn ghost" title={t("backup.pathTip")} onClick={exportNow}>
             {t("backup.exportNow")}
           </button>
         </div>
@@ -373,7 +373,7 @@ export default function Settings() {
       {backupStale && (
         <div className="backup-banner" role="status">
           <span>⚠️ {t("backup.banner")}</span>
-          <button className="btn ghost" onClick={exportNow}>
+          <button className="btn ghost" title={t("backup.pathTip")} onClick={exportNow}>
             {t("backup.exportNow")}
           </button>
         </div>
@@ -765,7 +765,7 @@ export default function Settings() {
           <div className="settings-row">
             <span className="settings-label">{t("settings.backup")}</span>
             <span className="settings-value">
-              <button className="btn ghost" onClick={doExportBackup}>
+              <button className="btn ghost" title={t("backup.pathTip")} onClick={doExportBackup}>
                 {t("settings.export")}
               </button>
               <button className="btn ghost" onClick={doImportBackup}>
