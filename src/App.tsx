@@ -153,6 +153,16 @@ export default function App() {
   const [zoomId, setZoomId] = useState<number | null>(null);
   // ⌘/Ctrl+click multi-select for batch delete / hang
   const [multiSel, setMultiSel] = useState<Set<number>>(new Set());
+  // two-step confirm on 批量删除 when the group is large (direction 202,
+  // same pattern as 153): first click arms, second executes; 3s timeout
+  const DEL_CONFIRM_N = 5;
+  const [delArmed, setDelArmed] = useState(false);
+  const delArmTimer = useRef<number | null>(null);
+  useEffect(() => {
+    // selection changed → drop the armed state
+    setDelArmed(false);
+    if (delArmTimer.current) window.clearTimeout(delArmTimer.current);
+  }, [multiSel]);
   // right-click context menu on cards
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; itemId: number } | null>(null);
   // ? cheatsheet overlay
@@ -777,14 +787,24 @@ export default function App() {
               )}
             </span>
             <button
-              className="btn primary"
+              className={"btn primary" + (delArmed ? " arm" : "")}
               onClick={async () => {
+                if (multiSel.size > DEL_CONFIRM_N && !delArmed) {
+                  // large group → require a second click within 3s
+                  setDelArmed(true);
+                  if (delArmTimer.current) window.clearTimeout(delArmTimer.current);
+                  delArmTimer.current = window.setTimeout(() => setDelArmed(false), 3000);
+                  return;
+                }
+                if (delArmTimer.current) window.clearTimeout(delArmTimer.current);
                 const ids = [...multiSel];
                 setMultiSel(new Set());
                 await invoke("delete_items", { ids }).catch(() => {});
               }}
             >
-              {t("batch.delete")}
+              {delArmed && multiSel.size > DEL_CONFIRM_N
+                ? t("batch.deleteConfirm")
+                : t("batch.delete")}
             </button>
             <button className="btn ghost" onClick={() => setMultiSel(new Set())}>
               {t("batch.clear")}
