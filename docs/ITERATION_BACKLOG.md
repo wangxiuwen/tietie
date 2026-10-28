@@ -228,7 +228,7 @@
 - [x] 192. 抽屉大图浮层右键复制：zoom 层右键直接复制图片
 - [x] 193. 设置页热键行显示占用来源：注册失败时附错误详情 title
 - [x] 194. 托盘面板宽度记忆：用户拉宽后跨会话保持
-- [ ] 195. Library 表格行中键删除：行中键直接删除条目
+- [x] 195. Library 表格行中键删除：行中键直接删除条目
 - [ ] 196. 托盘面板行字数截断提示：超长行 title 补完整内容
 - [ ] 197. 设置页语言下拉快捷键：focus 后字母跳转
 - [ ] 198. 抽屉敏感卡遮蔽快捷键遮蔽：🔒 卡 Enter 需先显形
@@ -238,6 +238,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
+2026-10-28 | 195 | TBD | Library 行 onMouseDown button=1 直接 delete_items（防自动滚动，与托盘/抽屉中键习惯一致），可信中键实测探针行删除+行消失
 2026-10-28 | 194 | 09dfdfa | 托盘窗 resizable+Resized 逻辑尺寸持久化（240-900/240-1200 钳制），图标点击与菜单两开窗路径都恢复（persisted_tray_size 助手），480 宽实测重启恢复后还原 320
 2026-10-28 | 193 | ddd678a | regFail 标签 title=后端注册错误详情（HotkeyState 加 err 槽+预管理暂存，registered 时不遮蔽活键），外部进程 RegisterHotKey 占 Ctrl+Alt+4 真实拒绝路径实测：snapshot 详入/ DOM title=详情/ 释放 recheck 恢复
 2026-10-28 | 192 | cd8334a | 大图层右键 copy_item_image（stopPropagation 不弹菜单不误关，meta 行 ✓ 已复制 1.2s + 常态「右键复制」提示），可信右键实测 OS 剪贴板位图入板

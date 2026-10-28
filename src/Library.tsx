@@ -411,6 +411,18 @@ export default function Library() {
                     })
                     .catch(() => {});
                 }}
+                onMouseDown={(e) => {
+                  // middle-click deletes the row (direction 195): mirrors the
+                  // tray/card middle-click pin idiom; preventDefault keeps the
+                  // WebView out of autoscroll mode
+                  if (e.button === 1) {
+                    e.preventDefault();
+                    invoke<number>("delete_items", { ids: [it.id] }).then((n) => {
+                      setMsg(`${t("lib.deleted")} ${n}`);
+                      refresh();
+                    }).catch(() => {});
+                  }
+                }}
               >
                 <td className="w-check">
                   <input
