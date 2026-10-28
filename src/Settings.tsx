@@ -694,6 +694,21 @@ export default function Settings() {
                   setPref(v);
                   setLangPref(v);
                 }}
+                onKeyDown={(e) => {
+                  // letter jumps while focused (direction 197): a=跟随系统 /
+                  // z=中文 / e=English — deterministic, unlike the native
+                  // select's first-letter search which can't match pinyin
+                  const map: Record<string, "auto" | "zh" | "en"> = {
+                    a: "auto",
+                    z: "zh",
+                    e: "en",
+                  };
+                  const v = map[e.key.toLowerCase()];
+                  if (!v) return;
+                  e.preventDefault();
+                  setPref(v);
+                  setLangPref(v);
+                }}
               >
                 <option value="auto">{t("settings.langAuto")}</option>
                 <option value="zh">中文</option>
