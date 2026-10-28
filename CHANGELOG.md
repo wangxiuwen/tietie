@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **192** [`cd8334a`](https://github.com/wangxiuwen/tietie/commit/cd8334a) 大图层右键 copy_item_image（stopPropagation 不弹菜单不误关，meta 行 ✓ 已复制 1.2s + 常态「右键复制」提示），可信右键实测 OS 剪贴板位图入板
+
 - **191** [`507af12`](https://github.com/wangxiuwen/tietie/commit/507af12) export_selected_csv 补 folder 列（folder 名一次预查 HashMap，无夹空单元格），A 行=夹名/B 行空双行实测后全还原
 
 ## 2026-10-27
