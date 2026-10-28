@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **195** [`42ce3e0`](https://github.com/wangxiuwen/tietie/commit/42ce3e0) Library 行 onMouseDown button=1 直接 delete_items（防自动滚动，与托盘/抽屉中键习惯一致），可信中键实测探针行删除+行消失
+
 - **194** [`09dfdfa`](https://github.com/wangxiuwen/tietie/commit/09dfdfa) 托盘窗 resizable+Resized 逻辑尺寸持久化（240-900/240-1200 钳制），图标点击与菜单两开窗路径都恢复（persisted_tray_size 助手），480 宽实测重启恢复后还原 320
 
 - **193** [`ddd678a`](https://github.com/wangxiuwen/tietie/commit/ddd678a) regFail 标签 title=后端注册错误详情（HotkeyState 加 err 槽+预管理暂存，registered 时不遮蔽活键），外部进程 RegisterHotKey 占 Ctrl+Alt+4 真实拒绝路径实测：snapshot 详入/ DOM title=详情/ 释放 recheck 恢复
