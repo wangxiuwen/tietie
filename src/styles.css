@@ -2875,3 +2875,18 @@ button.sync-ev {
   background: rgba(0, 0, 0, 0.1);
   color: var(--text);
 }
+
+/* 1-based position badge before each hotkey row label (direction 206) */
+.hk-order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: calc(10px * var(--fs));
+  font-weight: 700;
+}

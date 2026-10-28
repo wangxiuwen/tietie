@@ -638,6 +638,7 @@ export default function Settings() {
           <div id="sec-hotkeys" className="settings-subhead">{t("settings.hotkeys")}</div>
           <HotkeyRow
             kind="drawer"
+            order={1}
             label={t("settings.hk.drawer")}
             value={hks?.drawer ?? ""}
             others={[hks?.screenshot ?? "", hks?.clothesline ?? ""]}
@@ -645,6 +646,7 @@ export default function Settings() {
           />
           <HotkeyRow
             kind="screenshot"
+            order={2}
             label={t("settings.hk.screenshot")}
             value={hks?.screenshot ?? ""}
             others={[hks?.drawer ?? "", hks?.clothesline ?? ""]}
@@ -945,6 +947,7 @@ function HotkeyRow({
   others = [],
   registered = true,
   regDetail,
+  order,
   onSaved,
 }: {
   kind: string;
@@ -954,6 +957,8 @@ function HotkeyRow({
   registered?: boolean;
   /** last register error from the backend (direction 193 tooltip) */
   regDetail?: string | null;
+  /** 1-based position badge (direction 206) */
+  order?: number;
   onSaved: () => void;
 }) {
   const [recording, setRecording] = useState(false);
@@ -1037,7 +1042,10 @@ function HotkeyRow({
 
   return (
     <div className="settings-row">
-      <span className="settings-label">{label}</span>
+      <span className="settings-label">
+        {order != null && <span className="hk-order" aria-hidden="true">{order}</span>}
+        {label}
+      </span>
       <span className="settings-value">
         {recording ? (
           <>
