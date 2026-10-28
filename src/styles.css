@@ -2180,6 +2180,9 @@ mark.hl {
 .po-foot-open {
   all: unset;
   font: inherit;
+  /* font-size must track the panel scale (direction 201) — `font: inherit`
+     above would otherwise pin it to the page default 16px */
+  font-size: calc(11px * var(--fs));
   color: inherit;
   cursor: default;
   border-radius: var(--r-sm);
