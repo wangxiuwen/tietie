@@ -66,7 +66,8 @@ export default function TrayPopover() {
 
   const copyBack = async (it: ClipItem) => {
     await getCurrentWindow().hide();
-    await invoke("paste_item", { id: it.id });
+    // tray quick-copies don't bump use_count (direction 186)
+    await invoke("paste_item", { id: it.id, bumpUsage: false });
   };
 
   const matched = query

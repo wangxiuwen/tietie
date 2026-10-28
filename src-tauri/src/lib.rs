@@ -3016,7 +3016,12 @@ fn copy_item_image(state: tauri::State<'_, AppState>, id: i64) -> Result<(), Str
 /// (plain text + RTF/HTML for rich text; image for image; etc.), then
 /// hide drawer + restore focus + synth ⌘V. Replaces JS-side writeText/writeImage.
 #[tauri::command]
-fn paste_item(state: tauri::State<'_, AppState>, app: AppHandle, id: i64) -> Result<bool, String> {
+fn paste_item(
+    state: tauri::State<'_, AppState>,
+    app: AppHandle,
+    id: i64,
+    bump_usage: Option<bool>,
+) -> Result<bool, String> {
     let full = {
         let conn = state.conn.lock();
         db::get_full(&conn, id).map_err(|e| e.to_string())?
@@ -3046,8 +3051,9 @@ fn paste_item(state: tauri::State<'_, AppState>, app: AppHandle, id: i64) -> Res
         write_clipboard_native(&full)?;
     }
 
-    // Bump usage and trigger paste.
-    {
+    // Bump usage and trigger paste — tray quick-copies opt out of the count
+    // (direction 186): they'd otherwise inflate the search-ranking signal.
+    if bump_usage.unwrap_or(true) {
         let conn = state.conn.lock();
         let _ = db::touch_item(&conn, id);
     }
