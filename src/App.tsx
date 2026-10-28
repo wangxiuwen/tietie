@@ -971,13 +971,16 @@ function Header({
           ref={searchRef}
           placeholder={t("search.placeholder")}
           aria-label={t("search.placeholder")}
-          onFocus={() => {
+          onFocus={(e) => {
             // refocus within the blur grace period must cancel the close
             if (histClose.current != null) {
               window.clearTimeout(histClose.current);
               histClose.current = null;
             }
             setHistOpen(true);
+            // select the current query on (re)focus (direction 217): the
+            // next keystroke replaces it wholesale — quick re-search
+            e.target.select();
           }}
           onBlur={() => {
             // grace period so a click on a dropdown item still lands
