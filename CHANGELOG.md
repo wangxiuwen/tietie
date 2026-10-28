@@ -5,6 +5,8 @@
 
 ## 2026-10-29
 
+- **222** [`f4b7da6`](https://github.com/wangxiuwen/tietie/commit/f4b7da6) 导入按钮 backup.importTip 双语 title（文档目录挑最新/仅补入，语义先对 restore_backup 源码核实），实测+218 回归无回退
+
 - **221** [`e9dd4c5`](https://github.com/wangxiuwen/tietie/commit/e9dd4c5) Library 时间格 hover 显 ×（visibility 模式对齐 lib-row-copy，绝对定位防列宽抖动），基线/悬停/点删三段实测
 
 - **220** [`e74d50b`](https://github.com/wangxiuwen/tietie/commit/e74d50b) 托盘搜索框 onFocus 延迟 select 全选（217/219 同族收口），可信点击路径一次过；扩池 222-224
