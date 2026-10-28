@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **208** [`7a98016`](https://github.com/wangxiuwen/tietie/commit/7a98016) FilterTab 扩 pinned、TYPE_TABS 尾补置顶位、filtered 处理 pinned 过滤，7 位环实测置顶卡集=桥一致
+
 - **207** [`581f6cc`](https://github.com/wangxiuwen/tietie/commit/581f6cc) 托盘空搜索占位符补「⌘数字 快速复制」提示（search.tray 键双语），方向124 的快取能力首次可见于面板首屏
 
 - **206** [`d7376a1`](https://github.com/wangxiuwen/tietie/commit/d7376a1) 热键行 order prop 前缀圆形数字徽章（晾衣架下线后现存两行=1/2，aria-hidden），DOM 全行覆盖实测
