@@ -262,7 +262,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-29 | 221 | TBD | Library 时间格 hover 显 ×（visibility 模式对齐 lib-row-copy，绝对定位防列宽抖动），基线/悬停/点删三段实测
+2026-10-29 | 221 | e9dd4c5 | Library 时间格 hover 显 ×（visibility 模式对齐 lib-row-copy，绝对定位防列宽抖动），基线/悬停/点删三段实测
 2026-10-29 | 220 | e74d50b | 托盘搜索框 onFocus 延迟 select 全选（217/219 同族收口），可信点击路径一次过；扩池 222-224
 2026-10-29 | 219 | cdbb0cb | Library 搜索框 onFocus 全选（select 延迟一拍防受控 restore 回覆盖），可信点击聚焦实测全选+过滤旁证
 2026-10-29 | 218 | ef37ac5 | 备份导出三处按钮（主行+双横幅）加 backup.pathTip 双语 title，样例对齐 time_fmt，主行+横幅实测

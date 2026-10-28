@@ -5,6 +5,8 @@
 
 ## 2026-10-29
 
+- **221** [`e9dd4c5`](https://github.com/wangxiuwen/tietie/commit/e9dd4c5) Library 时间格 hover 显 ×（visibility 模式对齐 lib-row-copy，绝对定位防列宽抖动），基线/悬停/点删三段实测
+
 - **220** [`e74d50b`](https://github.com/wangxiuwen/tietie/commit/e74d50b) 托盘搜索框 onFocus 延迟 select 全选（217/219 同族收口），可信点击路径一次过；扩池 222-224
 
 - **219** [`cdbb0cb`](https://github.com/wangxiuwen/tietie/commit/cdbb0cb) Library 搜索框 onFocus 全选（select 延迟一拍防受控 restore 回覆盖），可信点击聚焦实测全选+过滤旁证
