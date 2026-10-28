@@ -3,6 +3,10 @@
 > 由 docs/ITERATION_BACKLOG.md 的迭代记录生成——`py -3 scripts/gen_changelog.py`，请勿手改。
 
 
+## 2026-10-28
+
+- **191** [`507af12`](https://github.com/wangxiuwen/tietie/commit/507af12) export_selected_csv 补 folder 列（folder 名一次预查 HashMap，无夹空单元格），A 行=夹名/B 行空双行实测后全还原
+
 ## 2026-10-27
 
 - **190** [`c8d5333`](https://github.com/wangxiuwen/tietie/commit/c8d5333) 大图层滚轮缩放（±15%/格 夹 [0.25,4]，transform 浮层不重排，换图重置），可信滚轮实测 0.658/1.521/极限 4.0/0.25 双向夹紧
