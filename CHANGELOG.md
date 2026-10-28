@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **207** [`581f6cc`](https://github.com/wangxiuwen/tietie/commit/581f6cc) 托盘空搜索占位符补「⌘数字 快速复制」提示（search.tray 键双语），方向124 的快取能力首次可见于面板首屏
+
 - **206** [`d7376a1`](https://github.com/wangxiuwen/tietie/commit/d7376a1) 热键行 order prop 前缀圆形数字徽章（晾衣架下线后现存两行=1/2，aria-hidden），DOM 全行覆盖实测
 
 - **205** [`87596c8`](https://github.com/wangxiuwen/tietie/commit/87596c8) 原图 Promise 缓存（id→一次性取数，失败出列可重试）+ 图片卡 onMouseEnter 预取 + ZoomOverlay 消费缓存，hover→点击实测 0ms blob 就绪
