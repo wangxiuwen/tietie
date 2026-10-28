@@ -2636,6 +2636,33 @@ select:focus-visible,
 .lib-row-copy:hover {
   background: var(--accent-dim);
 }
+/* hover quick-delete × on Library rows (direction 221, aligned with 212) —
+   absolute in the time cell so revealing it never shifts the column */
+.w-time {
+  position: relative;
+}
+.lib-row-del {
+  visibility: hidden;
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 0 4px;
+  font-size: calc(13px * var(--fs));
+  line-height: 1.4;
+  color: var(--text-3);
+}
+.lib-table tr:hover .lib-row-del {
+  visibility: visible;
+}
+.lib-row-del:hover {
+  background: rgba(255, 45, 85, 0.15);
+  color: var(--cat-image);
+}
 
 /* memo detail reminder row (direction 65) */
 .line-remind-row {

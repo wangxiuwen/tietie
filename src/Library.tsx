@@ -517,7 +517,26 @@ export default function Library() {
                   {it.folder_id == null ? "—" : (folders.find((f) => f.id === it.folder_id)?.name ?? "?")}
                 </td>
                 <td className="w-size">{fmtBytes(it.byte_size)}</td>
-                <td className="w-time">{relTime(it.used_at)}</td>
+                <td className="w-time">
+                  {relTime(it.used_at)}
+                  {/* hover quick-delete × (direction 221, aligned with the
+                      tray rows of 212): same delete path as middle-click,
+                      stopPropagation keeps the row selection untouched */}
+                  <button
+                    className="lib-row-del"
+                    title={t("tray.mDel")}
+                    aria-label={t("tray.mDel")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      invoke<number>("delete_items", { ids: [it.id] }).then((n) => {
+                        setMsg(`${t("lib.deleted")} ${n}`);
+                        refresh();
+                      }).catch(() => {});
+                    }}
+                  >
+                    ×
+                  </button>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
