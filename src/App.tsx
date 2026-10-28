@@ -1518,6 +1518,13 @@ function CardBody({
                 e.stopPropagation();
                 onSearchTerm(domain);
               }}
+              // right-click opens the card's URL in the system browser
+              // (direction 200) — the badge already knows the row is a link
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                invoke("open_url", { url: item.content }).catch(() => {});
+              }}
             >
               {domain}
             </button>
