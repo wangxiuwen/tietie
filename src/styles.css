@@ -2837,3 +2837,15 @@ button.sync-ev {
   font-weight: 600;
   pointer-events: none;
 }
+
+/* tray dark-mode gap fixes (direction 189): these elements' light rules live
+   further down the file, so the overrides must come after them to win the
+   cascade at equal specificity */
+@media (prefers-color-scheme: dark) {
+  .po-note-edit input {
+    background: rgba(255, 255, 255, 0.07);
+  }
+  .po-top {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  }
+}
