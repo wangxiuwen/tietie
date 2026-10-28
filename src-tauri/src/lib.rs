@@ -2819,13 +2819,28 @@ fn export_selected_csv(
             s.to_string()
         }
     }
-    let mut out = String::from("\u{FEFF}kind,content,source,size,used_at\n");
+    let mut out = String::from("\u{FEFF}kind,content,source,size,used_at,folder\n");
     let mut n = 0usize;
     {
         let conn = state.conn.lock();
+        // folder names for the new column (direction 191): id→name resolved
+        // once up front, misses render as the empty cell
+        let folder_names: std::collections::HashMap<i64, String> = {
+            let mut m = std::collections::HashMap::new();
+            if let Ok(mut stmt) = conn.prepare("SELECT id, name FROM folder") {
+                if let Ok(rows) =
+                    stmt.query_map([], |r| Ok((r.get::<_, i64>(0)?, r.get::<_, String>(1)?)))
+                {
+                    for row in rows.flatten() {
+                        m.insert(row.0, row.1);
+                    }
+                }
+            }
+            m
+        };
         for id in &ids {
             let Ok(row) = conn.query_row(
-                "SELECT kind, content, COALESCE(source_app, ''), byte_size, used_at
+                "SELECT kind, content, COALESCE(source_app, ''), byte_size, used_at, folder_id
                  FROM clip_item WHERE id = ?1",
                 rusqlite::params![id],
                 |r| {
@@ -2835,24 +2850,29 @@ fn export_selected_csv(
                         r.get::<_, String>(2)?,
                         r.get::<_, i64>(3)?,
                         r.get::<_, i64>(4)?,
+                        r.get::<_, Option<i64>>(5)?,
                     ))
                 },
             ) else {
                 continue;
             };
-            let (kind, content, src, size, used) = row;
+            let (kind, content, src, size, used, folder_id) = row;
+            let folder = folder_id
+                .and_then(|fid| folder_names.get(&fid).cloned())
+                .unwrap_or_default();
             let content = if kind == "image" {
                 format!("[图片 {content}]")
             } else {
                 content
             };
             out.push_str(&format!(
-                "{},{},{},{},{}\n",
+                "{},{},{},{},{},{}\n",
                 csv_cell(&kind),
                 csv_cell(&content),
                 csv_cell(&src),
                 size,
-                used
+                used,
+                csv_cell(&folder)
             ));
             n += 1;
         }
