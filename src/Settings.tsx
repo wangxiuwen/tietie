@@ -115,6 +115,21 @@ export default function Settings() {
   const [langPref, setLangPref] = useState<LangPref>(() => getPref());
   const [fs, setFs] = useState<FontScale>(() => getFontScale());
   useEffect(() => onFontScaleChange(() => setFs(getFontScale())), []);
+  // deep link: #sec-lan / #sec-hotkeys / #sec-general scrolls that section
+  // into view on open (direction 188) — the window keeps its URL for life,
+  // so also re-check when the settings-open event re-shows it
+  useEffect(() => {
+    const scroll = () => {
+      const h = window.location.hash.replace("#", "");
+      if (!h) return;
+      document.getElementById(h)?.scrollIntoView({ block: "start" });
+    };
+    scroll();
+    const un = listen("settings-open", scroll);
+    return () => {
+      un.then((u) => u()).catch(() => {});
+    };
+  }, []);
   const [accent, setAccentState] = useState<Accent>(() => getAccent());
   useEffect(() => onAccentChange(() => setAccentState(getAccent())), []);
   const [retention, setRetention] = useState(0);
@@ -404,7 +419,7 @@ export default function Settings() {
             <pre className="settings-notes">{upd.notes}</pre>
           )}
 
-          <div className="settings-subhead">{t("settings.lan")}</div>
+          <div id="sec-lan" className="settings-subhead">{t("settings.lan")}</div>
           <div className="settings-row">
             <span className="settings-label">{t("settings.lanDevices")}</span>
             <span className="settings-value lan-peers">
@@ -613,7 +628,7 @@ export default function Settings() {
             </span>
           </div>
 
-          <div className="settings-subhead">{t("settings.hotkeys")}</div>
+          <div id="sec-hotkeys" className="settings-subhead">{t("settings.hotkeys")}</div>
           <HotkeyRow
             kind="drawer"
             label={t("settings.hk.drawer")}
@@ -663,7 +678,7 @@ export default function Settings() {
             </span>
           </div>
 
-          <div className="settings-subhead">{t("settings.general")}</div>
+          <div id="sec-general" className="settings-subhead">{t("settings.general")}</div>
           <div className="settings-row">
             <span className="settings-label">{t("settings.language")}</span>
             <span className="settings-value">
