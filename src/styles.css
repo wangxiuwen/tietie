@@ -2890,3 +2890,25 @@ button.sync-ev {
   font-size: calc(10px * var(--fs));
   font-weight: 700;
 }
+
+/* hover-revealed quick-delete at the row tail (direction 212); stays hidden
+   until the row is hovered so the × never steals the ⌘N badge's space */
+.po-row .po-del {
+  display: none;
+  cursor: pointer;
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  line-height: 15px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: calc(12px * var(--fs));
+  color: var(--text-3);
+}
+.po-row:hover .po-del {
+  display: inline-block;
+}
+.po-row .po-del:hover {
+  background: rgba(255, 45, 85, 0.15);
+  color: var(--cat-image);
+}

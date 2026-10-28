@@ -229,6 +229,9 @@ export default function TrayPopover() {
                     onMiddle={() => {
                       invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
                     }}
+                    onRemove={() => {
+                      invoke("delete_item", { id: it.id }).then(refresh).catch(() => {});
+                    }}
                   />
                 ))}
               </div>
@@ -259,6 +262,9 @@ export default function TrayPopover() {
                       badgeBase={pageBase}
                     onMiddle={() => {
                       invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
+                    }}
+                    onRemove={() => {
+                      invoke("delete_item", { id: it.id }).then(refresh).catch(() => {});
                     }}
                     />
                   ))}
@@ -294,6 +300,9 @@ export default function TrayPopover() {
                       badgeBase={pageBase}
                     onMiddle={() => {
                       invoke("toggle_pin", { id: it.id }).then(refresh).catch(() => {});
+                    }}
+                    onRemove={() => {
+                      invoke("delete_item", { id: it.id }).then(refresh).catch(() => {});
                     }}
                     />
                   ))}
@@ -374,6 +383,7 @@ function Row({
   onContext,
   onMiddle,
   badgeBase = 0,
+  onRemove,
 }: {
   item: ClipItem;
   active: boolean;
@@ -385,6 +395,8 @@ function Row({
   onMiddle?: () => void;
   /** first row index carrying the ⌘N badges (direction 181) */
   badgeBase?: number;
+  /** hover-revealed quick-delete (direction 212) */
+  onRemove?: () => void;
 }) {
   return (
     <button
@@ -432,6 +444,21 @@ function Row({
           auto-loaded page so the keys stay useful after paging (181) */}
       {idx != null && idx - badgeBase >= 0 && idx - badgeBase < 10 && (
         <span className="kbd">{MOD}{idx - badgeBase === 9 ? 0 : idx - badgeBase + 1}</span>
+      )}
+      {onRemove && (
+        <span
+          className="po-del"
+          role="button"
+          aria-label={t("tray.mDel")}
+          title={t("tray.mDel")}
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          ×
+        </span>
       )}
     </button>
   );
