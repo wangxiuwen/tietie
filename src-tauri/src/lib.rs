@@ -819,6 +819,7 @@ pub fn run() {
             recheck_hotkeys,
             hotkey_defaults,
             set_tray_badge,
+            show_tray_panel,
             set_hotkey,
             begin_hotkey_capture,
             cancel_hotkey_capture,
@@ -837,6 +838,20 @@ pub fn run() {
             // DPI/scale hop (monitor move or zoom change): re-run the
             // cursor-following placement so the drawer / clothesline fit
             // the new monitor geometry instead of straddling or clipping.
+            // tray panel user resize persists (direction 194): store the
+            // LOGICAL size so the value survives scale-factor changes
+            if let tauri::WindowEvent::Resized(physical) = event {
+                if window.label() == "tray-popover" && physical.width > 0 && physical.height > 0 {
+                    let scale = window.scale_factor().unwrap_or(1.0);
+                    let lw = (physical.width as f64 / scale).round() as u32;
+                    let lh = (physical.height as f64 / scale).round() as u32;
+                    if (240..=900).contains(&lw) && (240..=1200).contains(&lh) {
+                        let app = window.app_handle().clone();
+                        let _ = save_setting(&app, "tray_popover_w", &lw.to_string());
+                        let _ = save_setting(&app, "tray_popover_h", &lh.to_string());
+                    }
+                }
+            }
             if let tauri::WindowEvent::ScaleFactorChanged { scale_factor, .. } = event {
                 let label = window.label();
                 if label == "drawer" || label == "clothesline" {
@@ -1405,11 +1420,26 @@ fn clothesline_visible(app: AppHandle) -> bool {
         .unwrap_or(false)
 }
 
+/// Persisted user tray-panel size as PHYSICAL px (direction 194); clamps
+/// guard against corrupted settings shrinking the panel to a slit.
+fn persisted_tray_size<R: Runtime>(app: &AppHandle<R>, scale: f64) -> (u32, u32) {
+    let sw = load_setting(app, "tray_popover_w", "")
+        .parse::<u32>()
+        .ok()
+        .filter(|w| (240..=900).contains(w))
+        .unwrap_or(TRAY_POPOVER_W);
+    let sh = load_setting(app, "tray_popover_h", "")
+        .parse::<u32>()
+        .ok()
+        .filter(|h| (240..=1200).contains(h))
+        .unwrap_or(TRAY_POPOVER_H);
+    ((sw as f64 * scale) as u32, (sh as f64 * scale) as u32)
+}
+
 fn position_tray_popover<R: Runtime>(app: &AppHandle<R>, click: PhysicalPosition<f64>) {
     if let Some(win) = app.get_webview_window("tray-popover") {
         let scale = win.scale_factor().unwrap_or(1.0);
-        let w = (TRAY_POPOVER_W as f64 * scale) as u32;
-        let h = (TRAY_POPOVER_H as f64 * scale) as u32;
+        let (w, h) = persisted_tray_size(app, scale);
 
         // Anchor at the click, then clamp into the monitor. On Windows/KDE the
         // tray sits in a bottom taskbar — pop upward, and keep the popover's
@@ -1482,6 +1512,13 @@ fn toggle_drawer<R: Runtime>(app: &AppHandle<R>) {
     }
 }
 
+/// IPC face of the tray-menu「查看最近剪切板」path (direction 194): same
+/// toggle the menu runs, so the remembered size applies identically.
+#[tauri::command]
+fn show_tray_panel(app: AppHandle) {
+    toggle_tray_popover(&app);
+}
+
 fn toggle_tray_popover<R: Runtime>(app: &AppHandle<R>) {
     if let Some(win) = app.get_webview_window("tray-popover") {
         match win.is_visible() {
@@ -1499,6 +1536,10 @@ fn toggle_tray_popover<R: Runtime>(app: &AppHandle<R>) {
                 }
                 #[cfg(not(target_os = "macos"))]
                 paste_native::snapshot_frontmost();
+                // apply the remembered user size before showing (direction
+                // 194) — the icon-click path does this in position_tray_*
+                let (w, h) = persisted_tray_size(app, win.scale_factor().unwrap_or(1.0));
+                let _ = win.set_size(PhysicalSize::new(w, h));
                 let _ = win.show();
                 let _ = win.set_focus();
                 let _ = app.emit("show-tray", ());

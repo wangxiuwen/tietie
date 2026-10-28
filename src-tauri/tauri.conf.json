@@ -33,7 +33,7 @@
         "url": "index.html?view=tray",
         "width": 320,
         "height": 460,
-        "resizable": false,
+        "resizable": true,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
