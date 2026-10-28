@@ -671,6 +671,7 @@ export default function Settings() {
             <span className="settings-value">
               <button
                 className="btn ghost"
+                title={t("settings.diagPath")}
                 onClick={async () => {
                   try {
                     const path = await invoke<string>("export_diagnostics");
