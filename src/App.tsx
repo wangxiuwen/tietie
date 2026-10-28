@@ -14,7 +14,7 @@ import { CodeView } from "./codeView";
 import { t, useLang } from "./i18n";
 import { onFontScaleChange } from "./fontScale";
 
-type FilterTab = "all" | ItemKind;
+type FilterTab = "all" | ItemKind | "pinned";
 
 // ─── drawer drag-to-hang: one shared tracker, listeners live in App ───
 // WebView2 only honors DOM pointer capture on activated windows, so tracking
@@ -73,6 +73,7 @@ const TYPE_TABS: { id: FilterTab; labelKey: string }[] = [
   { id: "image", labelKey: "kind.image", },
   { id: "code", labelKey: "kind.code", },
   { id: "color", labelKey: "kind.color", },
+  { id: "pinned", labelKey: "tab.pinned", },
 ];
 
 export default function App() {
@@ -312,7 +313,8 @@ export default function App() {
     let xs = items;
     if (folderId === "pinned") xs = xs.filter((x) => x.pinned);
     else if (typeof folderId === "number") xs = xs.filter((x) => x.folder_id === folderId);
-    if (tab !== "all") xs = xs.filter((x) => x.kind === tab);
+    if (tab === "pinned") xs = xs.filter((x) => x.pinned);
+    else if (tab !== "all") xs = xs.filter((x) => x.kind === tab);
     if (query.trim()) {
       // masked sensitive cards stay out of search entirely (direction 183):
       // matching them would leak content hints via highlight AND the count
