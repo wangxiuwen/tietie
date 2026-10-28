@@ -23,7 +23,7 @@ export const zh: Dict = {
   "tab.all": "全部", "tab.pinned": "置顶",
   // drawer
   "search.placeholder": "搜索剪切板历史 …", "search.clear": "清空搜索",
-  "search.tray": "搜索 …",
+  "search.tray": "搜索 …（⌘数字 快速复制）",
   "search.histTitle": "最近搜索",
   "search.library": "搜索（支持拼音首字母，如 nz 找「内存」）…",
   "empty.title": "剪切板还是空的",
@@ -183,7 +183,7 @@ export const en: Dict = {
   "kind.code": "Code", "kind.color": "Color",
   "tab.all": "All", "tab.pinned": "Pinned",
   "search.placeholder": "Search clipboard history …", "search.clear": "Clear search",
-  "search.tray": "Search …",
+  "search.tray": "Search … (⌘number quick-copies)",
   "search.histTitle": "Recent searches",
   "search.library": "Search (pinyin initials work, e.g. nz for 内存) …",
   "empty.title": "Clipboard is empty",
