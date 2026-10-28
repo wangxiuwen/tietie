@@ -227,6 +227,11 @@ export default function Library() {
             ? Math.min(c + 1, filtered.length - 1)
             : Math.max(c - 1, 0),
         );
+      } else if (e.key === "Home" || e.key === "End") {
+        // jump to the first/last row (direction 214) — the cursor effect
+        // scrolls the row into view and .kcursor highlights it
+        e.preventDefault();
+        setCursor(e.key === "Home" ? 0 : filtered.length - 1);
       } else if ((e.ctrlKey || e.metaKey) && (e.key === "a" || e.key === "A")) {
         // Ctrl+A selects the current filter results (direction 180) — same
         // toggle semantics as the header checkbox (all-on → clears)
