@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **209** [`2e67bd7`](https://github.com/wangxiuwen/tietie/commit/2e67bd7) 已具备收口：行 hover 高亮自方向7 即在；可信 mouseMoved 移入 rgba(0,122,255,.18) 显色、移出回透明实测；本轮池<3 先扩池 211-215
+
 - **208** [`7a98016`](https://github.com/wangxiuwen/tietie/commit/7a98016) FilterTab 扩 pinned、TYPE_TABS 尾补置顶位、filtered 处理 pinned 过滤，7 位环实测置顶卡集=桥一致
 
 - **207** [`581f6cc`](https://github.com/wangxiuwen/tietie/commit/581f6cc) 托盘空搜索占位符补「⌘数字 快速复制」提示（search.tray 键双语），方向124 的快取能力首次可见于面板首屏
