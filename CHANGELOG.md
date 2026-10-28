@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **205** [`87596c8`](https://github.com/wangxiuwen/tietie/commit/87596c8) 原图 Promise 缓存（id→一次性取数，失败出列可重试）+ 图片卡 onMouseEnter 预取 + ZoomOverlay 消费缓存，hover→点击实测 0ms blob 就绪
+
 - **204** [`469cea3`](https://github.com/wangxiuwen/tietie/commit/469cea3) Library 搜索框 × 清空钮（负 margin 内嵌右缘）+Esc 键盘孪生，162→37→162 三态实测
 
 - **203** [`285174b`](https://github.com/wangxiuwen/tietie/commit/285174b) 配对列表渲染前按 last_sync_at 降序（0 兜底保持配对序在后），DOM 序==桥期望序+谓词三元组实测
