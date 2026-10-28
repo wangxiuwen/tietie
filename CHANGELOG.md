@@ -5,6 +5,8 @@
 
 ## 2026-10-29
 
+- **220** [`e74d50b`](https://github.com/wangxiuwen/tietie/commit/e74d50b) 托盘搜索框 onFocus 延迟 select 全选（217/219 同族收口），可信点击路径一次过；扩池 222-224
+
 - **219** [`cdbb0cb`](https://github.com/wangxiuwen/tietie/commit/cdbb0cb) Library 搜索框 onFocus 全选（select 延迟一拍防受控 restore 回覆盖），可信点击聚焦实测全选+过滤旁证
 
 - **218** [`ef37ac5`](https://github.com/wangxiuwen/tietie/commit/ef37ac5) 备份导出三处按钮（主行+双横幅）加 backup.pathTip 双语 title，样例对齐 time_fmt，主行+横幅实测
