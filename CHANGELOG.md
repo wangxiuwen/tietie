@@ -5,6 +5,8 @@
 
 ## 2026-10-29
 
+- **214** [`c8a5e81`](https://github.com/wangxiuwen/tietie/commit/c8a5e81) Library 键盘 Home/End 跳首末行（入既有键盘链，cursor 副作用自动滚入视口），166 行实表三段断言一次过
+
 - **213** [`2e87555`](https://github.com/wangxiuwen/tietie/commit/2e87555) 导出诊断包按钮加 title 双语悬停提示产物路径格式（文档目录/diagnostics-日期-时间.txt，样例对齐 time_fmt），实测 zh→en 联动→还原
 
 ## 2026-10-28

@@ -256,7 +256,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-29 | 214 | TBD | Library 键盘 Home/End 跳首末行（入既有键盘链，cursor 副作用自动滚入视口），166 行实表三段断言一次过
+2026-10-29 | 214 | c8a5e81 | Library 键盘 Home/End 跳首末行（入既有键盘链，cursor 副作用自动滚入视口），166 行实表三段断言一次过
 2026-10-29 | 213 | 2e87555 | 导出诊断包按钮加 title 双语悬停提示产物路径格式（文档目录/diagnostics-日期-时间.txt，样例对齐 time_fmt），实测 zh→en 联动→还原
 2026-10-28 | 212 | 2d7c98b | 行尾 hover 显现 ×（display:none→hover block，stopPropagation 防行点击），可信点删实测隐藏/显现/删行删库三段
 2026-10-28 | 211 | b2fc6a1 | dblAct 前置色卡分支：双击=复制 hex 无视 paste/copy/edit 偏好（色卡的本体就是色值），OS 剪贴板 #34c759 实测
