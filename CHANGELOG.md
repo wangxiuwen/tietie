@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **188** [`d9da090`](https://github.com/wangxiuwen/tietie/commit/d9da090) 设置页三分区加 id（sec-lan/hotkeys/general），hash 滚动定位且 settings-open 重触发（窗口 URL 终生不变），hotkeys=0px/general=78px（末区滚尽）实测
+
 - **187** [`7004afe`](https://github.com/wangxiuwen/tietie/commit/7004afe) 图片卡缩略图右下角 WxH 徽章（content 列即尺寸串，半透明黑底白字 pointer-events:none），32/32 全覆盖且与库一致、非图片卡零徽章实测
 
 - **186** [`7b06d02`](https://github.com/wangxiuwen/tietie/commit/7b06d02) paste_item 加可选 bumpUsage（托盘 copyBack 传 false 不计 use_count，抽屉默认照计），19→19→20 双路径实测

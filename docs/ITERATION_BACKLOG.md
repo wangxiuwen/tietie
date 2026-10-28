@@ -228,7 +228,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-27 | 188 | TBD | 设置页三分区加 id（sec-lan/hotkeys/general），hash 滚动定位且 settings-open 重触发（窗口 URL 终生不变），hotkeys=0px/general=78px（末区滚尽）实测
+2026-10-27 | 188 | d9da090 | 设置页三分区加 id（sec-lan/hotkeys/general），hash 滚动定位且 settings-open 重触发（窗口 URL 终生不变），hotkeys=0px/general=78px（末区滚尽）实测
 2026-10-27 | 187 | 7004afe | 图片卡缩略图右下角 WxH 徽章（content 列即尺寸串，半透明黑底白字 pointer-events:none），32/32 全覆盖且与库一致、非图片卡零徽章实测
 2026-10-27 | 186 | 7b06d02 | paste_item 加可选 bumpUsage（托盘 copyBack 传 false 不计 use_count，抽屉默认照计），19→19→20 双路径实测
 2026-10-27 | 185 | bcbef8a | 语言切换跨窗即时（storage 事件广播 LS_KEY 变更，各窗 useLang 重解析 current），设置窗+托盘窗实测 zh↔en 双窗同步翻越后 auto 还原
