@@ -768,7 +768,7 @@ export default function Settings() {
               <button className="btn ghost" title={t("backup.pathTip")} onClick={doExportBackup}>
                 {t("settings.export")}
               </button>
-              <button className="btn ghost" onClick={doImportBackup}>
+              <button className="btn ghost" title={t("backup.importTip")} onClick={doImportBackup}>
                 {t("settings.import")}
               </button>
             </span>
