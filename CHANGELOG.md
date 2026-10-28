@@ -5,6 +5,8 @@
 
 ## 2026-10-29
 
+- **217** [`6d47f77`](https://github.com/wangxiuwen/tietie/commit/6d47f77) 搜索框 onFocus 加 e.target.select()（历史召回逻辑原样），聚焦全选+一键整体替换实测；扩池 219-221
+
 - **216** [`dbb71b5`](https://github.com/wangxiuwen/tietie/commit/dbb71b5) 托盘 Esc 全局隐藏（window 级监听 + 搜索框分支改守卫 defaultPrevented），菜单层只剥一层三段实测
 
 - **215** [`49ecb6d`](https://github.com/wangxiuwen/tietie/commit/49ecb6d) 链接卡 https 显 🔒（isHttps 判 protocol，域名徽章左侧绿色 --cat-link），http 卡无锁，双探针实测
