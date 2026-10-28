@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **206** [`d7376a1`](https://github.com/wangxiuwen/tietie/commit/d7376a1) 热键行 order prop 前缀圆形数字徽章（晾衣架下线后现存两行=1/2，aria-hidden），DOM 全行覆盖实测
+
 - **205** [`87596c8`](https://github.com/wangxiuwen/tietie/commit/87596c8) 原图 Promise 缓存（id→一次性取数，失败出列可重试）+ 图片卡 onMouseEnter 预取 + ZoomOverlay 消费缓存，hover→点击实测 0ms blob 就绪
 
 - **204** [`469cea3`](https://github.com/wangxiuwen/tietie/commit/469cea3) Library 搜索框 × 清空钮（负 margin 内嵌右缘）+Esc 键盘孪生，162→37→162 三态实测
