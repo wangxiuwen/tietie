@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **201** [`94f6f74`](https://github.com/wangxiuwen/tietie/commit/94f6f74) po-* 字号 --fs 审计揪出真缺口：.po-foot-open 的 font:inherit 钉死 16px（补 calc(11px*var(--fs))），10 元素 1→1.15 比例实测+条件渲染项 CSS 审计覆盖
+
 - **200** [`727210c`](https://github.com/wangxiuwen/tietie/commit/727210c) 域名徽章 onContextMenu→open_url(item.content)（吞事件防卡片菜单/防左键筛选），右键分发实测零副作用+命令冒烟通过
 
 - **199** [`81ca7ae`](https://github.com/wangxiuwen/tietie/commit/81ca7ae) Library 双击进详情（图片行=原图 blob 浮层/rich 行=HTML iframe/文本行保持 120 复制），Esc 归 richView 优先且补 dep，图片开/关+文本回归实测
