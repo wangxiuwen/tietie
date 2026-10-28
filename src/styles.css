@@ -2857,3 +2857,21 @@ button.sync-ev {
 .zoom-img {
   transition: transform 0.08s ease-out;
 }
+
+/* × clear button at the tail of the Library search box (direction 204) */
+.lib-clear {
+  all: unset;
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+  line-height: 17px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: calc(13px * var(--fs));
+  color: var(--text-3);
+  margin-left: -28px; /* overlap the search box's right padding */
+}
+.lib-clear:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--text);
+}

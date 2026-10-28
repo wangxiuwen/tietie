@@ -275,7 +275,25 @@ export default function Library() {
           placeholder={t("search.library")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            // Esc clears an active query (direction 204 companion) — the ×
+            // button needs pointer travel, Esc is the keyboard twin
+            if (e.key === "Escape" && query) {
+              e.preventDefault();
+              setQuery("");
+            }
+          }}
         />
+        {query && (
+          <button
+            className="lib-clear"
+            aria-label={t("search.clear")}
+            title={t("search.clear")}
+            onClick={() => setQuery("")}
+          >
+            ×
+          </button>
+        )}
         <button
           className={"btn ghost" + (view === "palette" ? " active" : "")}
           onClick={() => setView(view === "palette" ? "table" : "palette")}
