@@ -5,6 +5,8 @@
 
 ## 2026-10-29
 
+- **218** [`ef37ac5`](https://github.com/wangxiuwen/tietie/commit/ef37ac5) 备份导出三处按钮（主行+双横幅）加 backup.pathTip 双语 title，样例对齐 time_fmt，主行+横幅实测
+
 - **217** [`6d47f77`](https://github.com/wangxiuwen/tietie/commit/6d47f77) 搜索框 onFocus 加 e.target.select()（历史召回逻辑原样），聚焦全选+一键整体替换实测；扩池 219-221
 
 - **216** [`dbb71b5`](https://github.com/wangxiuwen/tietie/commit/dbb71b5) 托盘 Esc 全局隐藏（window 级监听 + 搜索框分支改守卫 defaultPrevented），菜单层只剥一层三段实测
