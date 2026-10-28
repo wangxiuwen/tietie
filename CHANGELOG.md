@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **203** [`285174b`](https://github.com/wangxiuwen/tietie/commit/285174b) 配对列表渲染前按 last_sync_at 降序（0 兜底保持配对序在后），DOM 序==桥期望序+谓词三元组实测
+
 - **202** [`1c8b36d`](https://github.com/wangxiuwen/tietie/commit/1c8b36d) 批量删除 >5 条两段式确认（首点红「确认删除？」/3s 超时/选择集变化重置，复用 .btn.arm），armed 不删→确认删 6 探针实测（1 条漏选为脚本点击问题当场清理）
 
 - **201** [`94f6f74`](https://github.com/wangxiuwen/tietie/commit/94f6f74) po-* 字号 --fs 审计揪出真缺口：.po-foot-open 的 font:inherit 钉死 16px（补 calc(11px*var(--fs))），10 元素 1→1.15 比例实测+条件渲染项 CSS 审计覆盖
