@@ -259,7 +259,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-29 | 219 | TBD | Library 搜索框 onFocus 全选（select 延迟一拍防受控 restore 回覆盖），可信点击聚焦实测全选+过滤旁证
+2026-10-29 | 219 | cdbb0cb | Library 搜索框 onFocus 全选（select 延迟一拍防受控 restore 回覆盖），可信点击聚焦实测全选+过滤旁证
 2026-10-29 | 218 | ef37ac5 | 备份导出三处按钮（主行+双横幅）加 backup.pathTip 双语 title，样例对齐 time_fmt，主行+横幅实测
 2026-10-29 | 217 | 6d47f77 | 搜索框 onFocus 加 e.target.select()（历史召回逻辑原样），聚焦全选+一键整体替换实测；扩池 219-221
 2026-10-29 | 216 | dbb71b5 | 托盘 Esc 全局隐藏（window 级监听 + 搜索框分支改守卫 defaultPrevented），菜单层只剥一层三段实测

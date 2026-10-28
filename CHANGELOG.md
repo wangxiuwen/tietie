@@ -5,6 +5,8 @@
 
 ## 2026-10-29
 
+- **219** [`cdbb0cb`](https://github.com/wangxiuwen/tietie/commit/cdbb0cb) Library 搜索框 onFocus 全选（select 延迟一拍防受控 restore 回覆盖），可信点击聚焦实测全选+过滤旁证
+
 - **218** [`ef37ac5`](https://github.com/wangxiuwen/tietie/commit/ef37ac5) 备份导出三处按钮（主行+双横幅）加 backup.pathTip 双语 title，样例对齐 time_fmt，主行+横幅实测
 
 - **217** [`6d47f77`](https://github.com/wangxiuwen/tietie/commit/6d47f77) 搜索框 onFocus 加 e.target.select()（历史召回逻辑原样），聚焦全选+一键整体替换实测；扩池 219-221
