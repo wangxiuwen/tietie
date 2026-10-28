@@ -44,6 +44,19 @@ export default function TrayPopover() {
     setItems(is);
   }, []);
 
+  // Esc anywhere in the panel hides it (direction 216). Layers that own Esc
+  // (row context menu, inline note editor) consume it with preventDefault —
+  // and once a layer closes, React re-renders and rebinds listeners
+  // mid-dispatch, so a state guard would already see the layer gone. Guard
+  // on the event itself.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !e.defaultPrevented) getCurrentWindow().hide();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   useEffect(() => {
     refresh();
     const unlistens: UnlistenFn[] = [];
@@ -149,7 +162,9 @@ export default function TrayPopover() {
               const it = shown[sel] ?? shown[0];
               if (it) copyBack(it);
             } else if (e.key === "Escape") {
-              getCurrentWindow().hide();
+              // a layer that consumed Esc (menu/note editor, direction 216)
+              // has already preventDefault'ed — don't hide the panel under it
+              if (!e.defaultPrevented) getCurrentWindow().hide();
             }
           }}
         />
