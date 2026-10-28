@@ -3,6 +3,10 @@
 > 由 docs/ITERATION_BACKLOG.md 的迭代记录生成——`py -3 scripts/gen_changelog.py`，请勿手改。
 
 
+## 2026-10-29
+
+- **213** [`2e87555`](https://github.com/wangxiuwen/tietie/commit/2e87555) 导出诊断包按钮加 title 双语悬停提示产物路径格式（文档目录/diagnostics-日期-时间.txt，样例对齐 time_fmt），实测 zh→en 联动→还原
+
 ## 2026-10-28
 
 - **212** [`2d7c98b`](https://github.com/wangxiuwen/tietie/commit/2d7c98b) 行尾 hover 显现 ×（display:none→hover block，stopPropagation 防行点击），可信点删实测隐藏/显现/删行删库三段
