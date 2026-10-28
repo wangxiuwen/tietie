@@ -375,6 +375,13 @@ export default function App() {
   // configurable double-click behavior (direction 68): paste / copy / edit
   const dblAct = useCallback(
     (it: ClipItem) => {
+      // color cards always copy their hex on dblclick (direction 211): the
+      // value IS the card's purpose, and paste-back of a hex string is
+      // rarely what the user wants from a swatch
+      if (it.kind === "color") {
+        navigator.clipboard.writeText(it.content).catch(() => {});
+        return;
+      }
       if (dblAction === "copy") {
         navigator.clipboard.writeText(it.content).catch(() => {});
       } else if (dblAction === "edit") {
