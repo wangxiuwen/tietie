@@ -517,7 +517,11 @@ export default function Settings() {
               {paired.length === 0 ? (
                 <span className="settings-tag muted">{t("settings.pairedNone")}</span>
               ) : (
-                paired.map((p) => (
+                // most-recently-synced first (direction 203): never-synced
+                // peers (0) keep their pairing-time order behind synced ones
+                [...paired]
+                .sort((a, b) => (b.last_sync_at || 0) - (a.last_sync_at || 0))
+                .map((p) => (
                   <span key={p.instance} className="lan-peer" title={p.addr}>
                     <input
                       className="pair-name"
