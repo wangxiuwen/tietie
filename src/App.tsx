@@ -1458,6 +1458,11 @@ function CardBody({
     return (
       <div
         className="img"
+        // hover kicks off the original-bytes fetch (direction 205) so the
+        // zoom overlay opens with bytes ready — see prefetchOrigImage
+        onMouseEnter={() => {
+          void prefetchOrigImage(item.id);
+        }}
         // fade the decoded thumbnail in (direction 144): large base64
         // backgrounds pop in with a flash once decoded; the opacity
         // transition turns that pop into a gentle reveal
@@ -1640,6 +1645,25 @@ function Footer({
   );
 }
 
+// Original-image promise cache (direction 205): one fetch per item id, shared
+// between the hover prefetch and the zoom overlay, so the first click on an
+// image card opens with bytes already in flight or ready. Rejections drop
+// out of the map so a later hover can retry after a transient error.
+const origImgCache = new Map<number, Promise<Blob | null>>();
+function prefetchOrigImage(id: number): Promise<Blob | null> {
+  let p = origImgCache.get(id);
+  if (!p) {
+    p = invoke<number[]>("get_item_image", { id })
+      .then((bytes) => new Blob([new Uint8Array(bytes)], { type: "image/png" }))
+      .catch(() => {
+        origImgCache.delete(id);
+        return null;
+      });
+    origImgCache.set(id, p);
+  }
+  return p;
+}
+
 /**
  * Full-size image preview overlay. Pulls the original PNG bytes via
  * get_item_image and renders them as a blob URL; falls back to the stored
@@ -1662,15 +1686,14 @@ function ZoomOverlay({ item, onClose }: { item?: ClipItem; onClose: () => void }
     let alive = true;
     (async () => {
       if (!item) return;
-      try {
-        const bytes = await invoke<number[]>("get_item_image", { id: item.id });
-        if (!alive) return;
-        const blob = new Blob([new Uint8Array(bytes)], { type: "image/png" });
+      // shared promise cache (direction 205): a hover may have already
+      // started (or finished) this fetch — null means trimmed/failed
+      const blob = await prefetchOrigImage(item.id);
+      if (!alive) return;
+      if (blob) {
         revoke = URL.createObjectURL(blob);
         setUrl(revoke);
-      } catch {
-        // blob trimmed — fall back to the base64 thumbnail
-        if (!alive || !item.preview) return;
+      } else if (item.preview) {
         revoke = `data:image/png;base64,${item.preview}`;
         setUrl(revoke);
         setFull(false);
