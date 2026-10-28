@@ -663,7 +663,12 @@ function DetailOverlay({ item, onClose }: { item: ClipItem; onClose: () => void 
           <div className="zoom-loading">…</div>
         )}
         <div className="zoom-meta">
-          <span>{oneLine(item.content).slice(0, 60)}</span>
+          <span>
+            {oneLine(item.content).slice(0, 60)}
+            {/* image byte size on the detail overlay (direction 223) — the
+                content column already carries WxH, size completes the pair */}
+            {item.kind === "image" && ` · ${fmtBytes(item.byte_size)}`}
+          </span>
           <span>Esc</span>
         </div>
       </div>
