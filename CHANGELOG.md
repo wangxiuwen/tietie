@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **187** [`7004afe`](https://github.com/wangxiuwen/tietie/commit/7004afe) 图片卡缩略图右下角 WxH 徽章（content 列即尺寸串，半透明黑底白字 pointer-events:none），32/32 全覆盖且与库一致、非图片卡零徽章实测
+
 - **186** [`7b06d02`](https://github.com/wangxiuwen/tietie/commit/7b06d02) paste_item 加可选 bumpUsage（托盘 copyBack 传 false 不计 use_count，抽屉默认照计），19→19→20 双路径实测
 
 - **185** [`bcbef8a`](https://github.com/wangxiuwen/tietie/commit/bcbef8a) 语言切换跨窗即时（storage 事件广播 LS_KEY 变更，各窗 useLang 重解析 current），设置窗+托盘窗实测 zh↔en 双窗同步翻越后 auto 还原
