@@ -2820,3 +2820,20 @@ button.sync-ev {
   outline-offset: 1px;
   border-radius: var(--r-xs);
 }
+
+/* W×H badge on the image-card thumbnail corner (direction 187) */
+.img {
+  position: relative;
+}
+.img-dim {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 6px;
+  border-radius: var(--r-xs);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: calc(10px * var(--fs));
+  font-weight: 600;
+  pointer-events: none;
+}

@@ -1436,7 +1436,11 @@ function CardBody({
           backgroundImage: `url(data:image/png;base64,${item.preview})`,
           animation: "img-fade-in 0.28s ease-out",
         }}
-      />
+      >
+        {/* dimensions chip on the corner (direction 187) — for image items
+            the content column IS the WxH string */}
+        <span className="img-dim">{item.content}</span>
+      </div>
     );
   }
   if (item.kind === "color") {
