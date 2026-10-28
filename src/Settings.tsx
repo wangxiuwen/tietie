@@ -621,7 +621,7 @@ export default function Settings() {
                   <button
                     key={i}
                     className={"sync-ev sync-ev" + e.dir + (logPeer === e.peer ? " on" : "")}
-                    title={t("settings.logFilter")}
+                    title={`${t("settings.logFilter")}\n${new Date(e.ts * 1000).toLocaleString()}`}
                     onClick={() => setLogPeer((p) => (p === e.peer ? null : e.peer))}
                   >
                     {new Date(e.ts * 1000).toLocaleTimeString()} {e.dir === "in" ? "⇦" : e.dir === "out" ? "⇨" : "⚠"}{" "}
