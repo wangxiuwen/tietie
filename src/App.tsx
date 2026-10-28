@@ -510,7 +510,16 @@ export default function App() {
       }
       if (e.key === "Enter") {
         const it = filtered[selectedIdx];
-        if (it) paste(it);
+        if (!it) return;
+        // masked sensitive card: Enter reveals first instead of pasting
+        // (direction 198) — a blind paste would leak 🔒 content to whatever
+        // app is focused; the second Enter (within the reveal window) pastes
+        if (it.sensitive && !revealed.has(it.id)) {
+          e.preventDefault();
+          revealItem(it.id);
+          return;
+        }
+        paste(it);
         return;
       }
       if (e.key === "Tab") {
@@ -598,7 +607,7 @@ export default function App() {
     // so preventDefault actually stops ⌘D / ⌘P / etc. from typing into search.
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, cheatsheet, richView, noteEdit, ctxMenu, paste, togglePin, deleteItem, startEdit]);
+  }, [filtered, selectedIdx, tab, editing, zoomId, multiSel.size, cheatsheet, richView, noteEdit, ctxMenu, paste, togglePin, deleteItem, startEdit, revealed, revealItem]);
 
   // scroll selected into view
   useEffect(() => {
