@@ -2849,3 +2849,8 @@ button.sync-ev {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   }
 }
+
+/* wheel-zoomed image floats over the stage without resizing it (direction 190) */
+.zoom-img {
+  transition: transform 0.08s ease-out;
+}

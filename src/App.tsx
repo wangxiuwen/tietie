@@ -1614,6 +1614,10 @@ function Footer({
 function ZoomOverlay({ item, onClose }: { item?: ClipItem; onClose: () => void }) {
   const [url, setUrl] = useState<string | null>(null);
   const [full, setFull] = useState(true);
+  // wheel zoom on the image (direction 190): 1 = natural size, clamped so
+  // the image never leaves a usable range; resets when the item changes
+  const [scale, setScale] = useState(1);
+  useEffect(() => setScale(1), [item?.id]);
 
   useEffect(() => {
     let revoke: string | null = null;
@@ -1645,7 +1649,16 @@ function ZoomOverlay({ item, onClose }: { item?: ClipItem; onClose: () => void }
     <div className="zoom-overlay" onClick={onClose}>
       <div className="zoom-stage" onClick={(e) => e.stopPropagation()}>
         {url ? (
-          <img className="zoom-img" src={url} alt={item.content} />
+          <img
+            className="zoom-img"
+            src={url}
+            alt={item.content}
+            style={{ transform: `scale(${scale})`, transformOrigin: "center center" }}
+            onWheel={(e) => {
+              e.preventDefault();
+              setScale((k) => Math.min(4, Math.max(0.25, k * (e.deltaY < 0 ? 1.15 : 1 / 1.15))));
+            }}
+          />
         ) : (
           <div className="zoom-loading">原图加载中…</div>
         )}
