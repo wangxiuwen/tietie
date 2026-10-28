@@ -462,6 +462,14 @@ button {
   line-height: 1.5;
   vertical-align: 1px;
 }
+/* 🔒 before the host badge on https links (direction 215) — link-green */
+.link-secure {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: calc(10px * var(--fs));
+  color: var(--cat-link);
+  vertical-align: 1px;
+}
 
 .img {
   margin-top: 10px;

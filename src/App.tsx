@@ -1427,6 +1427,15 @@ function linkDomain(url: string): string {
   }
 }
 
+/** https at a glance (direction 215): only https:// URLs carry the 🔒 cue. */
+function isHttps(url: string): boolean {
+  try {
+    return new URL(url).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 function cardAriaText(item: ClipItem): string {
   const s = item.kind === "image" ? item.content : (item.preview || item.content);
   const one = s.replace(/\s+/g, " ").trim();
@@ -1541,6 +1550,13 @@ function CardBody({
           <HighlightText text={item.preview || item.content} query={query} />
         </div>
         <div className="link-url">
+          {/* 🔒 on encrypted links (direction 215): sits left of the host
+              badge so "is this https" reads before the domain */}
+          {isHttps(item.content) && (
+            <span className="link-secure" title={t("card.secureLink")} aria-label={t("card.secureLink")}>
+              🔒
+            </span>
+          )}
           {/* registrable host as a glanceable badge (direction 118); click
               filters the list down to this domain (direction 166) */}
           {domain && (
