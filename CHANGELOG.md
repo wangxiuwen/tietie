@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **210** [`8202457`](https://github.com/wangxiuwen/tietie/commit/8202457) 日志行 title 两行化=过滤提示+toLocaleString 完整日期（184 过滤语义保留），实测 title 含 2026/10/28 22:47:23 且与行内时间同源
+
 - **209** [`2e67bd7`](https://github.com/wangxiuwen/tietie/commit/2e67bd7) 已具备收口：行 hover 高亮自方向7 即在；可信 mouseMoved 移入 rgba(0,122,255,.18) 显色、移出回透明实测；本轮池<3 先扩池 211-215
 
 - **208** [`7a98016`](https://github.com/wangxiuwen/tietie/commit/7a98016) FilterTab 扩 pinned、TYPE_TABS 尾补置顶位、filtered 处理 pinned 过滤，7 位环实测置顶卡集=桥一致
