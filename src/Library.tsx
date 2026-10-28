@@ -19,6 +19,8 @@ export default function Library() {
   const [items, setItems] = useState<ClipItem[]>([]);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
+  // rich-row detail overlay opened by double-click (direction 199)
+  const [richView, setRichView] = useState<ClipItem | null>(null);
   // folder names for the ownership column (direction 147)
   const [folders, setFolders] = useState<{ id: number; name: string }[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
@@ -210,6 +212,12 @@ export default function Library() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName;
+      // the detail overlay owns Escape even while a field is focused —
+      // an open modal must not strand the user (direction 199)
+      if (richView) {
+        if (e.key === "Escape") setRichView(null);
+        return;
+      }
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (view !== "table" || filtered.length === 0) return;
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -247,7 +255,7 @@ export default function Library() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [view, filtered, cursor, refresh]);
+  }, [view, filtered, cursor, refresh, richView]);
 
   // keep the cursor row visible
   useEffect(() => {
@@ -397,11 +405,10 @@ export default function Library() {
                   toggle(it.id);
                 }}
                 onDoubleClick={() => {
-                  // dblclick copies without needing the checkbox (direction 120):
-                  // text-ish rows copy content, image rows copy the image itself
-                  if (it.kind === "image") {
-                    invoke("copy_item_image", { id: it.id }).catch(() => {});
-                    setMsg(copiedMsg(it));
+                  // rich/image rows open their detail overlay (direction 199);
+                  // text rows keep the dblclick copy (direction 120)
+                  if (it.rich_html || it.kind === "image") {
+                    setRichView(it);
                     return;
                   }
                   navigator.clipboard
@@ -533,6 +540,7 @@ export default function Library() {
           </button>
         </div>
       </div>
+      {richView && <DetailOverlay item={richView} onClose={() => setRichView(null)} />}
     </div>
   );
 }
@@ -560,4 +568,55 @@ function relTime(unixSec: number): string {
   if (diff < 86400) return `${Math.floor(diff / 3600)}${t("rt.hour")}`;
   if (diff < 86400 * 7) return `${Math.floor(diff / 86400)}${t("rt.day")}`;
   return new Date(unixSec * 1000).toLocaleDateString();
+}
+
+/** Row-detail overlay (direction 199): rich rows render their captured HTML
+ *  in a sandboxed iframe, image rows show the ORIGINAL PNG (not the b64
+ *  thumbnail) — text rows never get here, they keep dblclick-copy. */
+function DetailOverlay({ item, onClose }: { item: ClipItem; onClose: () => void }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let revoke: string | null = null;
+    let alive = true;
+    (async () => {
+      if (item.rich_html) return; // rich rows need no fetch
+      try {
+        const bytes = await invoke<number[]>("get_item_image", { id: item.id });
+        if (!alive) return;
+        const blob = new Blob([new Uint8Array(bytes)], { type: "image/png" });
+        revoke = URL.createObjectURL(blob);
+        setUrl(revoke);
+      } catch {
+        if (!alive || !item.preview) return;
+        setUrl(`data:image/png;base64,${item.preview}`);
+      }
+    })();
+    return () => {
+      alive = false;
+      if (revoke) URL.revokeObjectURL(revoke);
+    };
+  }, [item.id, item.kind, item.rich_html, item.preview]);
+
+  return (
+    <div className="zoom-overlay" onClick={onClose}>
+      <div className="zoom-stage" onClick={(e) => e.stopPropagation()}>
+        {item.rich_html ? (
+          <iframe
+            className="rich-frame"
+            sandbox=""
+            srcDoc={`<meta charset="utf-8"><body style="margin:12px;font:13px/1.6 -apple-system,sans-serif">${item.rich_html}</body>`}
+            title="rich"
+          />
+        ) : url ? (
+          <img className="zoom-img" src={url} alt={item.content} />
+        ) : (
+          <div className="zoom-loading">…</div>
+        )}
+        <div className="zoom-meta">
+          <span>{oneLine(item.content).slice(0, 60)}</span>
+          <span>Esc</span>
+        </div>
+      </div>
+    </div>
+  );
 }
