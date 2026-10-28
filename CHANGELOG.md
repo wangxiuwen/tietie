@@ -5,6 +5,8 @@
 
 ## 2026-10-28
 
+- **198** [`e455049`](https://github.com/wangxiuwen/tietie/commit/e455049) Enter 对未显形 🔒 卡先 revealItem 不粘贴（显形窗口内二次 Enter 放行），双 Enter 实测密文不泄→放行→全还原
+
 - **197** [`df6286f`](https://github.com/wangxiuwen/tietie/commit/df6286f) 语言下拉 onKeyDown a/z/e 映射（a=跟随系统/z=中文/e=English，原生 select 首字母搜不了拼音），实测 e→en 托盘跨窗翻英 + a→auto 还原
 
 - **196** [`a237f70`](https://github.com/wangxiuwen/tietie/commit/a237f70) 截断行（… 结尾）title 追加完整原文（备注·大小·全文），未截断行结构不变，7/7 截断行桥对照实测
