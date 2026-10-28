@@ -116,6 +116,13 @@ export default function TrayPopover() {
           autoFocus
           placeholder={t("search.tray")}
           value={query}
+          onFocus={(e) => {
+            // select the current query on (re)focus (direction 220, aligned
+            // with 217/219). Deferred a tick — React's controlled-value
+            // restore after the focus event clobbers an in-handler select().
+            const el = e.target;
+            window.setTimeout(() => el.select(), 0);
+          }}
           onChange={(e) => {
             setQuery(e.target.value);
             setSel(0);
