@@ -50,6 +50,9 @@ interface HotkeysInfo {
   clothesline: string;
   screenshot_registered: boolean;
   clothesline_registered: boolean;
+  /** underlying register error for a refused combo (direction 193) */
+  screenshot_error?: string | null;
+  clothesline_error?: string | null;
 }
 
 function syncAgo(ts: number): string {
@@ -642,6 +645,7 @@ export default function Settings() {
             value={hks?.screenshot ?? ""}
             others={[hks?.drawer ?? "", hks?.clothesline ?? ""]}
             registered={hks?.screenshot_registered ?? true}
+            regDetail={hks?.screenshot_error}
             onSaved={reloadHotkeys}
           />
           <div className="settings-row">
@@ -921,6 +925,7 @@ function HotkeyRow({
   value,
   others = [],
   registered = true,
+  regDetail,
   onSaved,
 }: {
   kind: string;
@@ -928,6 +933,8 @@ function HotkeyRow({
   value: string;
   others?: string[];
   registered?: boolean;
+  /** last register error from the backend (direction 193 tooltip) */
+  regDetail?: string | null;
   onSaved: () => void;
 }) {
   const [recording, setRecording] = useState(false);
@@ -1046,7 +1053,12 @@ function HotkeyRow({
               </span>
             )}
             {!registered && (
-              <span className="settings-tag err">{t("settings.regFail")}</span>
+              <span
+                className="settings-tag err"
+                title={regDetail ?? t("settings.regFail")}
+              >
+                {t("settings.regFail")}
+              </span>
             )}
             <button className="btn ghost" onClick={startRecording}>
               {t("settings.modify")}

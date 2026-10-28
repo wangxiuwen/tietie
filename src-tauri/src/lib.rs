@@ -71,6 +71,10 @@ pub struct HotkeyState {
     pub drawer: Mutex<Shortcut>,
     pub screenshot: Mutex<Option<Shortcut>>,
     pub clothesline: Mutex<Option<Shortcut>>,
+    /// last register error per kind (direction 193): surfaces in the
+    /// settings panel as the regFail tag's tooltip
+    pub screenshot_err: Mutex<Option<String>>,
+    pub clothesline_err: Mutex<Option<String>>,
 }
 
 /// Last fire time per hotkey id. The Windows fallback hook replays WM_HOTKEY
@@ -330,21 +334,77 @@ fn hotkey_settings_key(kind: &str) -> &'static str {
 fn register_simple_hotkey<R: Runtime>(app: &AppHandle<R>, kind: &str) -> Option<Shortcut> {
     let cfg = load_setting(app, hotkey_settings_key(kind), hotkey_default(kind));
     let shot = parse_hotkey(&cfg)?;
+    // remember the last error for the settings tooltip (direction 193);
+    // generic Runtime handle — use the typed AppHandle copy kept in state
+    let mut last_err: Option<String> = None;
     for attempt in 0..3 {
         match app.global_shortcut().register(shot) {
-            Ok(()) => return Some(shot),
+            Ok(()) => {
+                record_hotkey_error(app, kind, None);
+                return Some(shot);
+            }
             Err(e) => {
                 log::warn!(
                     "register {kind} hotkey ({cfg}) attempt {}: {e}",
                     attempt + 1
                 );
+                last_err = Some(format!("{cfg}: {e}"));
                 if attempt < 2 {
                     std::thread::sleep(std::time::Duration::from_millis(700));
                 }
             }
         }
     }
+    record_hotkey_error(app, kind, last_err);
     None
+}
+
+/// Pre-manage stash for register errors (direction 193): startup registers
+/// hotkeys BEFORE HotkeyState is managed, so the first failures park here
+/// and get drained into the state right after `app.manage`.
+static PRE_STATE_HK_ERR: Mutex<Option<std::collections::HashMap<String, String>>> =
+    Mutex::new(None);
+
+/// Park the per-kind last register error into HotkeyState (direction 193);
+/// before the state exists the error waits in the pre-manage stash.
+fn record_hotkey_error<R: Runtime>(app: &AppHandle<R>, kind: &str, err: Option<String>) {
+    use tauri::Manager;
+    if kind != "screenshot" && kind != "clothesline" {
+        return;
+    }
+    if let Some(state) = app.try_state::<HotkeyState>() {
+        let slot = match kind {
+            "screenshot" => &state.screenshot_err,
+            _ => &state.clothesline_err,
+        };
+        *slot.lock() = err;
+        return;
+    }
+    let mut stash = PRE_STATE_HK_ERR.lock();
+    let m = stash.get_or_insert_with(std::collections::HashMap::new);
+    match err {
+        Some(e) => {
+            m.insert(kind.to_string(), e);
+        }
+        None => {
+            m.remove(kind);
+        }
+    }
+}
+
+/// Move any pre-manage register errors into the freshly managed state.
+fn drain_pre_state_hk_errors(state: &HotkeyState) {
+    let mut stash = PRE_STATE_HK_ERR.lock();
+    if let Some(m) = stash.take() {
+        for (kind, e) in m {
+            let slot = if kind == "screenshot" {
+                &state.screenshot_err
+            } else {
+                &state.clothesline_err
+            };
+            *slot.lock() = Some(e);
+        }
+    }
 }
 
 /// Try to register the configured drawer hotkey; if it is taken (other app
@@ -594,11 +654,15 @@ pub fn run() {
                 // 挂绳/晾衣架功能整体下线（用户决定，2026-10-27）：不注册热键、
                 // 不创建窗口，代码全部保留——恢复时撤销本次相关提交即可。
                 let line = None;
-                app.manage(HotkeyState {
+                let hk_state = HotkeyState {
                     drawer: Mutex::new(drawer),
                     screenshot: Mutex::new(shot),
                     clothesline: Mutex::new(line),
-                });
+                    screenshot_err: Mutex::new(None),
+                    clothesline_err: Mutex::new(None),
+                };
+                drain_pre_state_hk_errors(&hk_state);
+                app.manage(hk_state);
                 app.manage(HotkeyDebounce::default());
                 // Windows fallback: replay hotkeys via a low-level hook when
                 // the OS hotkey dispatch itself stops delivering WM_HOTKEY.
@@ -3177,6 +3241,10 @@ struct Hotkeys {
     /// settings panel shows a warning instead of a dead key
     screenshot_registered: bool,
     clothesline_registered: bool,
+    /// the underlying register error for a refused combo (direction 193),
+    /// shown as the regFail tag's tooltip; None when registered fine
+    screenshot_error: Option<String>,
+    clothesline_error: Option<String>,
 }
 
 #[tauri::command]
@@ -3235,6 +3303,22 @@ fn hotkeys_snapshot(app: &AppHandle) -> Hotkeys {
             .as_ref()
             .map(|s| s.clothesline.lock().is_some())
             .unwrap_or(false),
+        // only surface the error while the combo is actually dead — a failed
+        // rebind keeps the old combo alive, that's not a dead key
+        screenshot_error: state.as_ref().and_then(|s| {
+            if s.screenshot.lock().is_none() {
+                s.screenshot_err.lock().clone()
+            } else {
+                None
+            }
+        }),
+        clothesline_error: state.as_ref().and_then(|s| {
+            if s.clothesline.lock().is_none() {
+                s.clothesline_err.lock().clone()
+            } else {
+                None
+            }
+        }),
     }
 }
 
@@ -3263,8 +3347,10 @@ fn set_hotkey(app: AppHandle, kind: String, value: String) -> Result<(), String>
         if let Some(old) = old {
             let _ = app.global_shortcut().register(old);
         }
+        record_hotkey_error(&app, &kind, Some(format!("{value}: {e}")));
         return Err(format!("注册失败: {e}"));
     }
+    record_hotkey_error(&app, &kind, None);
     match kind.as_str() {
         "screenshot" => *state.screenshot.lock() = Some(new),
         "clothesline" => *state.clothesline.lock() = Some(new),
