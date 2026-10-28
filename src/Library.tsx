@@ -280,6 +280,14 @@ export default function Library() {
           placeholder={t("search.library")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={(e) => {
+            // select the current query on (re)focus (direction 219,
+            // aligned with 217): one keystroke replaces it wholesale.
+            // Deferred a tick — React's controlled-value restore after
+            // the focus event can clobber an in-handler select().
+            const el = e.target;
+            window.setTimeout(() => el.select(), 0);
+          }}
           onKeyDown={(e) => {
             // Esc clears an active query (direction 204 companion) — the ×
             // button needs pointer travel, Esc is the keyboard twin
