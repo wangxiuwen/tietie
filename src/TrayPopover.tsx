@@ -390,8 +390,17 @@ function Row({
     <button
       className={"po-row" + (active ? " active" : "")}
       data-idx={idx}
-      // hover hint: note (direction 115) + entry byte size (direction 168)
-      title={[item.note, fmtBytes(item.byte_size)].filter(Boolean).join(" · ") || undefined}
+      // hover hint: note (direction 115) + entry byte size (direction 168) +
+      // full content when the row text was truncated (direction 196)
+      title={
+        [
+          item.note,
+          fmtBytes(item.byte_size),
+          trimOne(rowText(item)).endsWith("…") ? rowText(item) : "",
+        ]
+          .filter(Boolean)
+          .join(" · ") || undefined
+      }
       onMouseDown={(e) => {
         if (e.button === 1) {
           // preventDefault keeps the WebView out of autoscroll mode
