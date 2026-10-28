@@ -5,6 +5,8 @@
 
 ## 2026-10-27
 
+- **186** [`7b06d02`](https://github.com/wangxiuwen/tietie/commit/7b06d02) paste_item 加可选 bumpUsage（托盘 copyBack 传 false 不计 use_count，抽屉默认照计），19→19→20 双路径实测
+
 - **185** [`bcbef8a`](https://github.com/wangxiuwen/tietie/commit/bcbef8a) 语言切换跨窗即时（storage 事件广播 LS_KEY 变更，各窗 useLang 重解析 current），设置窗+托盘窗实测 zh↔en 双窗同步翻越后 auto 还原
 
 - **184** [`b5dd0ab`](https://github.com/wangxiuwen/tietie/commit/b5dd0ab) 同步日志行改可点按钮（logPeer 过滤态，再点同对端取消，.on 描边高亮），msg_send 造事件实测过滤/高亮/恢复全链

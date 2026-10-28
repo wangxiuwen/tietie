@@ -228,7 +228,7 @@
 ## 迭代记录
 
 <!-- 每轮在此追加一行：日期 | 方向号 | commit | 一句话结果 -->
-2026-10-27 | 186 | TBD | paste_item 加可选 bumpUsage（托盘 copyBack 传 false 不计 use_count，抽屉默认照计），19→19→20 双路径实测
+2026-10-27 | 186 | 7b06d02 | paste_item 加可选 bumpUsage（托盘 copyBack 传 false 不计 use_count，抽屉默认照计），19→19→20 双路径实测
 2026-10-27 | 185 | bcbef8a | 语言切换跨窗即时（storage 事件广播 LS_KEY 变更，各窗 useLang 重解析 current），设置窗+托盘窗实测 zh↔en 双窗同步翻越后 auto 还原
 2026-10-27 | 184 | b5dd0ab | 同步日志行改可点按钮（logPeer 过滤态，再点同对端取消，.on 描边高亮），msg_send 造事件实测过滤/高亮/恢复全链
 2026-10-27 | 183 | 001581a* | 搜索过滤排除遮蔽敏感卡（!x.sensitive 前置于 matchQuery，零结果零计数），敏感词查询实测 0 卡+空态、对照词正常、浏览态遮蔽在位；*代码随并行下线轮提交进 main
